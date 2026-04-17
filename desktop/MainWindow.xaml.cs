@@ -29,9 +29,9 @@ public partial class MainWindow : Window
         ResetFiltersButton.Click += async (_, _) => await ResetFiltersAsync();
         BackToTopButton.Click += (_, _) => MainScrollViewer.ScrollToTop();
         DetailOverlay.MouseDown += DetailOverlay_MouseDown;
-        DetailNameText.MouseLeftButtonUp += (_, _) => CopyText(DetailNameText.Text);
-        DetailCardIdValueText.MouseLeftButtonUp += (_, _) => CopyText(DetailCardIdValueText.Text);
-        DetailDbfIdValueText.MouseLeftButtonUp += (_, _) => CopyText(DetailDbfIdValueText.Text);
+        RegisterSingleClickCopy(DetailNameText);
+        RegisterSingleClickCopy(DetailCardIdValueText);
+        RegisterSingleClickCopy(DetailDbfIdValueText);
         toastTimer.Tick += ToastTimer_Tick;
 
         foreach (var comboBox in new[]
@@ -51,6 +51,15 @@ public partial class MainWindow : Window
         }
 
         BuildStaticFilters();
+    }
+
+    private void RegisterSingleClickCopy(TextBox textBox)
+    {
+        textBox.PreviewMouseLeftButtonDown += (_, e) =>
+        {
+            e.Handled = true;
+            CopyText(textBox.Text);
+        };
     }
 
     private async void Window_Loaded(object sender, RoutedEventArgs e)
