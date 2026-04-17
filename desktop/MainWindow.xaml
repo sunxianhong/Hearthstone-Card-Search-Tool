@@ -98,8 +98,22 @@
             <Setter Property="TextWrapping" Value="Wrap" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
             <Setter Property="Focusable" Value="True" />
-            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="IsTabStop" Value="True" />
             <Setter Property="Cursor" Value="IBeam" />
+            <Setter Property="SelectionBrush" Value="#D3B382" />
+            <Setter Property="SelectionTextBrush" Value="#2A2118" />
+            <Setter Property="CaretBrush" Value="#2A2118" />
+        </Style>
+
+        <Style x:Key="TagLineTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource SelectableDisplayTextBoxStyle}">
+            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="Padding" Value="14,12" />
+            <Setter Property="Background" Value="#FBF4E8" />
+            <Setter Property="BorderBrush" Value="#A49374" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="FontSize" Value="15" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#3B2F22" />
         </Style>
 
         <Style x:Key="CenteredComboBoxItemStyle" TargetType="ComboBoxItem">
@@ -145,10 +159,7 @@
                         BorderBrush="#C3A879"
                         BorderThickness="1"
                         Background="#FBF6EE">
-                    <Viewbox Stretch="Uniform"
-                             StretchDirection="DownOnly">
-                        <Grid Width="1240"
-                              Margin="16,12">
+                    <Grid Margin="16,12">
                             <TextBox Style="{StaticResource SelectableDisplayTextBoxStyle}"
                                      FontSize="28"
                                      FontWeight="Bold"
@@ -163,8 +174,7 @@
                                          Foreground="#6B573C"
                                          Text="普通搜索" />
                             </Border>
-                        </Grid>
-                    </Viewbox>
+                    </Grid>
                 </Border>
 
                 <Border Grid.Row="1"
@@ -173,10 +183,7 @@
                         BorderBrush="#C3A879"
                         BorderThickness="1"
                         Background="#FBF6EE">
-                    <Viewbox Stretch="Uniform"
-                             StretchDirection="DownOnly">
-                        <Grid Width="1240"
-                              Margin="16">
+                    <Grid Margin="16">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
@@ -246,7 +253,7 @@
                                           Grid.Column="0"
                                           Margin="0,0,8,0"
                                           Height="40"
-                                          FontSize="14"
+                                          FontSize="13"
                                           MaxDropDownHeight="500"
                                           ScrollViewer.CanContentScroll="False"
                                           ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -254,12 +261,14 @@
                                           SelectedValuePath="Value">
                                     <ComboBox.ItemsPanel>
                                         <ItemsPanelTemplate>
-                                            <WrapPanel IsItemsHost="True" />
+                                            <UniformGrid IsItemsHost="True"
+                                                         Columns="3" />
                                         </ItemsPanelTemplate>
                                     </ComboBox.ItemsPanel>
                                     <ComboBox.ItemContainerStyle>
                                         <Style TargetType="ComboBoxItem" BasedOn="{StaticResource CenteredComboBoxItemStyle}">
-                                            <Setter Property="Width" Value="176" />
+                                            <Setter Property="MinWidth" Value="132" />
+                                            <Setter Property="Height" Value="36" />
                                         </Style>
                                     </ComboBox.ItemContainerStyle>
                                 </ComboBox>
@@ -268,55 +277,55 @@
                                           Grid.Column="1"
                                           Margin="0,0,8,0"
                                           Height="40"
-                                          FontSize="14"
+                                          FontSize="13"
                                           DisplayMemberPath="Label"
                                           SelectedValuePath="Value" />
                                 <ComboBox x:Name="ClassComboBox"
                                           Grid.Column="2"
                                           Margin="0,0,8,0"
                                           Height="40"
-                                          FontSize="14"
+                                          FontSize="13"
                                           DisplayMemberPath="Label"
                                           SelectedValuePath="Value" />
                                 <ComboBox x:Name="RarityComboBox"
                                           Grid.Column="3"
                                           Margin="0,0,8,0"
                                           Height="40"
-                                          FontSize="14"
+                                          FontSize="13"
                                           DisplayMemberPath="Label"
                                           SelectedValuePath="Value" />
                                 <ComboBox x:Name="TypeComboBox"
                                           Grid.Column="4"
                                           Margin="0,0,8,0"
                                           Height="40"
-                                          FontSize="14"
+                                          FontSize="13"
                                           DisplayMemberPath="Label"
                                           SelectedValuePath="Value" />
                                 <ComboBox x:Name="RaceComboBox"
                                           Grid.Column="5"
                                           Margin="0,0,8,0"
                                           Height="40"
-                                          FontSize="14"
+                                          FontSize="13"
                                           DisplayMemberPath="Label"
                                           SelectedValuePath="Value" />
                                 <ComboBox x:Name="SchoolComboBox"
                                           Grid.Column="6"
                                           Margin="0,0,8,0"
                                           Height="40"
-                                          FontSize="14"
+                                          FontSize="13"
                                           DisplayMemberPath="Label"
                                           SelectedValuePath="Value" />
                                 <ComboBox x:Name="KeywordComboBox"
                                           Grid.Column="7"
                                           Margin="0,0,8,0"
                                           Height="40"
-                                          FontSize="14"
+                                          FontSize="13"
                                           DisplayMemberPath="Label"
                                           SelectedValuePath="Value" />
                                 <ComboBox x:Name="CollectibleComboBox"
                                           Grid.Column="8"
                                           Height="40"
-                                          FontSize="14"
+                                          FontSize="13"
                                           DisplayMemberPath="Label"
                                           SelectedValuePath="Value" />
                             </Grid>
@@ -327,8 +336,7 @@
                                      Style="{StaticResource SelectableDisplayTextBoxStyle}"
                                      FontSize="14"
                                      Foreground="#69553D" />
-                        </Grid>
-                    </Viewbox>
+                    </Grid>
                 </Border>
 
                 <Border Grid.Row="2"

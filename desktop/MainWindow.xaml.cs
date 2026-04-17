@@ -29,9 +29,9 @@ public partial class MainWindow : Window
         ResetFiltersButton.Click += async (_, _) => await ResetFiltersAsync();
         BackToTopButton.Click += (_, _) => MainScrollViewer.ScrollToTop();
         DetailOverlay.MouseDown += DetailOverlay_MouseDown;
-        DetailNameText.MouseDoubleClick += (_, _) => CopyText(DetailNameText.Text);
-        DetailCardIdValueText.MouseDoubleClick += (_, _) => CopyText(DetailCardIdValueText.Text);
-        DetailDbfIdValueText.MouseDoubleClick += (_, _) => CopyText(DetailDbfIdValueText.Text);
+        DetailNameText.MouseLeftButtonUp += (_, _) => CopyText(DetailNameText.Text);
+        DetailCardIdValueText.MouseLeftButtonUp += (_, _) => CopyText(DetailCardIdValueText.Text);
+        DetailDbfIdValueText.MouseLeftButtonUp += (_, _) => CopyText(DetailDbfIdValueText.Text);
         toastTimer.Tick += ToastTimer_Tick;
 
         foreach (var comboBox in new[]
@@ -482,29 +482,16 @@ public partial class MainWindow : Window
 
         foreach (var tag in tags)
         {
-            var border = new Border
-            {
-                Margin = new Thickness(0, 0, 0, 10),
-                Padding = new Thickness(14, 12, 14, 12),
-                CornerRadius = new CornerRadius(0),
-                Background = new SolidColorBrush(Color.FromRgb(251, 244, 232)),
-                BorderBrush = new SolidColorBrush(Color.FromRgb(164, 147, 116)),
-                BorderThickness = new Thickness(1),
-            };
-
-            var lineBlock = new TextBlock
+            var lineBlock = new TextBox
             {
                 Text = $"{tag.DisplayName} = {tag.Value}",
-                FontSize = 15,
-                FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush(Color.FromRgb(59, 47, 34)),
-                TextWrapping = TextWrapping.Wrap,
-                LineHeight = 24,
+                Style = (Style)FindResource("TagLineTextBoxStyle"),
+                VerticalContentAlignment = VerticalAlignment.Center,
+                AcceptsReturn = false,
+                Cursor = Cursors.IBeam,
             };
 
-            border.Child = lineBlock;
-
-            TagsPanel.Children.Add(border);
+            TagsPanel.Children.Add(lineBlock);
         }
     }
 
