@@ -1,0 +1,1694 @@
+﻿using System.Text;
+using System.Text.RegularExpressions;
+
+namespace HearthstoneCardSearchTool.Core;
+
+public static class CardDataMaps
+{
+    private static readonly object SyncRoot = new();
+    private static bool initialized;
+
+    private static readonly IReadOnlyDictionary<string, string> FallbackUnknownEnumMap =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["2831"] = "树人",
+            ["3881"] = "小精灵",
+            ["2871"] = "古树",
+            ["4485"] = "死亡之翼",
+            ["1584"] = "喵",
+            ["2899"] = "疫病",
+            ["1623"] = "药膏",
+            ["2178"] = "冒险者",
+            ["2431"] = "圣物",
+            ["2500"] = "药剂",
+            ["2819"] = "乐句",
+            ["3631"] = "乘务员",
+            ["1590"] = "灵魂残片",
+            ["2522"] = "第二种族海盗",
+            ["2523"] = "第二种族龙",
+            ["2525"] = "第二种族德莱尼",
+            ["2534"] = "第二种族亡灵",
+            ["2536"] = "第二种族鱼人",
+            ["2537"] = "第二种族恶魔",
+            ["2539"] = "第二种族机械",
+            ["2540"] = "第二种族元素",
+            ["2542"] = "第二种族野兽",
+            ["2543"] = "第二种族图腾",
+            ["2546"] = "第二种族野猪人",
+            ["2553"] = "第二种族纳迦",
+        };
+
+    private static readonly IReadOnlyDictionary<string, string> FallbackTagLabels =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["TAG_NOT_SET"] = "标签未设置",
+            ["TAG_SCRIPT_DATA_ENT_1"] = "脚本数据实体1",
+            ["TAG_SCRIPT_DATA_ENT_2"] = "脚本数据实体2",
+            ["TAG_SCRIPT_DATA_NUM_1"] = "脚本数据数值1",
+            ["TAG_SCRIPT_DATA_NUM_2"] = "脚本数据数值2",
+            ["TAG_SCRIPT_DATA_NUM_3"] = "脚本数据数值3",
+            ["TAG_SCRIPT_DATA_NUM_4"] = "脚本数据数值4",
+            ["TAG_SCRIPT_DATA_NUM_5"] = "脚本数据数值5",
+            ["TAG_SCRIPT_DATA_NUM_6"] = "脚本数据数值6",
+            ["TAG_TB_RANDOM_DECK_TIME_ID"] = "乱斗模式随机卡组时间ID",
+            ["STATE"] = "游戏状态",
+            ["TURN"] = "当前回合数",
+            ["STEP"] = "当前游戏阶段",
+            ["NEXT_STEP"] = "下一个阶段",
+            ["ACTION_STEP_TYPE"] = "动作阶段类型",
+            ["IS_CURRENT_TURN_AN_EXTRA_TURN"] = "当前回合是否为额外回合",
+            ["EXTRA_TURNS_TAKEN_THIS_GAME"] = "本局游戏已进行的额外回合数",
+            ["WAIT_FOR_PLAYER_RECONNECT_PERIOD"] = "等待玩家重连时间",
+            ["PHASED_RESTART"] = "分阶段重启状态",
+            ["SQUELCH_NON_GAME_TRIGGERS_AND_MODIFIERS"] = "屏蔽非游戏触发器和修改器",
+            ["SQUELCH_LIFETIME_EFFECTS"] = "屏蔽持续光环效果",
+            ["BOARD_VISUAL_STATE"] = "棋盘视觉状态",
+            ["ALLOW_MOVE_MINION"] = "允许移动随从位置",
+            ["ALLOW_MOVE_BACON_SPELL"] = "允许移动酒馆战棋法术",
+            ["CANT_MOVE_MINION"] = "无法移动随从",
+            ["USE_FAST_ACTOR_TRANSITION_ANIMATIONS"] = "使用快速动画过渡",
+            ["HIGHLIGHT_ATTACKING_MINION_DURING_COMBAT"] = "在战斗中高亮攻击方随从",
+            ["DISABLE_NONHERO_GOLDEN_ANIMATIONS"] = "禁用非英雄的金色卡牌动画",
+            ["ALLOW_GAME_SPEEDUP"] = "允许游戏加速",
+            ["SKIP_MULLIGAN"] = "跳过调度阶段",
+            ["DARKMOON_FAIRE_PRIZES_ACTIVE"] = "战棋：暗月奖品激活",
+            ["BACON_COMBAT_DAMAGE_CAP"] = "战棋：战斗伤害上限",
+            ["BACON_COMBAT_DAMAGE_CAP_ENABLED"] = "战棋：伤害保护上限已启用",
+            ["GAME_SEED"] = "游戏随机种子",
+            ["BACON_DIABLO_FIGHT_DIABLO_PLAYER_ID"] = "战棋：迪亚波罗Boss战的玩家ID",
+            ["BACON_BUDDY_ENABLED"] = "战棋：英雄伙伴机制已启用",
+            ["BACON_EVOLUTION_CARD_ID"] = "战棋：进化卡牌ID",
+            ["BACON_EVOLUTION_CARD_ID_2"] = "战棋：进化卡牌ID 2",
+            ["BACON_GUIDE_RELATED_CARD"] = "战棋：向导相关卡牌",
+            ["BACON_QUESTS_ACTIVE"] = "战棋：任务机制激活",
+            ["BACON_TRINKETS_ACTIVE"] = "战棋：饰品机制激活",
+            ["BACON_MAX_LEADERBOARD_ARMOR"] = "战棋：排行榜最大护甲值",
+            ["BACON_USE_COIN_BASED_BUDDY_METER"] = "战棋：使用基于铸币的伙伴计量表",
+            ["BACON_NO_TIER_UP_BUTTON"] = "战棋：无升级酒馆按钮",
+            ["ANOMALY1"] = "畸变1",
+            ["ANOMALY2"] = "畸变2",
+            ["BACON_TIMES_VISITED_ALT_TAVERN"] = "战棋：访问异变酒馆的次数",
+            ["BACON_ALT_TAVERN_SYSTEM_ACTIVE"] = "战棋：异变酒馆系统激活",
+            ["BACON_TURNS_UNTIL_ALT_TAVERN"] = "战棋：距离异变酒馆的回合数",
+            ["BACON_BLACK_MARKET_EXTRA_CHRONUM"] = "战棋：黑市额外时间币",
+            ["BACON_TIMEWARP_TURN1_TOOLTIP"] = "战棋：时空扭曲回合1提示",
+            ["BACON_TIMEWARP_TURN2_TOOLTIP"] = "战棋：时空扭曲回合2提示",
+            ["BACON_TOTAL_TIMEWARPS_FOR_GAME"] = "战棋：本局总时空扭曲次数",
+            ["BACON_TIMEWARP_CHRONUM_TOOLTIP"] = "战棋：时空扭曲时间币提示",
+            ["TEAM_ID"] = "队伍ID",
+            ["PLAYER_ID"] = "玩家ID",
+            ["STARTHANDSIZE"] = "起始手牌数",
+            ["MAXHANDSIZE"] = "最大手牌上限",
+            ["MAXRESOURCES"] = "最大法力水晶数",
+            ["MAXRESOURCES_BLOOD"] = "最大血霜符文数",
+            ["MAXRESOURCES_FROST"] = "最大冰霜符文数",
+            ["MAXRESOURCES_UNHOLY"] = "最大邪恶符文数",
+            ["MAXRESOURCES_DEATH"] = "最大死亡符文数",
+            ["TIMEOUT"] = "回合超时时间",
+            ["TURN_START"] = "回合开始标志",
+            ["TURN_TIMER_SLUSH"] = "回合计时器缓冲时间",
+            ["HEROPOWER_ADDITIONAL_ACTIVATIONS"] = "英雄技能额外使用次数",
+            ["HEROPOWER_ACTIVATIONS_THIS_TURN"] = "本回合已使用英雄技能次数",
+            ["HEROPOWER_UNLIMITED_USES"] = "英雄技能无限使用",
+            ["BACON_DUMMY_PLAYER"] = "战棋：假人玩家",
+            ["PROGRESSBAR_TOTAL"] = "进度条总值",
+            ["PROGRESSBAR_PROGRESS"] = "进度条当前进度",
+            ["PROGRESSBAR_CARDID"] = "进度条相关卡牌ID",
+            ["PROGRESSBAR_SHOW"] = "是否显示进度条",
+            ["PROGRESSBAR_TEXT"] = "进度条文本",
+            ["EARLY_CONCEDE_POPUP_AVAILABLE"] = "允许提前投降弹窗",
+            ["BACON_NUMBER_HERO_REFRESH_AVAILABLE"] = "战棋：英雄刷新可用次数",
+            ["CARD_BACK_OVERRIDE"] = "卡背覆盖",
+            ["CORPSES"] = "尸体数",
+            ["CORPSES_SPENT_THIS_GAME"] = "本局游戏消耗的尸体数",
+            ["CORPSE_SPENDER"] = "消耗尸体牌",
+            ["DECK_SWAP_ACTIVE"] = "牌库交换已激活",
+            ["CURRENT_EXCAVATE_TIER"] = "当前发掘等级",
+            ["MAX_EXCAVATE_TIER"] = "最大发掘等级",
+            ["DAMAGE_DEALT_TO_HERO_LAST_TURN"] = "上回合对英雄造成的伤害",
+            ["CORNER_REPLACEMENT_TYPE"] = "卡牌边角替换类型",
+            ["DRAW_SPELL_OVERRIDE"] = "抽牌法术动画覆盖",
+            ["MILL_SPELL_OVERRIDE"] = "爆牌法术动画覆盖",
+            ["HAMUUL_ACTIVE"] = "哈缪尔效果激活",
+            ["IMBUE_SUB_COUNTER"] = "附魔/注能子计数器",
+            ["CARES_ABOUT_IMBUE_CARDS"] = "关注注能卡牌的状态",
+            ["FIRST_PLAYER"] = "先手玩家",
+            ["CURRENT_PLAYER"] = "当前回合玩家",
+            ["HERO_ENTITY"] = "英雄实体",
+            ["RESOURCES"] = "当前法力水晶",
+            ["RESOURCES_BLOOD"] = "当前血符文",
+            ["RESOURCES_FROST"] = "当前冰霜符文",
+            ["RESOURCES_UNHOLY"] = "当前邪恶符文",
+            ["RESOURCES_DEATH"] = "当前死亡符文",
+            ["RESOURCES_USED"] = "已使用的法力水晶",
+            ["FATIGUE"] = "疲劳值",
+            ["PLAYSTATE"] = "玩家游戏状态",
+            ["CURRENT_SPELLPOWER_BASE"] = "当前基础法术伤害",
+            ["CURRENT_SPELLPOWER_ARCANE"] = "当前奥术法术伤害",
+            ["CURRENT_SPELLPOWER_FIRE"] = "当前火焰法术伤害",
+            ["CURRENT_SPELLPOWER_FROST"] = "当前冰霜法术伤害",
+            ["CURRENT_SPELLPOWER_NATURE"] = "当前自然法术伤害",
+            ["CURRENT_SPELLPOWER_HOLY"] = "当前神圣法术伤害",
+            ["CURRENT_SPELLPOWER_SHADOW"] = "当前暗影法术伤害",
+            ["CURRENT_SPELLPOWER_FEL"] = "当前邪能法术伤害",
+            ["CURRENT_SPELLPOWER_PHYSICAL"] = "当前物理法术伤害",
+            ["CURRENT_TEMP_SPELLPOWER_BASE"] = "临时基础法术伤害",
+            ["CURRENT_TEMP_SPELLPOWER_ARCANE"] = "临时奥术法术伤害",
+            ["CURRENT_TEMP_SPELLPOWER_FEL"] = "临时邪能法术伤害",
+            ["CURRENT_TEMP_SPELLPOWER_FIRE"] = "临时火焰法术伤害",
+            ["CURRENT_TEMP_SPELLPOWER_FROST"] = "临时冰霜法术伤害",
+            ["CURRENT_TEMP_SPELLPOWER_NATURE"] = "临时自然法术伤害",
+            ["CURRENT_TEMP_SPELLPOWER_HOLY"] = "临时神圣法术伤害",
+            ["CURRENT_TEMP_SPELLPOWER_PHYSICAL"] = "临时物理法术伤害",
+            ["CURRENT_TEMP_SPELLPOWER_SHADOW"] = "临时暗影法术伤害",
+            ["CURRENT_NEGATIVE_SPELLPOWER"] = "负面法术伤害",
+            ["CURRENT_HEALING_POWER"] = "当前治疗强度",
+            ["SUPPRESS_SPELL_POWER_IN_TEXT"] = "在卡牌文本中隐藏法强加成显示",
+            ["MULLIGAN_STATE"] = "调度状态",
+            ["ZONES_REVEALED"] = "区域已揭示",
+            ["STEADY_SHOT_CAN_TARGET"] = "猎人技能可指定目标",
+            ["OVERLOAD_THIS_GAME"] = "本局游戏已过载的法力值总和",
+            ["SPELLS_COST_HEALTH"] = "法术消耗生命值而非按法力值",
+            ["CANT_BE_FATIGUED"] = "免疫疲劳伤害",
+            ["RED_MANA_CRYSTALS"] = "红色法力水晶",
+            ["WHIZBANG_DECK_ID"] = "威兹班卡组ID",
+            ["EXTRA_BATTLECRIES_BASE"] = "额外战吼基础次数",
+            ["EXTRA_MINION_BATTLECRIES_BASE"] = "额外随从战吼基础次数",
+            ["EXTRA_BATTLECRIES_ADDITIONAL"] = "额外战吼附加次数",
+            ["EXTRA_DEATHRATTLES_BASE"] = "额外亡语基础次数",
+            ["EXTRA_MINION_DEATHRATTLES_BASE"] = "额外随从亡语基础次数",
+            ["EXTRA_DEATHRATTLES_ADDITIONAL"] = "额外亡语附加次数",
+            ["AMOUNT_HEALED_THIS_GAME"] = "本局游戏总治疗量",
+            ["NUM_HERO_POWER_DAMAGE_THIS_GAME"] = "本局游戏英雄技能造成的伤害总和",
+            ["MARK_OF_EVIL"] = "跟班",
+            ["HERO_FLYING"] = "英雄处于飞行状态",
+            ["AI_MAKES_DECISIONS_FOR_PLAYER"] = "AI代为决策",
+            ["DOUBLE_FATIGUE_DAMAGE"] = "疲劳伤害翻倍",
+            ["PLAYER_LEADERBOARD_PLACE"] = "战棋/乱斗排行榜名次",
+            ["PLAYER_TECH_LEVEL"] = "玩家科技等级",
+            ["PLAYER_TRIPLES"] = "玩家三连次数",
+            ["NEXT_OPPONENT_PLAYER_ID"] = "下个对手的玩家ID",
+            ["NEXT_OPPONENT_TEAMMATE_PLAYER_ID"] = "下个对手队友的玩家ID",
+            ["BACON_ODD_PLAYER_OUT"] = "战棋轮空玩家",
+            ["BACON_DUO_TEAMMATE_PLAYER_ID"] = "战棋双打：队友玩家ID",
+            ["BACON_DUO_TEAM_ID"] = "战棋双打：队伍ID",
+            ["DUOS_QUEUED_NOT_ON_TEAM"] = "双排但不在同一队",
+            ["PLAYER_ABANDONED_BY_TEAMMATE"] = "队友已退出/挂机",
+            ["BACON_MAX_PLAYER_TECH_LEVEL"] = "战棋玩家最大酒馆等级",
+            ["MAIN_GALAKROND"] = "主迦拉克隆实体",
+            ["PROXY_GALAKROND"] = "迦拉克隆代理实体",
+            ["INVOKE_COUNTER"] = "祈求次数计数器",
+            ["GALAKROND_HERO_CARD"] = "迦拉克隆英雄卡",
+            ["BACON_HERO_POWER_ACTIVATED"] = "战棋英雄技能已激活",
+            ["PROXY_CTHUN_SHATTERED"] = "破碎的克苏恩代理实体",
+            ["PLAYED_CTHUN_EYE"] = "已打出克苏恩之眼",
+            ["PLAYED_CTHUN_BODY"] = "已打出克苏恩之躯",
+            ["PLAYED_CTHUN_MAW"] = "已打出克苏恩之口",
+            ["PLAYED_CTHUN_HEART"] = "已打出克苏恩之心",
+            ["NUM_SPELLS_PLAYED_THIS_GAME"] = "本局打出的法术数量",
+            ["ARMOR_GAINED_THIS_GAME"] = "本局获得的护甲总和",
+            ["BACON_PLAYER_NUM_HERO_BUDDIES_GAINED"] = "战棋：玩家已获得的伙伴数量",
+            ["BACON_HERO_BUDDY_PROGRESS"] = "战棋：伙伴进度条",
+            ["BACON_BUDDY_3_TIMES"] = "战棋：伙伴获取第三次",
+            ["MAX_SLOTS_PER_PLAYER_OVERRIDE"] = "玩家最大随从格子数覆盖",
+            ["BACON_BLOODGEMBUFFATKVALUE"] = "战棋：鲜血宝石提供的攻击力buff值",
+            ["BACON_BLOODGEMBUFFHEALTHVALUE"] = "战棋：鲜血宝石提供的生命值buff值",
+            ["TAVERN_SPELL_ATTACK_INCREASE"] = "战棋：酒馆法术攻击力提升",
+            ["TAVERN_SPELL_HEALTH_INCREASE"] = "战棋：酒馆法术生命值提升",
+            ["BACON_ELEMENTAL_BUFFATKVALUE"] = "战棋：元素全局攻击buff值",
+            ["BACON_ELEMENTAL_BUFFHEALTHVALUE"] = "战棋：元素全局生命buff值",
+            ["BACON_PIRATE_BUFFATKVALUE"] = "战棋：海盗全局攻击buff值",
+            ["BACON_PIRATE_BUFFHEALTHVALUE"] = "战棋：海盗全局生命buff值",
+            ["BACON_DEEP_BLUE"] = "战棋：深蓝",
+            ["BACON_DUO_PLAYER_FIGHTS_FIRST_NEXT_COMBAT"] = "战棋双打：下次战斗我方先战",
+            ["BACON_TEAMMATE_BONUS_MINION_DAMAGE_LAST_COMBAT"] = "战棋双打：上轮战斗队友增伤",
+            ["BACON_DUOS_PUNISH_LEAVERS"] = "战棋双打：惩罚逃跑者",
+            ["BG_COMBAT_SPEED_START_TIME"] = "战棋战斗加速：开始时间",
+            ["BG_COMBAT_SPEED_ACCELERATION"] = "战棋战斗加速：加速度",
+            ["BG_COMBAT_SPEED_DECELERATION"] = "战棋战斗加速：减速度",
+            ["BG_COMBAT_SPEED_MAX_SPEED"] = "战棋战斗加速：最大速度",
+            ["BG_COMBAT_SPEED_ATTACKS_REMAINING_BEFORE_SLOW_DOWN_MIN"] = "战棋战斗加速：减速前最小剩余攻击数",
+            ["BG_COMBAT_SPEED_ATTACKS_REMAINING_BEFORE_SLOW_DOWN_MAX"] = "战棋战斗加速：减速前最大剩余攻击数",
+            ["BG_COMBAT_SPEED_MIN_COMBAT_EVENTS_REMAINING_TO_START"] = "战棋战斗加速：触发加速所需的最小剩余事件数",
+            ["DEMON_PORTAL_DECK"] = "恶魔传送门卡组",
+            ["PET_ENTITY"] = "宠物实体",
+            ["BACON_WON_LAST_COMBAT"] = "战棋：赢下了上一场战斗",
+            ["CARDRACE"] = "随从种族",
+            ["CARDTYPE"] = "卡牌类型",
+            ["COST"] = "法力值消耗",
+            ["COST_BLOOD"] = "鲜血符文",
+            ["COST_FROST"] = "冰霜符文",
+            ["COST_UNHOLY"] = "邪恶符文",
+            ["COST_DEATH"] = "死亡符文",
+            ["HEALTH"] = "生命值",
+            ["ATK"] = "攻击力",
+            ["DURABILITY_DEPRECATED"] = "武器耐久度",
+            ["ARMOR"] = "护甲值",
+            ["PREDAMAGE"] = "预判伤害",
+            ["PREHEALING"] = "预判治疗",
+            ["TAG_LAST_KNOWN_COST_IN_HAND"] = "在手牌中的最后已知消耗",
+            ["TARGETING_ARROW_TEXT"] = "瞄准箭头上的提示文字",
+            ["LAST_AFFECTED_BY"] = "最后作用于该实体的实体ID",
+            ["ENCHANTMENT_BIRTH_VISUAL"] = "附魔生成动画",
+            ["ENCHANTMENT_IDLE_VISUAL"] = "附魔待机动画",
+            ["PREMIUM"] = "镀膜级别",
+            ["COLLECTIBLE"] = "可收集卡牌",
+            ["CARDTEXT"] = "卡牌文本信息",
+            ["CUSTOMTEXT1"] = "自定义动态文本1",
+            ["CUSTOMTEXT2"] = "自定义动态文本2",
+            ["CUSTOMTEXT3"] = "自定义动态文本3",
+            ["DECK_LIST_SORT_ORDER"] = "牌表排序权重",
+            ["HERO_DECK_ID"] = "英雄卡组ID",
+            ["GAME_MODE_BUTTON_SLOT"] = "游戏模式按钮插槽位置",
+            ["TECH_LEVEL"] = "随从的星级/酒馆等级",
+            ["MOVE_MINION_HOVER_TARGET_SLOT"] = "移动随从悬停时的目标槽",
+            ["BACON_ACTION_CARD"] = "战棋动作卡牌",
+            ["IS_BACON_POOL_MINION"] = "是否是战棋随从池里的随从",
+            ["BACON_HERO_CAN_BE_DRAFTED"] = "战棋英雄是否可被选",
+            ["SPAWN_TIME_COUNT"] = "召唤顺序",
+            ["SPELL_SCHOOL"] = "法术派系",
+            ["BACON_PLAYER_RESULTS_HERO_OVERRIDE"] = "战棋结算面板英雄头像覆盖",
+            ["MINI_SET"] = "迷你包",
+            ["HAS_DIAMOND_QUALITY"] = "有钻石品质版本",
+            ["HAS_SIGNATURE_QUALITY"] = "有异画品质版本",
+            ["BACON_SKIN"] = "战棋皮肤",
+            ["BACON_SKIN_PARENT_ID"] = "战棋皮肤所属原版ID",
+            ["BACON_BOB_SKIN"] = "战棋鲍勃皮肤",
+            ["BACON_COMBAT_PHASE_HERO"] = "战棋战斗阶段英雄",
+            ["TARGETING_ARROW_TYPE"] = "瞄准箭头类型",
+            ["LOCATION_ACTION_COST"] = "地标行动消耗",
+            ["LOCATION_ACTION_COOLDOWN"] = "地标技能冷却时间",
+            ["IMP"] = "小鬼",
+            ["WHELP"] = "雏龙",
+            ["MINION_TYPE_MASK"] = "双种族/多种族的掩码",
+            ["EVIL_TWIN_MUSTACHE"] = "邪恶双子胡子特效",
+            ["SUPPRESS_EVIL_TWIN_MUSTACHE_SOUND"] = "抑制邪恶双子的音效",
+            ["HAS_BLOOD_PLAGUE"] = "附带鲜血疫病",
+            ["HAS_FROST_PLAGUE"] = "附带冰霜疫病",
+            ["HAS_UNHOLY_PLAGUE"] = "附带邪恶疫病",
+            ["HERO_ATTACK_GIVEN_ADDITIONAL"] = "英雄获得的额外攻击",
+            ["HERO_ARMOR_GIVEN_ADDITIONAL"] = "英雄获得的额外护甲",
+            ["HAS_ACTIVATE_POWER"] = "带有主动技能",
+            ["BACON_COSTS_HEALTH_TO_BUY"] = "战棋买怪消耗生命值",
+            ["HERO_DOESNT_MOVE_ON_ATTACK"] = "英雄攻击时不播放位移动画",
+            ["OBFUSCATED"] = "数据混淆/隐藏状态",
+            ["SUPPRESS_MILL_ANIMATION"] = "不播放爆牌动画",
+            ["IGNORE_SUPPRESS_MILL_ANIMATION"] = "忽略上述设置",
+            ["HERO_PASSIVE_ID"] = "英雄被动技能ID",
+            ["SKIP_ARMOR_ANIMATION"] = "跳过加甲动画",
+            ["SKIP_HERO_TWEEN"] = "跳过英雄位移动画",
+            ["CAN_TARGET_CARDS_IN_HAND"] = "可以瞄准手牌中的卡牌",
+            ["REPEATABLE"] = "可重复打出",
+            ["USES_CHARGES"] = "使用充能次数",
+            ["CARDTEXT_ENTITY_0"] = "动态文本关联的实体0",
+            ["CARDTEXT_ENTITY_1"] = "动态文本关联的实体1",
+            ["CARDTEXT_ENTITY_2"] = "动态文本关联的实体2",
+            ["CARDTEXT_ENTITY_3"] = "动态文本关联的实体3",
+            ["CARDTEXT_ENTITY_4"] = "动态文本关联的实体4",
+            ["CARDTEXT_ENTITY_5"] = "动态文本关联的实体5",
+            ["CARDTEXT_ENTITY_6"] = "动态文本关联的实体6",
+            ["CARDTEXT_ENTITY_7"] = "动态文本关联的实体7",
+            ["CARDTEXT_ENTITY_8"] = "动态文本关联的实体8",
+            ["CARDTEXT_ENTITY_9"] = "动态文本关联的实体9",
+            ["CARDTEXT_ENTITY_AS_NUMBERS"] = "卡牌文本变量以纯数字显示",
+            ["BACON_BUY_BUDDY"] = "战棋：购买伙伴按钮",
+            ["BACON_BUY_BUDDY_2"] = "战棋：二次购买伙伴",
+            ["BACON_SHOW_HEROPOWER_BUDDY_AS_EVOLVING_BIG_CARD"] = "将技能或伙伴以进化大卡展示",
+            ["BACON_HEROPOWER_BASE_HERO_ID"] = "战棋英雄技能的基础英雄ID",
+            ["EMOTECHARACTER"] = "表情所属角色",
+            ["EMOTECLASS"] = "表情所属职业",
+            ["BACON_DONT_SHOW_PAIR_TRIPLE_DISCOVER_VFX"] = "战棋：不播放碰对子的三连动画",
+            ["IS_ALTERNATE_HEROPOWER"] = "是替代版英雄技能",
+            ["HERO_FRAME_TYPE"] = "英雄头像框类型",
+            ["FALLBACK_ENCHANTMENT_PORTRAIT_DBID"] = "附魔卡图后备DBID",
+            ["SHOW_SLEEP_ZZZ_OVERRIDE"] = "强制覆盖显示'ZZZ'休眠特效",
+            ["NOZDORMU_DORMANT_EFFECT_HELPER"] = "诺兹多姆休眠特效辅助器",
+            ["NOZDORMU_DORMANT_EFFECT_WATCHER"] = "诺兹多姆特效监视器",
+            ["HAS_TIMEWARPED_TAVERN_ALT_TEXT"] = "时空扭曲酒馆特殊文本",
+            ["ENTITY_ID"] = "实体唯一ID",
+            ["DEFINITION"] = "定义",
+            ["OWNER"] = "所属玩家",
+            ["CONTROLLER"] = "当前控制者",
+            ["ZONE"] = "所在区域",
+            ["EXHAUSTED"] = "是否疲劳",
+            ["ATTACHED"] = "附着在哪个实体上",
+            ["PROPOSED_ATTACKER"] = "即将发起攻击的实体",
+            ["ATTACKING"] = "正在攻击",
+            ["PROPOSED_DEFENDER"] = "即将被攻击的目标",
+            ["DEFENDING"] = "正在防守",
+            ["PROTECTED"] = "受保护状态",
+            ["PROTECTING"] = "正在保护",
+            ["RECENTLY_ARRIVED"] = "刚刚入场",
+            ["DAMAGE"] = "当前累计受到的伤害",
+            ["DATABASE_ID"] = "数据库卡牌ID",
+            ["MODULAR_ENTITY_PART_1"] = "磁力组合实体的部分1",
+            ["MODULAR_ENTITY_PART_2"] = "磁力组合实体的部分2",
+            ["QUEST_PROGRESS"] = "任务进度",
+            ["QUEST_PROGRESS_TOTAL"] = "任务总目标数",
+            ["QUEST_CONTRIBUTOR"] = "任务进度贡献者",
+            ["QUEST_REWARD_DATABASE_ID"] = "任务奖励卡牌ID",
+            ["QUEST_HIDE_PROGRESS"] = "隐藏任务进度UI",
+            ["QUESTLINE_FINAL_REWARD_DATABASE_ID"] = "任务线最终奖励ID",
+            ["QUESTLINE_PART"] = "任务线当前阶段",
+            ["QUESTLINE_REQUIREMENT_MET_1"] = "任务线条件1已满足",
+            ["QUESTLINE_REQUIREMENT_MET_2"] = "任务线条件2已满足",
+            ["QUESTLINE_REQUIREMENT_MET_3"] = "任务线条件3已满足",
+            ["SHIFTING"] = "百变怪状态",
+            ["SHIFTING_MINION"] = "变形成随从",
+            ["SHIFTING_WEAPON"] = "变形成武器",
+            ["SHIFTING_SPELL"] = "变形成法术",
+            ["SHIFTING_LOCATION"] = "变形成地标",
+            ["TREASURE"] = "宝藏牌",
+            ["TREASURE_DEFINTIONAL_ATTACK"] = "宝藏自定义攻击",
+            ["TREASURE_DEFINTIONAL_COST"] = "宝藏自定义法力值",
+            ["TREASURE_DEFINTIONAL_HEALTH"] = "宝藏自定义生命值",
+            ["ACTS_LIKE_A_SPELL"] = "行为表现得像一张法术",
+            ["EMPOWERED_TREASURE"] = "强化宝藏",
+            ["ONE_SIDED_GHOSTLY"] = "单方幻影状态",
+            ["OPPONENT_SIDE_GHOSTLY"] = "对手方幻影状态",
+            ["IS_VAMPIRE"] = "吸血鬼",
+            ["VALEERASHADOW"] = "瓦莉拉的暗影",
+            ["RECRUIT"] = "招募",
+            ["LOOT_CARD_1"] = "战利品卡牌1",
+            ["LOOT_CARD_2"] = "战利品卡牌2",
+            ["LOOT_CARD_3"] = "战利品卡牌3",
+            ["OVERRIDECARDNAME"] = "强制覆盖卡牌名称",
+            ["OVERRIDECARDTEXTBUILDER"] = "强制覆盖文本生成器",
+            ["USE_ALTERNATE_CARD_TEXT"] = "使用备用卡牌文本",
+            ["SUPPRESS_ALT_CARD_TEXT_FOR_OPPONENT"] = "对手视角隐藏备用文本",
+            ["TREAT_AS_PLAYED_HERO_CARD"] = "视为已打出英雄牌",
+            ["FLOOPY"] = "弗洛普效果",
+            ["PLAYER_TAG_THRESHOLD_TAG_ID"] = "玩家标签阈值监视",
+            ["PLAYER_TAG_THRESHOLD_VALUE"] = "玩家标签阈值数值",
+            ["ENTITY_TAG_THRESHOLD_TAG_ID"] = "实体标签阈值监视",
+            ["ENTITY_TAG_THRESHOLD_VALUE"] = "实体标签阈值数值",
+            ["HIDE_WATERMARK"] = "隐藏水印",
+            ["WATERMARK_OVERRIDE_CARD_SET"] = "覆盖水印为特定扩展包",
+            ["COPIED_BY_KHADGAR"] = "卡德加机制复制出来的",
+            ["COLLECTION_RELATED_CARD_DATABASE_ID"] = "收藏管理器关联卡牌ID",
+            ["DISPLAY_ENTITY_IN_PLAY_ID"] = "在场上用于展示的实体ID",
+            ["DISPLAY_ENTITY_IN_PLAY_HAS_BLUE_GLOW"] = "场上实体显示蓝色发光",
+            ["COPIED_FROM_ENTITY_ID"] = "从该实体ID复制而来",
+            ["USE_LEADERBOARD_AS_SPAWN_ORIGIN"] = "战棋：以排行榜作为特效生成源点",
+            ["BACON_MUKLA_BANANA_SPAWN_COUNT"] = "战棋：穆克拉香蕉生成数量",
+            ["BACON_QUEST_COMPLETED"] = "战棋任务已完成",
+            ["TRANSFORMED_FROM_CARD_VISUAL_TYPE"] = "变形的视觉特效类型",
+            ["DARKMOON_TICKET"] = "暗月奖券",
+            ["SHOW_DISCOVER_FROM_DECK"] = "显示从牌库发现的动画",
+            ["CARD_NAME_DATA_1"] = "动态卡牌名称数据插入变量",
+            ["HIDDEN_CHOICE_OVERRIDE"] = "覆盖隐藏抉择",
+            ["COIN_CARD"] = "硬币卡牌标识",
+            ["BACON_SHOW_REFRESH_LEFT_BANNER"] = "战棋：显示剩余刷新次数横幅",
+            ["MAIN_HAND_WEAPON_ENTITY"] = "主手武器实体",
+            ["OFF_HAND_WEAPON_ENTITY"] = "副手武器实体",
+            ["IS_SHOP_CHOICE"] = "是商店抉择项",
+            ["IS_A_SHOP_CHOICE_CARD"] = "是商店提供的卡牌",
+            ["BACON_TIMEWARPED"] = "战棋：受时空扭曲影响",
+            ["TRIGGER_VISUAL"] = "触发时播放视觉特效",
+            ["TAG_ONE_TURN_EFFECT"] = "此效果仅限本回合",
+            ["TAUNT"] = "嘲讽",
+            ["SPELLPOWER"] = "法术伤害加成",
+            ["SPELLPOWER_ARCANE"] = "奥术法术伤害加成",
+            ["SPELLPOWER_FIRE"] = "火焰法术伤害加成",
+            ["SPELLPOWER_FROST"] = "冰霜法术伤害加成",
+            ["SPELLPOWER_NATURE"] = "自然法术伤害加成",
+            ["SPELLPOWER_HOLY"] = "神圣法术伤害加成",
+            ["SPELLPOWER_SHADOW"] = "暗影法术伤害加成",
+            ["SPELLPOWER_FEL"] = "邪能法术伤害加成",
+            ["SPELLPOWER_PHYSICAL"] = "物理法术伤害加成",
+            ["DIVINE_SHIELD"] = "圣盾",
+            ["DIVINE_SHIELD_DAMAGE"] = "圣盾承受的伤害",
+            ["CHARGE"] = "冲锋",
+            ["SPELL_SHIELD"] = "法术护盾",
+            ["NON_KEYWORD_CHARGE"] = "强制冲锋",
+            ["SECRET"] = "奥秘",
+            ["LIBRAM"] = "圣契",
+            ["MORPH"] = "变形",
+            ["TAUNT_READY"] = "嘲讽已准备好",
+            ["IGNORE_TAUNT"] = "无视嘲讽",
+            ["STEALTH_READY"] = "潜行已准备好",
+            ["CHARGE_READY"] = "冲锋已准备好",
+            ["CREATOR"] = "创建者的实体ID",
+            ["CREATOR_DBID"] = "创建者的卡牌数据库ID",
+            ["START_OF_GAME_KEYWORD"] = "对局开始时触发",
+            ["HEALING_DOES_DAMAGE_HINT"] = "提示：治疗会造成伤害",
+            ["LIFESTEAL_DOES_DAMAGE_HINT"] = "提示：吸血会造成伤害死循环危险",
+            ["AFFECTED_BY_HEALING_DOES_DAMAGE"] = "当前受到“治疗转伤害”光环影响",
+            ["RULEBOOK"] = "规则书卡牌",
+            ["SPELL_RESISTANCE_ARCANE"] = "佣兵战纪：奥术抗性",
+            ["SPELL_RESISTANCE_FIRE"] = "火焰抗性",
+            ["SPELL_RESISTANCE_FROST"] = "冰霜抗性",
+            ["SPELL_RESISTANCE_NATURE"] = "自然抗性",
+            ["SPELL_RESISTANCE_HOLY"] = "神圣抗性",
+            ["SPELL_RESISTANCE_SHADOW"] = "暗影抗性",
+            ["SPELL_RESISTANCE_FEL"] = "邪能抗性",
+            ["SPELL_WEAKNESS_ARCANE"] = "奥术弱点",
+            ["SPELL_WEAKNESS_FIRE"] = "火焰弱点",
+            ["SPELL_WEAKNESS_FROST"] = "冰霜弱点",
+            ["SPELL_WEAKNESS_NATURE"] = "自然弱点",
+            ["SPELL_WEAKNESS_HOLY"] = "神圣弱点",
+            ["SPELL_WEAKNESS_SHADOW"] = "暗影弱点",
+            ["SPELL_WEAKNESS_FEL"] = "邪能弱点",
+            ["LETTUCE_KEYWORD_ATTACK"] = "佣兵：攻击关键词",
+            ["LETTUCE_KEYWORD_SPELL_COMBO"] = "佣兵：法术连击",
+            ["LETTUCE_SPELLDAMAGEARCANE"] = "佣兵：奥术伤害加成",
+            ["LETTUCE_SPELLDAMAGEFEL"] = "佣兵：邪能伤害加成",
+            ["LETTUCE_SPELLDAMAGEFIRE"] = "佣兵：火焰伤害加成",
+            ["LETTUCE_SPELLDAMAGEFROST"] = "佣兵：冰霜伤害加成",
+            ["LETTUCE_SPELLDAMAGEHOLY"] = "佣兵：神圣伤害加成",
+            ["LETTUCE_SPELLDAMAGENATURE"] = "佣兵：自然伤害加成",
+            ["LETTUCE_SPELLDAMAGESHADOW"] = "佣兵：暗影伤害加成",
+            ["DEATHBLOW"] = "消灭",
+            ["LETTUCE_BLEED"] = "佣兵：流血效果",
+            ["LETTUCE_KEYWORD_CRITICAL_DAMAGE"] = "佣兵：暴击伤害",
+            ["LETTUCE_KEYWORD_ROOT"] = "佣兵：缠绕/定身",
+            ["LETTUCE_ALLIANCE"] = "佣兵：联盟阵营",
+            ["LETTUCE_HORDE"] = "佣兵：部落阵营",
+            ["LETTUCE_REFRESH"] = "佣兵：技能刷新",
+            ["LETTUCE_ELVES"] = "佣兵：精灵属性",
+            ["REVIVE"] = "复活",
+            ["ALLIED"] = "盟友相关",
+            ["LETTUCE_KEYWORD_HEALING_POWER"] = "佣兵：治疗强度",
+            ["MERCENARIES_SPELL_WEAKNESS"] = "佣兵法术弱点",
+            ["MERCENARIES_SPELL_RESISTANCE"] = "佣兵法术抗性",
+            ["MERCS_BENCH"] = "佣兵替补席",
+            ["MERCS_EXPLORER"] = "佣兵探险家",
+            ["LETTUCE_KEYWORD_SILENCE"] = "佣兵：沉默",
+            ["LETTUCE_CHARGE"] = "佣兵：冲锋",
+            ["MERCENARIES_TREASURE_SCALE_LEVEL"] = "佣兵：宝藏缩放等级",
+            ["CANT_DRAW"] = "无法被抽到",
+            ["CANT_PLAY"] = "无法打出",
+            ["CANT_DISCARD"] = "无法弃掉",
+            ["CANT_ATTACK"] = "无法攻击",
+            ["CANT_READY"] = "无法准备",
+            ["CANT_REMOVE_FROM_GAME"] = "无法移出游戏",
+            ["CANT_SET_ASIDE"] = "无法被置入特定区域",
+            ["CANT_DAMAGE"] = "无法造成伤害",
+            ["CANT_HEAL"] = "无法产生治疗",
+            ["CANT_TRIGGER_DEATHRATTLE"] = "无法触发亡语",
+            ["CANT_BE_DESTROYED"] = "无法被消灭",
+            ["CANT_BE_TARGETED"] = "无法被选为目标",
+            ["CANT_BE_ATTACKED"] = "无法被攻击",
+            ["CANT_BE_READIED"] = "无法被设为准备状态",
+            ["CANT_BE_REMOVED_FROM_GAME"] = "无法从游戏中移除",
+            ["CANT_BE_SET_ASIDE"] = "无法被搁置",
+            ["IMMUNE"] = "免疫",
+            ["CANT_BE_HEALED"] = "无法被治疗",
+            ["CANT_BE_SUMMONING_SICK"] = "无法受到召唤失血",
+            ["CANT_BE_SILENCED"] = "无法被沉默",
+            ["APPEAR_FUNCTIONALLY_DEAD"] = "在视觉/功能上表现为死亡",
+            ["FROZEN"] = "冻结状态",
+            ["JUST_PLAYED"] = "刚打出的回合",
+            ["LINKED_ENTITY"] = "关联实体",
+            ["ZONE_POSITION"] = "在所属区域的具体位置索引",
+            ["CANT_BE_FROZEN"] = "无法被冻结",
+            ["COMBO_ACTIVE"] = "连击已触发/发光状态",
+            ["CARD_TARGET"] = "卡牌选中的目标实体ID",
+            ["NUM_CARDS_PLAYED_THIS_TURN"] = "本回合打出的卡牌数量",
+            ["CANT_BE_TARGETED_BY_OPPONENTS"] = "无法被对手选为目标",
+            ["NUM_TURNS_IN_PLAY"] = "在场上的回合数",
+            ["NUM_TURNS_IN_HAND"] = "在手牌中的回合数",
+            ["SUMMONED"] = "召唤来源类型",
+            ["ENRAGED"] = "激怒状态",
+            ["ENRAGE_TOOLTIP"] = "激怒提示文本",
+            ["SILENCED"] = "被沉默了",
+            ["WINDFURY"] = "风怒",
+            ["MEGA_WINDFURY"] = "超级风怒",
+            ["ELUSIVE"] = "扰魔",
+            ["LOYALTY"] = "忠诚度/效忠对象",
+            ["DEATHRATTLE"] = "亡语",
+            ["ADJACENT_BUFF"] = "相邻Buff光环",
+            ["STEALTH"] = "潜行",
+            ["BATTLECRY"] = "战吼",
+            ["NUM_TURNS_LEFT"] = "剩余回合数",
+            ["NUM_TURNS_LAST_AFFECTED_BY"] = "上次被影响经过的回合",
+            ["IS_MORPHED"] = "已被变形",
+            ["TEMP_RESOURCES"] = "临时水晶",
+            ["OVERLOAD_OWED"] = "下回合需要过载的数量",
+            ["NUM_ATTACKS_THIS_TURN"] = "本回合已攻击次数",
+            ["NEXT_ALLY_BUFF"] = "对下一个友方的Buff",
+            ["MAGNET"] = "磁力",
+            ["FIRST_CARD_PLAYED_THIS_TURN"] = "本回合打出的第一张牌",
+            ["CANT_BE_TARGETED_BY_SPELLS"] = "无法被法术指定目标",
+            ["SHOULDEXITCOMBAT"] = "应该退出战斗",
+            ["PARENT_CARD"] = "父卡牌",
+            ["NUM_MINIONS_PLAYED_THIS_TURN"] = "本回合打出的随从数量",
+            ["CANT_BE_TARGETED_BY_HERO_POWERS"] = "无法被英雄技能指定",
+            ["CANT_BE_TARGETED_BY_BATTLECRIES"] = "无法被战吼指定",
+            ["CANNOT_ATTACK_HEROES"] = "无法攻击英雄",
+            ["UNTOUCHABLE"] = "不可触碰",
+            ["QUEST"] = "任务卡牌",
+            ["SIDE_QUEST"] = "支线任务",
+            ["SIGIL"] = "咒符",
+            ["OBJECTIVE"] = "目标牌",
+            ["OBJECTIVE_AURA"] = "目标光环",
+            ["PALADIN_AURA"] = "圣骑士光环",
+            ["FINISH_ATTACK_SPELL_ON_DAMAGE"] = "造成伤害后结束攻击法术",
+            ["ADAPT"] = "进化",
+            ["GEARS"] = "齿轮/机械模块机制",
+            ["GOOD_OL_GENERIC_FRIENDLY_DRAGON_DISCOVER_VISUALS"] = "龙族友善的发现视觉效果",
+            ["DISCOVER_STUDIES_VISUAL"] = "研习法术的发现视觉效果",
+            ["DUNGEON_PASSIVE_BUFF"] = "地下城被动Buff",
+            ["HEALING_DOES_DAMAGE"] = "治疗转为伤害",
+            ["ALTERNATE_CHAPTER_VO"] = "冒险模式备用语音",
+            ["LIFESTEAL_DAMAGES_OPPOSING_HERO"] = "吸血伤害转化给对方英雄",
+            ["MAGNETIC"] = "磁力",
+            ["TITAN"] = "泰坦关键词",
+            ["TITAN_ABILITY_USED_1"] = "泰坦技能1已使用",
+            ["TITAN_ABILITY_USED_2"] = "泰坦技能2已使用",
+            ["TITAN_ABILITY_USED_3"] = "泰坦技能3已使用",
+            ["TRANSFORM"] = "变形",
+            ["LAUNCHPAD"] = "发射台",
+            ["INTERACTABLE_OBJECT"] = "可交互对象",
+            ["INTERACTABLE_OBJECT_COST"] = "交互对象的消耗",
+            ["SCORE_LABELID_1"] = "结算计分板标签ID 1",
+            ["SCORE_LABELID_2"] = "结算计分板标签ID 2",
+            ["SCORE_LABELID_3"] = "结算计分板标签ID 3",
+            ["SCORE_VALUE_1"] = "结算计分板数值 1",
+            ["SCORE_VALUE_2"] = "结算计分板数值 2",
+            ["SCORE_VALUE_3"] = "结算计分板数值 3",
+            ["SCORE_FOOTERID"] = "计分板页脚文本ID",
+            ["ZOMBEAST_DEBUG_CURRENT_BEAST_DATABASE_ID"] = "僵尸兽Debug：当前野兽数据库ID",
+            ["ZOMBEAST_DEBUG_CURRENT_ITERATION"] = "僵尸兽Debug：当前迭代次数",
+            ["ZOMBEAST_DEBUG_MAX_ITERATIONS"] = "僵尸兽Debug：最大迭代次数",
+            ["DRUSTVAR_HORROR_DEBUG_CURRENT_SPELL_DATABASE_ID"] = "德鲁斯瓦恐魔Debug：当前法术数据库ID",
+            ["DRUSTVAR_HORROR_DEBUG_CURRENT_ITERATION"] = "德鲁斯瓦恐魔Debug：当前迭代次数",
+            ["DRUSTVAR_HORROR_DEBUG_MAX_ITERATIONS"] = "德鲁斯瓦恐魔Debug：最大迭代次数",
+            ["DEBUG_DISPLAY_TAG_BOTTOM_RIGHT"] = "开发者底右标签显示",
+            ["DEBUG_DISPLAY_TAG_TOP_RIGHT"] = "开发者顶右标签显示",
+            ["SMART_DISCOVER_DEBUG_ENTITY_1"] = "智能发现测试相关实体1",
+            ["SMART_DISCOVER_DEBUG_ENTITY_2"] = "智能发现测试相关实体2",
+            ["SMART_DISCOVER_DEBUG_ENTITY_3"] = "智能发现测试相关实体3",
+            ["SMART_DISCOVER_DEBUG_TEST_COMPLETE"] = "智能发现测试完成",
+            ["SMART_DISCOVER_DEBUG_PASSIVE_EVAL_RESULT_1"] = "智能发现测试被动评估结果1",
+            ["SMART_DISCOVER_DEBUG_PASSIVE_EVAL_RESULT_2"] = "智能发现测试被动评估结果2",
+            ["SMART_DISCOVER_DEBUG_PASSIVE_EVAL_RESULT_3"] = "智能发现测试被动评估结果3",
+            ["CHOICE_NAME_DISPLAY_TYPE"] = "抉择名称显示类型",
+            ["CHOICE_ACTOR_TYPE"] = "抉择演员模型类型",
+            ["COMBO"] = "连击",
+            ["ELITE"] = "传说卡牌标识",
+            ["CARD_SET"] = "扩展包",
+            ["FACTION"] = "阵营",
+            ["RARITY"] = "稀有度",
+            ["CLASS"] = "职业",
+            ["KEEP_HERO_CLASS"] = "变身英雄时保留原职业",
+            ["MISSION_EVENT"] = "冒险任务事件触发器",
+            ["FREEZE"] = "冻结机制触发",
+            ["OVERLOAD"] = "过载点数",
+            ["SILENCE"] = "执行沉默",
+            ["COUNTER"] = "反制法术",
+            ["FORCED_PLAY"] = "强制打出",
+            ["LOW_HEALTH_THRESHOLD"] = "低血量预警阈值",
+            ["SPELLPOWER_DOUBLE"] = "法强翻倍",
+            ["SPELL_HEALING_DOUBLE"] = "法术治疗翻倍",
+            ["ALL_HEALING_DOUBLE"] = "所有治疗翻倍",
+            ["NUM_OPTIONS_PLAYED_THIS_TURN"] = "本回合使用的抉择项数量",
+            ["TO_BE_DESTROYED"] = "标记为即将被消灭",
+            ["HEALTH_MINIMUM"] = "生命值最低限制",
+            ["AURA"] = "光环效果",
+            ["POISONOUS"] = "剧毒",
+            ["NON_KEYWORD_POISONOUS"] = "非关键字剧毒",
+            ["HERO_POWER_DOUBLE"] = "英雄技能翻倍",
+            ["AI_MUST_PLAY"] = "AI必须打出这张牌",
+            ["NUM_MINIONS_PLAYER_KILLED_THIS_TURN"] = "玩家本回合消灭随从数",
+            ["NUM_MINIONS_KILLED_THIS_TURN"] = "本回合所有被消灭随从数",
+            ["AFFECTED_BY_SPELL_POWER"] = "受到法术伤害加成",
+            ["SOURCE_OVERRIDE_FOR_MODIFIER_TEXT"] = "卡牌说明文本中的修改来源覆盖",
+            ["START_WITH_1_HEALTH"] = "以1点生命值开局",
+            ["IMMUNE_WHILE_ATTACKING"] = "攻击时具有免疫",
+            ["IMMUNE_TO_FIRE_SPELLS"] = "对火焰法术免疫",
+            ["MULTIPLY_HERO_DAMAGE"] = "英雄受到的伤害倍数增加",
+            ["MULTIPLY_BUFF_VALUE"] = "Buff数值翻倍",
+            ["CUSTOM_KEYWORD_EFFECT"] = "自定义关键字效果",
+            ["HERO_POWER"] = "英雄技能",
+            ["HERO_POWER_ENTITY"] = "当前英雄挂载的英雄技能实体",
+            ["ADDITIONAL_HERO_POWER_INDEX"] = "额外的英雄技能槽位索引",
+            ["ADDITIONAL_HERO_POWER_ENTITY_1"] = "额外的英雄技能实体",
+            ["BACON_DONT_DISPLAY_HP_IN_LEADERBOARD_OR_STATS"] = "战棋中不在排行榜/数据统计中显示血量",
+            ["DEATHRATTLE_RETURN_ZONE"] = "亡语返回原区域",
+            ["DISPLAYED_CREATOR"] = "在卡牌下方显示的“由XXX生成”",
+            ["POWERED_UP"] = "卡牌处于强化状态",
+            ["SPARE_PART"] = "零件牌",
+            ["FORGETFUL"] = "健忘",
+            ["FORGETFUL_ATTACK_VISUAL"] = "健忘触发时的攻击特效",
+            ["CAN_SUMMON_MAXPLUSONE_MINION"] = "允许召唤超过格子上限+1个随从",
+            ["BURNING"] = "燃烧状态",
+            ["OVERLOAD_LOCKED"] = "被锁住的过载水晶数量",
+            ["NUM_TIMES_HERO_POWER_USED_THIS_GAME"] = "本局游戏英雄技能使用次数",
+            ["CURRENT_HEROPOWER_DAMAGE_BONUS"] = "当前英雄技能伤害附加值",
+            ["HEROPOWER_DAMAGE"] = "英雄技能的基础伤害",
+            ["NUM_FRIENDLY_MINIONS_THAT_DIED_THIS_TURN"] = "本回合死亡的友方随从数",
+            ["NUM_CARDS_DRAWN_THIS_TURN"] = "本回合抽牌数量",
+            ["AI_ONE_SHOT_KILL"] = "AI判定可一击必杀",
+            ["EVIL_GLOW"] = "邪恶发光UI",
+            ["HIDE_STATS"] = "隐藏攻防身材属性UI",
+            ["IGNORE_HIDE_STATS_FOR_BIG_CARD"] = "当鼠标悬停放大时不隐藏属性",
+            ["INSPIRE"] = "激励",
+            ["RECEIVES_DOUBLE_SPELLDAMAGE_BONUS"] = "获得双倍法强加成",
+            ["REVEALED"] = "已被展示/揭示",
+            ["FORGE_REVEALED"] = "锻造时被揭示",
+            ["NUM_FRIENDLY_MINIONS_THAT_DIED_THIS_GAME"] = "本局游戏死亡的友方随从总数",
+            ["LOCK_AND_LOAD"] = "子弹上膛机制状态",
+            ["DISCOVER"] = "发现",
+            ["USE_DISCOVER_VISUALS"] = "使用发现机制UI样式",
+            ["SHADOWFORM"] = "暗影形态",
+            ["DEATH_KNIGHT"] = "英雄牌",
+            ["HISTORY_PROXY"] = "历史记录左侧栏的代理实体",
+            ["DONT_SHOW_IN_HISTORY"] = "不在左侧历史记录栏显示",
+            ["NUM_FRIENDLY_MINIONS_THAT_ATTACKED_THIS_TURN"] = "本回合已攻击的友方随从数",
+            ["NUM_RESOURCES_SPENT_THIS_GAME"] = "本局已消耗的法力水晶总数",
+            ["CHOOSE_BOTH"] = "鹿盔效果：同时拥有两次抉择",
+            ["ELECTRIC_CHARGE_LEVEL"] = "电能充能等级",
+            ["HEAVILY_ARMORED"] = "重甲状态",
+            ["DONT_SHOW_IMMUNE"] = "隐藏实体的免疫动画特效",
+            ["HISTORY_PROXY_NO_BIG_CARD"] = "在历史记录中不显示悬浮放大卡牌",
+            ["TRANSFORMED_FROM_CARD"] = "记录该实体是从哪张卡变形来的",
+            ["PENDING_TRANSFORM_TO_CARD"] = "挂起状态：准备变形的卡牌",
+            ["TIMES_BEEN_TRANSFORMED"] = "此实体已被变形的次数",
+            ["RITUALIST_MINION"] = "邪教徒/仪式相关随从",
+            ["CTHUN"] = "克苏恩标签",
+            ["CTHUN_ATTACK_BUFF"] = "克苏恩累计叠加的攻击BUFF",
+            ["CTHUN_HEALTH_BUFF"] = "克苏恩累计叠加的生命BUFF",
+            ["CTHUN_TAUNT_BUFF"] = "克苏恩获得的嘲讽BUFF",
+            ["CAST_RANDOM_SPELLS"] = "随机施放法术",
+            ["EMBRACE_THE_SHADOW"] = "拥抱暗影状态",
+            ["CHOOSE_ONE"] = "抉择",
+            ["AUTO_ATTACK"] = "自动攻击",
+            ["EXTRA_ATTACKS_THIS_TURN"] = "本回合额外获得的攻击次数",
+            ["SEEN_CTHUN"] = "本局游戏已看到/打出过克苏恩",
+            ["MINION_TYPE_REFERENCE"] = "随从种族引用",
+            ["JADE_GOLEM"] = "青玉魔像",
+            ["ARMS_DEALING"] = "武器交易",
+            ["MINION_IN_HAND_BUFF"] = "手牌中的随从Buff",
+            ["DEFINING_ENCHANTMENT"] = "定义性附魔",
+            ["MODIFY_DEFINITION_ATTACK"] = "永久修改基础攻击定义",
+            ["MODIFY_DEFINITION_HEALTH"] = "永久修改基础生命定义",
+            ["MODIFY_DEFINITION_COST"] = "永久修改基础消耗定义",
+            ["MULTIPLE_CLASSES"] = "多职业卡牌",
+            ["TOURIST"] = "游客",
+            ["ALL_TARGETS_RANDOM"] = "所有目标都是随机选择的",
+            ["CARD_ALTERNATE_COST"] = "卡牌使用备选法力值消耗",
+            ["GRIMY_GOONS"] = "污手党",
+            ["JADE_LOTUS"] = "青玉莲",
+            ["KABAL"] = "暗金教",
+            ["ADDITIONAL_PLAY_REQS_1"] = "打出条件限制1",
+            ["ADDITIONAL_PLAY_REQS_2"] = "打出条件限制2",
+            ["ELEMENTAL_POWERED_UP"] = "元素链已触发",
+            ["BOSS"] = "Boss级实体",
+            ["STAMPEDE"] = "奔踩/集群效果",
+            ["CORRUPTED"] = "已被腐蚀",
+            ["HIDE_HEALTH"] = "隐藏生命值UI",
+            ["HIDE_HEALTH_NUMBER"] = "隐藏生命值具体数字",
+            ["HIDE_ATTACK"] = "隐藏攻击力UI",
+            ["HIDE_ATTACK_NUMBER"] = "隐藏攻击力具体数字",
+            ["HIDE_COST"] = "隐藏费用UI",
+            ["LIFESTEAL"] = "吸血",
+            ["GHOSTLY"] = "幽灵状态",
+            ["DISGUISED_TWIN"] = "伪装的双子",
+            ["SECRET_DEATHRATTLE"] = "隐藏的亡语/奥秘触发的亡语",
+            ["ZOMBEAST"] = "僵尸兽",
+            ["HERO_EMOTE_SILENCED"] = "英雄表情已被屏蔽",
+            ["MODULAR"] = "模块化",
+            ["GLORIOUSGLOOP"] = "黏液特效",
+            ["REBORN"] = "复生",
+            ["HAS_BEEN_REBORN"] = "这是一个通过复生复活起来的随从",
+            ["POISONOUS_INSTANT"] = "瞬间剧毒",
+            ["REPLACEMENT_ENTITY"] = "替换实体",
+            ["SPELLS_CAST_TWICE"] = "法术施放两次",
+            ["DONT_PICK_FROM_SUBSETS"] = "不从子池子中选取",
+            ["LUNAHIGHLIGHTHINT"] = "露娜高亮提示",
+            ["EMPOWER"] = "祈求/强化",
+            ["EMPOWER_PRIEST"] = "牧师祈求",
+            ["EMPOWER_ROGUE"] = "盗贼祈求",
+            ["EMPOWER_SHAMAN"] = "萨满祈求",
+            ["EMPOWER_WARLOCK"] = "术士祈求",
+            ["EMPOWER_WARRIOR"] = "战士祈求",
+            ["GOLDSPARKLES_HINT"] = "金色闪光特效提示",
+            ["CASTS_WHEN_DRAWN"] = "抽到时施放",
+            ["DORMANT_VISUAL"] = "休眠视觉特效",
+            ["DORMANT"] = "休眠状态",
+            ["DORMANT_AWAKEN_CONDITION_ENCHANT"] = "满足特定条件唤醒的休眠附魔",
+            ["DORMANT_AWAKENED_THIS_TURN"] = "本回合刚刚唤醒",
+            ["SHRINE"] = "神龛",
+            ["FATIGUE_REFERENCE"] = "疲劳伤害参考值",
+            ["WAND"] = "魔杖",
+            ["TWINSPELL"] = "双生法术",
+            ["DEPRECATED_TWINSPELL_COPY"] = "已废弃的双生法术复制",
+            ["TWINSPELLPENDING"] = "双生法术挂起结算中",
+            ["CREATED_BY_TWINSPELL"] = "这是由双生法术生成的卡",
+            ["CREATED_BY_MINIATURIZE"] = "这是由微缩生成的卡",
+            ["CREATED_BY_GIGANTIFY"] = "这是由巨化生成的卡",
+            ["CLIENT_LIST_REPLACEMENTS_WHEN_PLAYED"] = "客户端打出时列出替换牌",
+            ["CREATED_AS_ON_PLAY_REPLACEMENT"] = "作为打出替换选项生成的卡",
+            ["EVILZUG"] = "怪盗军团相关怪异标签",
+            ["OVERRIDE_EMOTE_0"] = "强制替换表情 0",
+            ["OVERRIDE_EMOTE_1"] = "强制替换表情 1",
+            ["OVERRIDE_EMOTE_2"] = "强制替换表情 2",
+            ["OVERRIDE_EMOTE_3"] = "强制替换表情 3",
+            ["OVERRIDE_EMOTE_4"] = "强制替换表情 4",
+            ["OVERRIDE_EMOTE_5"] = "强制替换表情 5",
+            ["HERO_POWER_DISABLED"] = "英雄技能被禁用",
+            ["RUSH"] = "突袭",
+            ["ATTACKABLE_BY_RUSH"] = "能够被突袭随从攻击",
+            ["ECHO"] = "回响",
+            ["NON_KEYWORD_ECHO"] = "非关键词回响",
+            ["OVERKILL"] = "超杀",
+            ["PROPHECY"] = "预言/命运",
+            ["ETHEREAL"] = "虚灵属性",
+            ["REVEAL_CHOICES"] = "揭示抉择项",
+            ["HIDDEN_CHOICE"] = "隐藏抉择",
+            ["REAL_TIME_TRANSFORM"] = "实时变形",
+            ["HEALTH_DISPLAY"] = "生命值显示数值",
+            ["ENABLE_HEALTH_DISPLAY"] = "启用强制生命值显示",
+            ["HEALTH_DISPLAY_COLOR"] = "生命值显示颜色",
+            ["HEALTH_DISPLAY_NEGATIVE"] = "负面生命值显示",
+            ["VOODOO_LINK"] = "巫毒链接",
+            ["FAN_LINK"] = "粉丝链接",
+            ["COLLECTIONMANAGER_FILTER_MANA_EVEN"] = "收藏管理器过滤条件：偶数费",
+            ["COLLECTIONMANAGER_FILTER_MANA_ODD"] = "收藏管理器过滤条件：奇数费",
+            ["SUPPRESS_DEATH_SOUND"] = "不播放死亡音效",
+            ["ECHOING_OOZE_SPELL"] = "分裂软泥怪复制自身的法术特效",
+            ["ENCHANTMENT_INVISIBLE"] = "不可见的附魔",
+            ["WILD"] = "狂野模式特有/狂野标识",
+            ["HALL_OF_FAME"] = "荣誉室",
+            ["FAST_BATTLECRY"] = "快速战吼",
+            ["CARD_DOES_NOTHING"] = "这张牌什么都不做",
+            ["FORCE_NO_CUSTOM_SPELLS"] = "强制不播放自定义法术特效",
+            ["FORCE_NO_CUSTOM_SUMMON_SPELLS"] = "强制不播自定义召唤特效",
+            ["FORCE_NO_CUSTOM_LIFETIME_SPELLS"] = "强制不播持续特效",
+            ["FORCE_NO_CUSTOM_KEYWORD_SPELLS"] = "强制不播关键词特效",
+            ["FORCE_GREEN_GLOW_ACTIVE"] = "强制卡牌显示绿色发光",
+            ["START_OF_COMBAT"] = "战斗开始时",
+            ["ZERG"] = "异虫",
+            ["TERRAN"] = "人族",
+            ["PROTOSS"] = "星灵",
+            ["HERALD_COLOSSAL_CLASS"] = "巨型使者职业分类",
+            ["HERALD_COLOSSAL_AMOUNT"] = "巨型使者数量",
+            ["HERALD_COLOSSAL_PREMIUM"] = "巨型使者品质",
+            ["LOCK_VISUAL"] = "锁定状态视觉表现",
+            ["LOCK_VISUAL_STATE"] = "锁定视觉的状态参数",
+            ["PUZZLE"] = "谜题模式",
+            ["PUZZLE_PROGRESS"] = "谜题当前进度",
+            ["PUZZLE_PROGRESS_TOTAL"] = "谜题总目标",
+            ["PUZZLE_TYPE"] = "谜题类型",
+            ["PUZZLE_COMPLETED"] = "谜题已通关",
+            ["PUZZLE_NAME"] = "谜题名称",
+            ["PREVIOUS_PUZZLE_COMPLETED"] = "前一个谜题已通关",
+            ["PUZZLE_MODE"] = "进入解谜模式",
+            ["CONCEDE_BUTTON_ALTERNATIVE_TEXT"] = "投降按钮的备选文本",
+            ["HIDE_RESTART_BUTTON"] = "隐藏重新开始按钮",
+            ["END_TURN_BUTTON_ALTERNATIVE_APPEARANCE"] = "结束回合按钮的备选样式",
+            ["TURN_INDICATOR_ALTERNATIVE_APPEARANCE"] = "回合指示器的备选样式",
+            ["DISABLE_TURN_INDICATORS"] = "禁用回合指示器",
+            ["DECK_RULE_MOD_DECK_SIZE"] = "规则修改：卡组大小上限变更",
+            ["IGNORE_DECK_RULESET"] = "忽略构筑规则限制",
+            ["HIDE_OUT_OF_CARDS_WARNING"] = "隐藏牌库抽空的疲劳警告提示",
+            ["SUPPRESS_JOBS_DONE_VO"] = "屏蔽酒馆老板'工作完成'的语音",
+            ["BLOCK_ALL_INPUT"] = "屏蔽玩家所有操作输入",
+            ["SUPPRESS_ALL_SUMMON_VO"] = "屏蔽所有随从登场语音",
+            ["SUPPRESS_SUMMON_VO_FOR_PLAYER"] = "屏蔽对特定玩家的登场语音",
+            ["SUPPRES_ALL_SOUNDS_FOR_ENTITY"] = "屏蔽该实体的所有音效",
+            ["DONT_SUPPRESS_SUMMON_VO"] = "强制不屏蔽登场语音",
+            ["DONT_SUPPRESS_KEYWORD_VO"] = "强制不屏蔽关键词触发语音",
+            ["PLAYER_BASE_SHRINE_DECK_ID"] = "玩家自带神龛的卡组ID",
+            ["DISPLAY_CARD_ON_MOUSEOVER"] = "鼠标悬停时展示卡牌",
+            ["DISPLAY_ENTITY_ON_MOUSEOVER"] = "鼠标悬停时展示实体",
+            ["DECK_POWER_UP"] = "卡组强化状态",
+            ["SIDEKICK"] = "边锋/助手牌",
+            ["SIDEKICK_HERO_POWER"] = "助手的英雄技能",
+            ["RUN_PROGRESS"] = "冒险模式轮次进度",
+            ["ALTERNATE_MOUSE_OVER_CARD"] = "悬停时显示备用卡面",
+            ["ENCHANTMENT_BANNER_TEXT"] = "附魔在UI横幅上显示的文字",
+            ["MOUSE_OVER_CARD_APPEARANCE"] = "鼠标悬停展示样式",
+            ["IS_ADVENTURE_SCENARIO"] = "当前对局属于单人冒险剧本",
+            ["COIN_MANA_GEM"] = "特殊硬币法力水晶模型",
+            ["COIN_MANA_GEM_FOR_CHOICE_CARDS"] = "用于抉择牌选项的硬币水晶模型",
+            ["TECH_LEVEL_MANA_GEM"] = "战棋：代替水晶显示酒馆星级的UI元素",
+            ["BACON_COIN_ON_ENEMY_MINIONS"] = "战棋：敌方随从身上的硬币标记",
+            ["ALWAYS_USE_FAST_ACTOR_TRIGGERS"] = "始终使用加速动画触发器",
+            ["HEROIC_HERO_POWER"] = "英雄难度/强化的英雄技能",
+            ["UI_BUFF_ATK_UP"] = "UI提示：攻击力上升特效",
+            ["UI_BUFF_COST_DOWN"] = "UI提示：法力值减费特效",
+            ["UI_BUFF_COST_UP"] = "UI提示：法力值加费特效",
+            ["UI_BUFF_HEALTH_UP"] = "UI提示：生命值上升特效",
+            ["UI_BUFF_SET_COST_ZERO"] = "UI提示：法力值变为0特效",
+            ["UI_BUFF_DURABILITY_UP"] = "UI提示：耐久度上升特效",
+            ["GALAKROND_IN_PLAY"] = "迦拉克隆正在场上",
+            ["OUTCAST"] = "流放",
+            ["STUDY"] = "研习",
+            ["SPELLBURST"] = "法术迸发",
+            ["NON_KEYWORD_SPELLBURST"] = "非关键字法术迸发",
+            ["CORRUPT"] = "腐蚀",
+            ["CORRUPTED_CARD"] = "这是一张已经被腐蚀升级过的牌",
+            ["FRENZY"] = "暴怒",
+            ["TRADEABLE"] = "可交易",
+            ["FORGE"] = "锻造",
+            ["FORGED"] = "已锻造状态",
+            ["FORGES_INTO"] = "这张卡锻造后会变成的卡牌ID",
+            ["BACON_DUO_PASSABLE"] = "战棋双打：可传递的卡牌",
+            ["DECK_ACTION_COST"] = "对牌库操作的费用消耗",
+            ["IS_USING_TRADE_OPTION"] = "玩家当前操作是正在'交易'这张牌",
+            ["IS_USING_FORGE_OPTION"] = "玩家当前操作是正在'锻造'这张牌",
+            ["IS_USING_PASS_OPTION"] = "玩家当前操作是正在'传递'这张牌",
+            ["TOOL"] = "工具",
+            ["QUESTLINE"] = "任务线",
+            ["HONORABLE_KILL"] = "荣誉消灭",
+            ["COLOSSAL"] = "巨型",
+            ["COLOSSAL_LIMB"] = "巨型的衍生物",
+            ["COLOSSAL_LIMB_ON_LEFT"] = "这个巨型肢体召唤在左侧",
+            ["DREDGE"] = "探底",
+            ["INFUSE"] = "注能",
+            ["INFUSED"] = "已注能状态",
+            ["CORPSE"] = "尸体",
+            ["MANATHIRST"] = "法力渴求",
+            ["MAGNETIC_TO_RACE"] = "磁力吸附到特定种族",
+            ["MAX_SIDEBOARD_CARDS"] = "牛头人乐队等机制的最大备牌数",
+            ["MIN_SIDEBOARD_CARDS"] = "牛头人乐队等机制的最少备牌数",
+            ["FINALE"] = "压轴",
+            ["OVERHEAL"] = "过量治疗",
+            ["END_OF_TURN_TRIGGER"] = "回合结束触发器",
+            ["BONUS_EFFECTS"] = "额外加成效果",
+            ["SIDEBOARD_TYPE"] = "备牌库类型",
+            ["BIG_CARD_AS_TOOLTIP_USE_TOOKTIP_SYSTEM"] = "将大卡面的悬停展示走Tooltip系统",
+            ["RED_MANA_GEM"] = "红色法力水晶",
+            ["BACON_IS_KEL_THUZAD"] = "战棋：当前对战的玩家是克尔苏加德",
+            ["BACON_TRIPLE_UPGRADE_MINION_ID"] = "战棋：三连后升级成的金色随从ID",
+            ["BACON_TRIPLE_CANDIDATE"] = "战棋：三连候选对象",
+            ["BACON_TRIPLED_BASE_MINION_ID"] = "战棋：金卡的原始随从基础ID 1",
+            ["BACON_TRIPLED_BASE_MINION_ID2"] = "战棋：金卡的融合原始随从ID 2",
+            ["BACON_TRIPLED_BASE_MINION_ID3"] = "战棋：融合原始随从ID 3",
+            ["BACON_PAIR_CANDIDATE"] = "战棋：场上/手牌已对子",
+            ["BACON_DUO_TRIPLE_CANDIDATE_TEAMMATE"] = "战棋双打：和队友可组成三连候选",
+            ["BACON_DUO_PAIR_CANDIDATE_TEAMMATE"] = "战棋双打：和队友组成对子",
+            ["BATTLEGROUNDS_PREMIUM_EMOTES"] = "战棋高级表情包解锁",
+            ["PLAYER_ID_LOOKUP"] = "查找对应玩家ID的链接",
+            ["BACON_BLOOD_GEM_TOOLTIP"] = "战棋：鲜血宝石悬停提示",
+            ["BACON_ELEMENTAL_TOOLTIP"] = "战棋：元素悬停提示",
+            ["BACON_PIRATE_TOOLTIP"] = "战棋：海盗悬停提示",
+            ["BACON_TAVERN_SPELL_TOOLTIP"] = "战棋：酒馆法术悬停提示",
+            ["BACON_REFRESH_TOOLTIP"] = "战棋：刷新按钮悬停提示",
+            ["BACON_YAMATO_CANNON_TOOLTIP"] = "战棋星际联动：大和炮提示",
+            ["BACON_LIBERATOR_TOOLTIP"] = "战棋星际联动：解放者提示",
+            ["BACON_MEDIVAC_TOOLTIP"] = "战棋星际联动：医疗运输机提示",
+            ["BACON_YAMATO_CANNON"] = "战棋：大和炮效果发射",
+            ["AVENGE"] = "战棋复仇机制",
+            ["BACON_SPELLCRAFT_ID"] = "战棋：塑造法术ID",
+            ["VENOMOUS"] = "战棋：烈毒",
+            ["BACON_HERO_EARLY_ACCESS"] = "战棋：该英雄处于抢先体验阶段",
+            ["BACON_STARSTOBOUNCEOFF"] = "战棋：受伤掉落的小星星特效反弹基准值",
+            ["BACON_CHOSEN_BOARD_SKIN_ID"] = "战棋：当前装备的棋盘皮肤ID",
+            ["BACON_COMPANION_ID"] = "战棋：伙伴角色ID",
+            ["BACON_BUDDY"] = "战棋：这属于一张伙伴牌",
+            ["BATTLEGROUNDS_FAVORITE_FINISHER"] = "战棋：偏好的终结者击杀动画特效",
+            ["BACON_OMIT_WHEN_OUT_OF_ROTATION"] = "战棋：不在卡池轮换中时忽略该牌",
+            ["BACON_FREEZE_TOOLTIP"] = "战棋：冻结按钮提示",
+            ["BACON_STEALTH_TOOLTIP"] = "战棋：潜行提示",
+            ["BACON_QUEST_TOOLTIP"] = "战棋：任务UI提示",
+            ["BACON_REBORN_TOOLTIP"] = "战棋：复生效果提示",
+            ["BACON_PUTRICIDES_CREATION_TOOLTIP"] = "战棋：普崔塞德教授的造物提示",
+            ["BACON_MINION_TYPE_REWARD"] = "战棋奖励：随从种族",
+            ["BACON_CARD_DBID_REWARD"] = "战棋奖励：指定的卡牌数据库ID",
+            ["BACON_IS_HEROPOWER_QUESTREWARD"] = "战棋：这是否为任务奖励给的英雄技能",
+            ["BACON_HERO_QUEST_REWARD_DATABASE_ID"] = "战棋：英雄所做任务的奖励牌数据库ID",
+            ["BACON_HERO_HEROPOWER_QUEST_REWARD_DATABASE_ID"] = "战棋：英雄技能对应的奖励数据库ID",
+            ["BACON_HERO_QUEST_REWARD_COMPLETED"] = "战棋：英雄的主任务已完成",
+            ["BACON_HERO_HEROPOWER_QUEST_REWARD_COMPLETED"] = "战棋：英雄技能对应的任务已完成",
+            ["BACON_DOUBLE_QUEST_HERO_POWER"] = "战棋：双任务英雄技能",
+            ["BACON_IS_BOB_QUEST"] = "战棋：鲍勃派发的随机任务机制",
+            ["BACON_HERO_REWARD_CARD_DBID"] = "战棋：英雄奖励的卡牌ID",
+            ["BACON_HERO_HEROPOWER_REWARD_CARD_DBID"] = "战棋：英雄技能奖励的卡牌ID",
+            ["BACON_HERO_REWARD_MINION_TYPE"] = "战棋：英雄奖励的随从种族",
+            ["BACON_HERO_HEROPOWER_REWARD_MINION_TYPE"] = "战棋：英雄技能奖励的随从种族",
+            ["BACON_HERO_QUEST_REWARD_SDN1"] = "战棋任务奖励脚本数据数字1",
+            ["BACON_HERO_QUEST_REWARD_SDN2"] = "战棋任务奖励脚本数据数字2",
+            ["BACON_HERO_QUEST_REWARD_ALT_TEXT"] = "战棋任务奖励备用文本",
+            ["BACON_HERO_HEROPOWER_QUEST_REWARD_SDN1"] = "战棋英雄技能任务奖励SDN1",
+            ["BACON_HERO_HEROPOWER_QUEST_REWARD_SDN2"] = "战棋英雄技能任务奖励SDN2",
+            ["BACON_HERO_HEROPOWER_QUEST_REWARD_ALT_TEXT"] = "战棋英雄技能任务奖励备用文本",
+            ["BACON_HERO_FIRST_TRINKET_LEADERBOARD_SDN1"] = "战棋：英雄第一饰品在排行榜显示的数据1",
+            ["BACON_HERO_SECOND_TRINKET_LEADERBOARD_SDN1"] = "战棋：英雄第二饰品在排行榜显示的数据1",
+            ["BACON_HERO_HEROPOWER_TRINKET_LEADERBOARD_SDN1"] = "英雄技能饰品数据1",
+            ["BACON_HERO_FIRST_TRINKET_LEADERBOARD_SDN2"] = "战棋第一饰品榜设数据2",
+            ["BACON_HERO_SECOND_TRINKET_LEADERBOARD_SDN2"] = "战棋第二饰品榜设数据2",
+            ["BACON_HERO_HEROPOWER_TRINKET_LEADERBOARD_SDN2"] = "战棋英雄技能饰品数据2",
+            ["BACON_HERO_FIRST_TRINKET_LEADERBOARD_SDN3"] = "战棋第一饰品榜设数据3",
+            ["BACON_HERO_SECOND_TRINKET_LEADERBOARD_SDN3"] = "战棋第二饰品榜设数据3",
+            ["BACON_HERO_HEROPOWER_TRINKET_LEADERBOARD_SDN3"] = "战棋英雄技能饰品数据3",
+            ["BACON_HERO_FIRST_TRINKET_LEADERBOARD_ALT_TEXT"] = "战棋第一饰品榜设备用文本",
+            ["BACON_HERO_SECOND_TRINKET_LEADERBOARD_ALT_TEXT"] = "战棋第二饰品榜设备用文本",
+            ["BACON_HERO_HEROPOWER_TRINKET_LEADERBOARD_ALT_TEXT"] = "战棋英雄技能饰品榜设备用文本",
+            ["BACON_DIED_LAST_COMBAT"] = "战棋：在上一场战斗中阵亡的玩家",
+            ["BACON_GLOBAL_ANOMALY_DBID"] = "战棋：当前生效的全局畸变ID",
+            ["HAS_DRAG_TO_BUY"] = "支持拖拽购买",
+            ["TRANSIENT_ENTITY"] = "瞬态实体",
+            ["BACON_TRIGGER_UPBEAT"] = "战棋：节拍触发",
+            ["BACON_TRIGGER_XY"] = "战棋：触发坐标X/Y位置",
+            ["BACON_TRIGGER_XY_STAY"] = "战棋：保留触发坐标",
+            ["BACON_SELL_VALUE"] = "战棋：此卡牌售出的铸币价值",
+            ["BACON_CURRENT_COMBAT_PLAYER_ID"] = "战棋：正在交战的对手玩家ID",
+            ["BACON_CONSUME_TOOLTIP"] = "战棋：吞噬效果悬停提示",
+            ["BACON_SHOW_COST_ON_DISCOVER"] = "战棋：在发现卡面上显示购买费用",
+            ["BACON_IS_MAGIC_ITEM_DISCOVER"] = "战棋：这是魔法物品的发现机制",
+            ["BACON_IS_POTENTIAL_TRINKET"] = "战棋：这是潜在会刷出的饰品池",
+            ["BACON_TURNS_LEFT_TO_DISCOVER_TRINKET"] = "战棋：距离下一次发现饰品的回合数",
+            ["BACON_FIRST_TRINKET_DATABASE_ID"] = "战棋：玩家第一饰品的卡牌ID",
+            ["BACON_SECOND_TRINKET_DATABASE_ID"] = "战棋：玩家第二饰品的卡牌ID",
+            ["BACON_HEROPOWER_TRINKET_DATABASE_ID"] = "战棋：英雄技能转化为饰品的卡牌ID",
+            ["BACON_OVERRIDE_COST_COLOR"] = "战棋：覆盖费用数字颜色",
+            ["BACON_NUM_MULLIGAN_REFRESH_USED"] = "战棋调度阶段：起手选英雄已刷新次数",
+            ["BACON_NUM_MAX_REROLL_PER_HERO"] = "战棋：每个英雄最大允许的重新roll英雄次数",
+            ["BACON_LOCKED_MULLIGAN_HERO"] = "战棋：锁住特定英雄选项不让刷新",
+            ["BACON_OVERRIDE_BG_COST"] = "战棋：覆盖购买酒馆卡牌的基础消耗",
+            ["BACON_UNLOCK_MULLIGAN_HERO_ENABLED"] = "战棋：允许解锁调度选项的英雄",
+            ["BACON_PREMIUM_FREE_REROLLS"] = "战棋：具有酒馆通行证的免费英雄刷新次数",
+            ["BACON_NUM_FREE_REROLLS_USED"] = "战棋：已使用多少次免费英雄刷新",
+            ["BACON_NUM_PAID_REROLLS_USED"] = "战棋：已使用多少次付费英雄刷新",
+            ["BACON_PLAYER_MULLIGAN_HERO_BEEN_REROLLED"] = "战棋玩家：起手的英雄已被刷新掉",
+            ["BACON_MULLIGAN_HERO_REROLL_ACTIVE"] = "战棋：起手选英雄刷新机制生效中",
+            ["BACON_SHOW_OVERRIDEN_MINION_COST"] = "战棋：显示被修改后的随从购买价格",
+            ["BACON_PORTAL_IN_SOLO"] = "战棋：单人游玩时的传送门UI",
+            ["BACON_TURNS_TILL_ACTIVE"] = "战棋：经过几回合后激活",
+            ["BACON_MAGICSHOP"] = "战棋：魔法商店",
+            ["BACON_ANOMALY_ALL_HEROES_ARE_THIS_DBID"] = "战棋畸变：本局所有玩家都是同一个英雄",
+            ["IS_EXTRA_TRIGGERED_POWER"] = "是否是额外的触发器技能/效果",
+            ["DONT_PLAY_VFX_FROM_EXTRA_TRIGGERED_POWER"] = "不要播放来自额外触发技能的视觉特效",
+            ["BACON_PLAYER_EXTRA_GOLD_NEXT_TURN"] = "战棋玩家下回合将获得的额外铸币数",
+            ["BACON_PLAYER_OVERDRAWN_GOLD_NEXT_TURN"] = "战棋玩家下回合预透支的铸币数",
+            ["BACON_PLAYER_ENCHANTMENT_DISPLAY_ENABLED"] = "战棋：启用玩家全局附魔显示光环",
+            ["BACON_BARTENDER_CARD_ID"] = "战棋：酒馆老板/酒保卡牌ID",
+            ["BACON_SUBSET_DRAGON"] = "战棋本局牌池子集包含：龙",
+            ["BACON_SUBSET_MURLOC"] = "战棋子集包含：鱼人",
+            ["BACON_SUBSET_DEMON"] = "战棋子集包含：恶魔",
+            ["BACON_SUBSET_BEAST"] = "战棋子集包含：野兽",
+            ["BACON_SUBSET_MECH"] = "战棋子集包含：机械",
+            ["BACON_SUBSET_PIRATE"] = "战棋子集包含：海盗",
+            ["BACON_SUBSET_ELEMENTALS"] = "战棋子集包含：元素",
+            ["BACON_SUBSET_QUILLBOAR"] = "战棋子集包含：野猪人",
+            ["BACON_SUBSET_NAGA"] = "战棋子集包含：纳迦",
+            ["BACON_SUBSET_UNDEAD"] = "战棋子集包含：亡灵",
+            ["BACON_ALT_TAVERN_COIN"] = "战棋：异变酒馆硬币",
+            ["BACON_ALT_TAVERN_COIN_USED"] = "战棋：已使用异变酒馆硬币",
+            ["BACON_ALT_TAVERN_IN_PROGRESS"] = "战棋：异变酒馆正在进行中",
+            ["BACON_FACTION_BANNERS_ENABLED"] = "战棋：开启种族/阵营旗帜",
+            ["FX_DATANUM_1"] = "视觉特效数据参数1",
+            ["FX_DATANUM_2"] = "视觉特效数据参数2",
+            ["FX_DATANUM_3"] = "视觉特效数据参数3",
+            ["BACON_VERDANTSPHERES"] = "战棋：凯尔萨斯的翠绿魔珠特效",
+            ["METAMORPHOSIS"] = "恶魔变形",
+            ["BACON_AVALANCHE"] = "战棋：雪崩机制",
+            ["BACON_COMEONECOMEALL"] = "战棋：悉听尊便",
+            ["BACON_DIED_LAST_COMBAT_HINT"] = "战棋提示：这名对手上场战斗已阵亡",
+            ["ROOTED"] = "定身/缠绕",
+            ["VULNERABLE"] = "易伤",
+            ["IMMOLATING"] = "献祭状态",
+            ["SUPPRESS_IMMOLATE_VISUAL_FOR_OPPONENT"] = "在对手视角隐藏被献祭的动画",
+            ["SPELLCRAFT_HINT"] = "塑造法术提示文字",
+            ["COPIED_HINT"] = "复制提示文字",
+            ["BLEEDING"] = "流血状态",
+            ["IMMOLATESTAGE"] = "献祭倒计时阶段",
+            ["SINFUL_BRAND"] = "罪孽烙印",
+            ["HAUNTED_SECRET"] = "被作祟的奥秘",
+            ["SECRET_LOCKED"] = "被锁住的奥秘区",
+            ["LITERALLY_UNPLAYABLE"] = "字面意义上的不可打出",
+            ["UNPLAYABLE_VISUALS"] = "不可打出时的视觉表现",
+            ["DEATH_SPELL_OVERRIDE"] = "强制覆盖随从死亡法术特效",
+            ["EXTRA_TURNS_SPELL_OVERRIDE"] = "额外回合特效法术覆盖",
+            ["BUILDING_UP"] = "积攒/建造中",
+            ["TUTORIAL_TARGET_OPPONENT_ANIM"] = "教程：提示攻击对手英雄动画",
+            ["TUTORIAL_TARGET_MINION_ANIM"] = "教程：提示攻击随从动画",
+            ["TUTORIAL_PLAY_MINION_ANIM"] = "教程：提示打出随从动画",
+            ["TUTORIAL_HERO_POWER_TARGET_MINION_ANIM"] = "教程：技能瞄准随从提示动画",
+            ["TUTORIAL_HERO_POWER_TARGET_OPPONENT_ANIM"] = "教程：技能瞄准对手英雄提示动画",
+            ["ALONE_RANGER"] = "孤胆游侠",
+            ["SUPPRESS_HERO_STANDARD_SUMMON_FX"] = "屏蔽英雄标准登场特效",
+            ["SHUDDERWOCKHIGHLIGHTHINT"] = "沙德沃克高亮提示：有战吼可重复",
+            ["OUROBOSDEATHRATTLE"] = "衔尾蛇亡语",
+            ["DRAENEI_TRIGGER_HINT"] = "德莱尼触发提示",
+            ["HAS_DARK_GIFT"] = "具有黑暗天赋",
+            ["AGAMAGGAN_CURSE"] = "阿迦玛甘的诅咒",
+            ["GOLDRINN_MULTIPLIER"] = "戈德林属性乘区",
+            ["ARCANE_TICKET"] = "奥术奖券",
+            ["NOZDORMU_HINT"] = "诺兹多姆提示",
+            ["AZURE_ARCANE_SPELL_BUFF"] = "碧蓝奥术法术增益",
+            ["PLAYER_DEATHRATTLE"] = "玩家本体挂载的亡语",
+            ["HERO_CANT_BE_DESTROYED"] = "英雄无法被消灭",
+            ["VISIBLE_PLAYER_ENCHANTMENT_CARD"] = "玩家可见的全局附魔卡",
+            ["ALEXSTRASZA_HEALTHTRACKER"] = "阿莱克丝塔萨红龙生命值追踪",
+            ["FAKE_ZONE"] = "假区域",
+            ["FAKE_ZONE_POSITION"] = "在假区域的排序",
+            ["FAKE_CONTROLLER"] = "假控制器",
+            ["CUTSCENE_CARD_TYPE"] = "过场动画卡牌类型",
+            ["LETTUCE_CONTROLLER"] = "佣兵战纪：控制器",
+            ["LETTUCE_MERCENARY"] = "佣兵战纪：这是一个佣兵实体",
+            ["LETTUCE_ABILITY_OWNER"] = "佣兵技能所属者",
+            ["LETTUCE_SELECTED_TARGET"] = "佣兵：已选择的行动目标",
+            ["LETTUCE_SELECTED_SUBCARD_INDEX"] = "佣兵：选择的子卡索引",
+            ["LETTUCE_ROLE"] = "佣兵定位",
+            ["LETTUCE_IS_COMBAT_ACTION_TAKEN"] = "佣兵：当前行动已确认完毕",
+            ["LETTUCE_COOLDOWN_CONFIG"] = "佣兵技能的配置冷却回合数",
+            ["LETTUCE_CURRENT_COOLDOWN"] = "佣兵技能当前剩余冷却",
+            ["LETTUCE_ABILITY_SUMMONED_MINION"] = "佣兵技能召唤出的随从",
+            ["LETTUCE_ABILITY_TILE_VISUAL_SELF_ONLY"] = "佣兵技能：视觉UI仅对自己可见",
+            ["LETTUCE_ABILITY_TILE_VISUAL_ALL_VISIBLE"] = "佣兵技能UI全局可见",
+            ["LETTUCE_MAX_IN_PLAY_MERCENARIES"] = "场上允许的最大佣兵数量",
+            ["LETTUCE_MERCENARIES_TO_NOMINATE"] = "佣兵：需要指定首发阵容",
+            ["LETTUCE_COOLDOWN_WHILE_BENCHED"] = "佣兵：替补席期间是否继续走冷却时间",
+            ["LETTUCE_MERCENARY_RESERVE"] = "佣兵备用库",
+            ["LETTUCE_SKIP_MERCENARY_RESERVE"] = "佣兵：跳过替补阶段",
+            ["LETTUCE_DISABLE_AUTO_SELECT_NEXT_MERC"] = "禁止自动选择下一个佣兵",
+            ["LETTUCE_ABILITY_USED_LAST_TURN"] = "佣兵上回合使用的技能",
+            ["LETTUCE_MERCENARY_EXPERIENCE"] = "佣兵经验值",
+            ["LETTUCE_IS_EQUPIMENT"] = "这是佣兵装备卡",
+            ["LETTUCE_EQUIPMENT_ID"] = "佣兵装备的ID",
+            ["LETTUCE_SELECTED_ABILITY_QUEUE_ORDER"] = "佣兵技能队列的排列顺序",
+            ["LETTUCE_HAS_MANUALLY_SELECTED_ABILITY"] = "佣兵：玩家已手动指定技能",
+            ["LETTUCE_KEEP_LAST_STANDING_MINION_ACTOR"] = "佣兵：保留最后倒下的随从尸体模型动画",
+            ["LETTUCE_USE_DETERMINISTIC_TEAM_ABILITY_QUEUING"] = "佣兵：同速技能固定队伍排队机制",
+            ["LETTUCE_NODE_TYPE"] = "佣兵地图节点类型",
+            ["LETTUCE_PASSIVE_ABILITY"] = "佣兵被动技能",
+            ["LETTUCE_BOUNTY_BOSS"] = "佣兵：这是悬赏Boss节点",
+            ["LETTUCE_IS_TREASURE_CARD"] = "佣兵：这是宝藏卡",
+            ["LETTUCE_CURRENT_BOUNTY_ID"] = "佣兵当前悬赏令ID",
+            ["LETTUCE_SHOW_OPPOSING_FAKE_HAND"] = "佣兵：展示敌方的虚拟手牌区域",
+            ["LETTUCE_VERSUS_SPELL_STATE"] = "佣兵PVP决斗法术状态",
+            ["LETTUCE_START_OF_GAME_ABILITY"] = "佣兵开局直接释放的技能",
+            ["LETTUCE_CURSED_ABILITY_VISUAL"] = "佣兵受诅咒的技能UI表现",
+            ["LETTUCE_OVERTIME"] = "佣兵加时赛",
+            ["LETTUCE_ABILITY_TILE_VISUAL_PUBLIC_SPEED"] = "佣兵技能：公开显示其释放速度值",
+            ["LETTUCE_FACTION"] = "佣兵阵营属性",
+            ["LETTUCE_COMBAT_FROM_HIGH_TO_LOW"] = "佣兵战斗：按速度值从大到小结算",
+            ["LETTUCE_ABILITY_TIER"] = "佣兵技能的等级",
+            ["LETTUCE_EQUIPMENT_TIER"] = "佣兵装备的等级",
+            ["MERCENARIES_DISCOVER_SOURCE"] = "佣兵的发现效果来源",
+            ["SUMMONED_WHEN_DRAWN"] = "抽到时自动召唤",
+            ["QUICKDRAW"] = "快枪",
+            ["EXCAVATE"] = "发掘",
+            ["MINIATURIZE"] = "微缩",
+            ["MINI"] = "微型",
+            ["BACON_PASS_TOOLTIP"] = "战棋双打：传递按钮的提示文本",
+            ["ZILLIAX_CUSTOMIZABLE_COSMETICMODULE"] = "奇利亚斯：自选外观模块",
+            ["ZILLIAX_CUSTOMIZABLE_FUNCTIONALMODULE"] = "奇利亚斯：自选功能模块",
+            ["ZILLIAX_CUSTOMIZABLE_LINKED_COSMETICMOUDLE"] = "奇利亚斯：绑定的外观模块关联",
+            ["ZILLIAX_CUSTOMIZABLE_LINKED_FUNCTIONALMOUDLE"] = "奇利亚斯：绑定的功能模块关联",
+            ["ZILLIAX_CUSTOMIZABLE_SAVED_VERSION"] = "奇利亚斯已保存的构建版本",
+            ["GIGANTIFY"] = "巨化",
+            ["GIGANTIC"] = "巨型牌",
+            ["MAGE_TOURIST"] = "法师游客",
+            ["DRUID_TOURIST"] = "德鲁伊游客",
+            ["WARRIOR_TOURIST"] = "战士游客",
+            ["HUNTER_TOURIST"] = "猎人游客",
+            ["PRIEST_TOURIST"] = "牧师游客",
+            ["DEMON_HUNTER_TOURIST"] = "恶魔猎手游客",
+            ["SHAMAN_TOURIST"] = "萨满游客",
+            ["DEATH_KNIGHT_TOURIST"] = "死亡骑士游客",
+            ["WARLOCK_TOURIST"] = "术士游客",
+            ["ROGUE_TOURIST"] = "潜行者游客",
+            ["PALADIN_TOURIST"] = "圣骑士游客",
+            ["SHIFTING_TOP"] = "百变怪在手牌顶部",
+            ["STARSHIP"] = "星舰本体",
+            ["STARSHIP_PIECE"] = "星舰组件",
+            ["TAG_LAUNCHPAD_ABILITY"] = "发射台专属技能",
+            ["STARSHIP_LAUNCH_COST_DISCOUNT"] = "星舰发射时的费用折扣",
+            ["STARSHIP_LAUNCH_TRIGGER"] = "发射星舰触发器",
+            ["IS_RELAUNCHED_STARSHIP"] = "是再次发射的星舰",
+            ["IS_NIGHTMARE_BONUS"] = "梦魇奖励标识",
+            ["IMBUE"] = "灌注/附魔",
+            ["DARK_GIFT"] = "黑暗礼物",
+            ["BACON_TRINKET"] = "战棋饰品实体标识",
+            ["BONUS_KEYWORDS"] = "附加关键词池",
+            ["DYNAMIC_KEYWORD1"] = "动态关键词配置位1",
+            ["DYNAMIC_KEYWORD2"] = "动态关键词配置位2",
+            ["KINDRED"] = "延系",
+            ["UNSTABLE"] = "不稳定的",
+            ["STABILIZED"] = "稳定状态",
+            ["REWIND"] = "回溯",
+            ["USED_REWIND"] = "已使用回溯",
+            ["MYTHIC"] = "神话/神珍品质",
+            ["PET_ID"] = "战棋宠物ID",
+            ["PET_VARIANT_ID"] = "宠物变体/毛色ID",
+            ["PET_EVENT_ID"] = "宠物互动事件",
+            ["PET_SMALL_XP_TRIGGER_COUNT"] = "宠物获取小额经验值触发次数",
+            ["PET_MEDIUM_XP_TRIGGER_COUNT"] = "宠物获取中额经验值触发次数",
+            ["PET_LARGE_XP_TRIGGER_COUNT"] = "宠物获取大额经验值触发次数",
+            ["PET_TREATS_FED"] = "宠物已喂食零食次数",
+            ["PET_TREATS_GENERATED"] = "已生成的宠物零食数",
+            ["PET_LEVELOVERRIDE"] = "强制覆盖宠物等级UI",
+            ["BACON_RALLY"] = "战棋集结机制",
+            ["FABLED"] = "寓言/神话状态",
+            ["FABLED_PLUS"] = "高级寓言",
+            ["SHATTER"] = "裂变",
+            ["SHATTERED"] = "已裂变",
+            ["HERALD"] = "兆示",
+            ["SI_7"] = "军情七处",
+            ["HOW_TO_EARN"] = "获取方式",
+            ["HOW_TO_EARN_GOLDEN"] = "金色版获取方式",
+            ["IS_FABLED_BUNDLE_CARD"] = "这是特定传说合集包里的皮肤卡牌",
+            ["BACON_TIMEWARP_TOOLTIP"] = "战棋：时空扭曲UI提示",
+            ["BACON_FREE_REFRESH_COUNT"] = "战棋：免费刷新剩余次数",
+            ["DECK_BUILDER_BAR_AMOUNT"] = "卡组构筑器进度条数量",
+            ["SHOULD_TRACK_DECK_COST"] = "应当追踪整个卡组的奥术之尘消耗",
+            ["AttackVisualType"] = "卡牌名称",
+            ["DevState"] = "攻击视觉类型",
+            ["CARDNAME"] = "开发阶段",
+            ["FLAVORTEXT"] = "卡牌趣文",
+            ["ARTISTNAME"] = "画师",
+        };
+
+    private static readonly IReadOnlyDictionary<string, string> FallbackClassMap =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["1"] = "死亡骑士",
+            ["2"] = "德鲁伊",
+            ["3"] = "猎人",
+            ["4"] = "法师",
+            ["5"] = "圣骑士",
+            ["6"] = "牧师",
+            ["7"] = "潜行者",
+            ["8"] = "萨满祭司",
+            ["9"] = "术士",
+            ["10"] = "战士",
+            ["12"] = "中立",
+            ["14"] = "恶魔猎手",
+        };
+
+    private static readonly IReadOnlyDictionary<string, string> FallbackRarityMap =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["1"] = "普通",
+            ["2"] = "免费",
+            ["3"] = "稀有",
+            ["4"] = "史诗",
+            ["5"] = "传说",
+        };
+
+    private static readonly IReadOnlyDictionary<string, string> FallbackCardTypeMap =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["3"] = "英雄",
+            ["4"] = "随从",
+            ["5"] = "法术",
+            ["7"] = "武器",
+            ["10"] = "英雄技能",
+            ["39"] = "地标",
+        };
+
+    private static readonly IReadOnlyDictionary<string, string> FallbackRaceMap =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["2"] = "德莱尼",
+            ["11"] = "亡灵",
+            ["14"] = "鱼人",
+            ["15"] = "恶魔",
+            ["17"] = "机械",
+            ["18"] = "元素",
+            ["20"] = "野兽",
+            ["21"] = "图腾",
+            ["23"] = "海盗",
+            ["24"] = "龙",
+            ["26"] = "全部",
+            ["43"] = "野猪人",
+            ["92"] = "娜迦",
+        };
+
+    private static readonly IReadOnlyDictionary<string, string> FallbackSchoolMap =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["1"] = "奥术",
+            ["2"] = "火焰",
+            ["3"] = "冰霜",
+            ["4"] = "自然",
+            ["5"] = "神圣",
+            ["6"] = "暗影",
+            ["7"] = "邪能",
+        };
+
+    private static readonly IReadOnlyDictionary<string, string> FallbackSetMap =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["0"] = "失效",
+            ["1"] = "临时测试",
+            ["3"] = "经典",
+            ["4"] = "荣誉室",
+            ["6"] = "调试",
+            ["7"] = "未知",
+            ["8"] = "愚弄",
+            ["9"] = "空白",
+            ["10"] = "测试",
+            ["11"] = "纪念",
+            ["12"] = "纳克萨玛斯",
+            ["13"] = "地精大战侏儒",
+            ["14"] = "黑石山的火焰",
+            ["15"] = "冠军的试炼",
+            ["17"] = "英雄皮肤和技能",
+            ["19"] = "混乱",
+            ["20"] = "探险者协会",
+            ["21"] = "上古之神的低语",
+            ["22"] = "上古之神保留",
+            ["23"] = "卡拉赞之夜",
+            ["24"] = "卡拉赞保留",
+            ["25"] = "龙争虎斗加基森",
+            ["26"] = "加基森保留",
+            ["27"] = "勇闯安戈洛",
+            ["1001"] = "冰封王座的骑士",
+            ["1003"] = "天梯实验",
+            ["1004"] = "狗头人与地下世界",
+            ["1125"] = "女巫森林",
+            ["1127"] = "砰砰计划",
+            ["1129"] = "拉斯塔哈的大乱斗",
+            ["1130"] = "暗影崛起",
+            ["1158"] = "奥丹姆奇兵",
+            ["1403"] = "迦拉克隆的觉醒",
+            ["1347"] = "巨龙降临",
+            ["1439"] = "狂野模式活动",
+            ["1414"] = "外域的灰烬",
+            ["1463"] = "恶魔猎手新兵",
+            ["1443"] = "通灵学园",
+            ["1466"] = "疯狂的暗月马戏团",
+            ["1525"] = "贫瘠之地的锤炼",
+            ["1586"] = "佣兵战纪",
+            ["1635"] = "怀旧",
+            ["1578"] = "暴风城下的集结",
+            ["1705"] = "佣兵实验",
+            ["1626"] = "奥特兰克的决裂",
+            ["1637"] = "核心",
+            ["1658"] = "探索沉没之城",
+            ["1691"] = "纳斯利亚堡的悬案",
+            ["1776"] = "巫妖王的进军",
+            ["1810"] = "核心(失效)",
+            ["1869"] = "阿尔萨斯之路",
+            ["1809"] = "传奇音乐节",
+            ["1858"] = "泰坦诸神",
+            ["1898"] = "时光之穴",
+            ["1892"] = "决战荒芜之地",
+            ["1897"] = "威兹班的工坊",
+            ["1941"] = "活动礼物",
+            ["1905"] = "胜地历险记",
+            ["1935"] = "深暗领域",
+            ["1946"] = "翡翠梦境",
+            ["1952"] = "安戈洛龟途",
+            ["1957"] = "穿越时间流",
+            ["1980"] = "大地的裂变",
+        };
+
+    private static IReadOnlyDictionary<string, string> unknownEnumMap = FallbackUnknownEnumMap;
+    private static IReadOnlyDictionary<string, string> tagLabels = FallbackTagLabels;
+    private static IReadOnlyDictionary<string, string> classMap = FallbackClassMap;
+    private static IReadOnlyDictionary<string, string> rarityMap = FallbackRarityMap;
+    private static IReadOnlyDictionary<string, string> cardTypeMap = FallbackCardTypeMap;
+    private static IReadOnlyDictionary<string, string> raceMap = FallbackRaceMap;
+    private static IReadOnlyDictionary<string, string> schoolMap = FallbackSchoolMap;
+    private static IReadOnlyDictionary<string, string> setMap = FallbackSetMap;
+
+    public static IReadOnlyDictionary<string, string> UnknownEnumMap => unknownEnumMap;
+    public static IReadOnlyDictionary<string, string> ClassMap => classMap;
+    public static IReadOnlyDictionary<string, string> RarityMap => rarityMap;
+    public static IReadOnlyDictionary<string, string> CardTypeMap => cardTypeMap;
+    public static IReadOnlyDictionary<string, string> RaceMap => raceMap;
+    public static IReadOnlyDictionary<string, string> SchoolMap => schoolMap;
+    public static IReadOnlyDictionary<string, string> SetMap => setMap;
+
+    public static void Initialize(string resourceRoot)
+    {
+        lock (SyncRoot)
+        {
+            if (initialized)
+            {
+                return;
+            }
+
+            initialized = true;
+
+            var htmlPath = FindLegacyHtml(resourceRoot);
+            if (htmlPath is null)
+            {
+                return;
+            }
+
+            try
+            {
+                var html = File.ReadAllText(htmlPath);
+                unknownEnumMap = Merge(FallbackUnknownEnumMap, ParseObjectMap(html, "unknownEnumMap"));
+                tagLabels = FallbackTagLabels;
+                classMap = Merge(FallbackClassMap, ParseObjectMap(html, "classMap"));
+                rarityMap = Merge(FallbackRarityMap, ParseObjectMap(html, "rarityMap"));
+                cardTypeMap = Merge(FallbackCardTypeMap, ParseObjectMap(html, "typeMap"));
+                raceMap = Merge(FallbackRaceMap, ParseObjectMap(html, "raceMap"));
+                schoolMap = Merge(FallbackSchoolMap, ParseObjectMap(html, "schoolMap"));
+                setMap = Merge(FallbackSetMap, ParseObjectMap(html, "setMap"));
+            }
+            catch
+            {
+                unknownEnumMap = FallbackUnknownEnumMap;
+                tagLabels = FallbackTagLabels;
+                classMap = FallbackClassMap;
+                rarityMap = FallbackRarityMap;
+                cardTypeMap = FallbackCardTypeMap;
+                raceMap = FallbackRaceMap;
+                schoolMap = FallbackSchoolMap;
+                setMap = FallbackSetMap;
+            }
+        }
+    }
+
+    public static string MapTagLabel(string tagKey)
+    {
+        return tagLabels.TryGetValue(tagKey, out var label)
+            ? label
+            : tagKey;
+    }
+
+    public static string BuildDisplayTagName(string tagKey, string? enumId)
+    {
+        if (!string.IsNullOrWhiteSpace(enumId) && unknownEnumMap.TryGetValue(enumId, out var patched))
+        {
+            return AppendEnumSuffix(patched, enumId);
+        }
+
+        if (tagLabels.TryGetValue(tagKey, out var label))
+        {
+            return AppendEnumSuffix($"{label}-{tagKey}", enumId);
+        }
+
+        if (int.TryParse(tagKey, out _))
+        {
+            return AppendEnumSuffix(tagKey, enumId);
+        }
+
+        return AppendEnumSuffix($"未定义标签-{tagKey}", enumId);
+    }
+
+    public static string MapTagValue(string tagKey, string value)
+    {
+        return tagKey switch
+        {
+            "CLASS" => MapWithFallback(classMap, value),
+            "RARITY" => MapWithFallback(rarityMap, value),
+            "CARDTYPE" => value == "6" ? "附魔 (6)" : MapWithFallback(cardTypeMap, value),
+            "CARD_SET" => MapWithFallback(setMap, value),
+            "CARDRACE" => MapWithFallback(raceMap, value),
+            "SPELL_SCHOOL" => MapWithFallback(schoolMap, value),
+            "COLLECTIBLE" => value == "1" ? "是" : "否",
+            _ => value,
+        };
+    }
+
+    public static bool IsKnownSet(string? setCode)
+    {
+        return !string.IsNullOrWhiteSpace(setCode) && setMap.ContainsKey(setCode);
+    }
+
+    private static IReadOnlyDictionary<string, string> Merge(
+        IReadOnlyDictionary<string, string> fallback,
+        IReadOnlyDictionary<string, string> overrides)
+    {
+        var merged = new Dictionary<string, string>(fallback, StringComparer.Ordinal);
+        foreach (var pair in overrides)
+        {
+            merged[pair.Key] = pair.Value;
+        }
+
+        return merged;
+    }
+
+    private static string MapWithFallback(IReadOnlyDictionary<string, string> map, string value)
+    {
+        return map.TryGetValue(value, out var label)
+            ? $"{label} ({value})"
+            : value;
+    }
+
+    private static string AppendEnumSuffix(string prefix, string? enumId)
+    {
+        return string.IsNullOrWhiteSpace(enumId)
+            ? prefix
+            : $"{prefix}-（{enumId}）";
+    }
+
+    private static string? FindLegacyHtml(string resourceRoot)
+    {
+        var expectedPath = Path.Combine(resourceRoot, "查询卡牌工具.html");
+        if (File.Exists(expectedPath))
+        {
+            return expectedPath;
+        }
+
+        foreach (var htmlPath in Directory.EnumerateFiles(resourceRoot, "*.html", SearchOption.TopDirectoryOnly))
+        {
+            try
+            {
+                using var stream = File.OpenRead(htmlPath);
+                using var reader = new StreamReader(stream);
+                var head = reader.ReadToEnd();
+                if (head.Contains("const tagDict = {", StringComparison.Ordinal))
+                {
+                    return htmlPath;
+                }
+            }
+            catch
+            {
+                // Ignore unreadable files and continue probing.
+            }
+        }
+
+        return null;
+    }
+
+    private static IReadOnlyDictionary<string, string> ParseObjectMap(string html, string objectName)
+    {
+        var body = ExtractObjectBody(html, objectName);
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return new Dictionary<string, string>(StringComparer.Ordinal);
+        }
+
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        var index = 0;
+
+        while (index < body.Length)
+        {
+            SkipSeparators(body, ref index);
+            if (index >= body.Length)
+            {
+                break;
+            }
+
+            var key = ParseToken(body, ref index);
+            if (!string.IsNullOrWhiteSpace(key))
+            {
+                SkipWhitespace(body, ref index);
+                if (index < body.Length && body[index] == ':')
+                {
+                    index++;
+                    SkipWhitespace(body, ref index);
+                    var value = ParseToken(body, ref index);
+                    result[key.Trim()] = value.Trim();
+                }
+            }
+
+            SkipUntilNextPair(body, ref index);
+        }
+
+        return result;
+    }
+
+    private static string? ExtractObjectBody(string html, string objectName)
+    {
+        var start = html.IndexOf($"const {objectName}", StringComparison.Ordinal);
+        if (start < 0)
+        {
+            return null;
+        }
+
+        var braceStart = html.IndexOf('{', start);
+        if (braceStart < 0)
+        {
+            return null;
+        }
+
+        var depth = 0;
+        var inString = false;
+        var quote = '\0';
+        var escaped = false;
+
+        for (var index = braceStart; index < html.Length; index++)
+        {
+            var current = html[index];
+
+            if (inString)
+            {
+                if (escaped)
+                {
+                    escaped = false;
+                    continue;
+                }
+
+                if (current == '\\')
+                {
+                    escaped = true;
+                    continue;
+                }
+
+                if (current == quote)
+                {
+                    inString = false;
+                }
+
+                continue;
+            }
+
+            if (current is '"' or '\'')
+            {
+                inString = true;
+                quote = current;
+                continue;
+            }
+
+            if (current == '{')
+            {
+                depth++;
+                continue;
+            }
+
+            if (current != '}')
+            {
+                continue;
+            }
+
+            depth--;
+            if (depth == 0)
+            {
+                return html[(braceStart + 1)..index];
+            }
+        }
+
+        return null;
+    }
+
+    private static string ParseToken(string input, ref int index)
+    {
+        if (index >= input.Length)
+        {
+            return string.Empty;
+        }
+
+        return input[index] is '"' or '\''
+            ? ParseQuotedToken(input, ref index)
+            : ParseBareToken(input, ref index);
+    }
+
+    private static string ParseQuotedToken(string input, ref int index)
+    {
+        var quote = input[index];
+        index++;
+
+        var builder = new StringBuilder();
+        while (index < input.Length)
+        {
+            var current = input[index++];
+            if (current == '\\' && index < input.Length)
+            {
+                var escaped = input[index++];
+                builder.Append(escaped switch
+                {
+                    'n' => '\n',
+                    'r' => '\r',
+                    't' => '\t',
+                    '\\' => '\\',
+                    '"' => '"',
+                    '\'' => '\'',
+                    _ => escaped,
+                });
+                continue;
+            }
+
+            if (current == quote)
+            {
+                break;
+            }
+
+            builder.Append(current);
+        }
+
+        return builder.ToString();
+    }
+
+    private static string ParseBareToken(string input, ref int index)
+    {
+        var start = index;
+        while (index < input.Length && input[index] is not ':' and not ',' and not '\r' and not '\n')
+        {
+            index++;
+        }
+
+        return input[start..index];
+    }
+
+    private static void SkipSeparators(string input, ref int index)
+    {
+        while (index < input.Length && (char.IsWhiteSpace(input[index]) || input[index] == ','))
+        {
+            index++;
+        }
+    }
+
+    private static void SkipWhitespace(string input, ref int index)
+    {
+        while (index < input.Length && char.IsWhiteSpace(input[index]))
+        {
+            index++;
+        }
+    }
+
+    private static void SkipUntilNextPair(string input, ref int index)
+    {
+        var inString = false;
+        var quote = '\0';
+        var escaped = false;
+
+        while (index < input.Length)
+        {
+            var current = input[index];
+
+            if (inString)
+            {
+                index++;
+
+                if (escaped)
+                {
+                    escaped = false;
+                    continue;
+                }
+
+                if (current == '\\')
+                {
+                    escaped = true;
+                    continue;
+                }
+
+                if (current == quote)
+                {
+                    inString = false;
+                }
+
+                continue;
+            }
+
+            if (current is '"' or '\'')
+            {
+                inString = true;
+                quote = current;
+                index++;
+                continue;
+            }
+
+            if (current == ',')
+            {
+                index++;
+                return;
+            }
+
+            index++;
+        }
+    }
+}
+

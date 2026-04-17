@@ -1,0 +1,9 @@
+cardpng/
+dist/
+.vs/
+TestResults/
+**/bin/
+**/obj/
+*.user
+*.suo
+*.cache

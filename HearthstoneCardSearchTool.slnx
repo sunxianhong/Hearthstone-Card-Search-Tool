@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/desktop-core/">
+    <Project Path="desktop-core/HearthstoneCardSearchTool.Core.csproj" />
+  </Folder>
+  <Folder Name="/desktop-tests/">
+    <Project Path="desktop-tests/HearthstoneCardSearchTool.Tests.csproj" />
+  </Folder>
+  <Folder Name="/desktop/">
+    <Project Path="desktop/HearthstoneCardSearchTool.csproj" />
+  </Folder>
+</Solution>
