@@ -10,7 +10,7 @@ namespace HearthstoneCardSearchTool;
 
 public partial class MainWindow : Window
 {
-    private const int MaxDisplay = 300;
+    private const int MaxDisplay = 100;
 
     private readonly FileImageConverter imageConverter = new();
     private readonly List<CardRecord> currentResults = [];
@@ -102,9 +102,9 @@ public partial class MainWindow : Window
 
         CollectibleComboBox.ItemsSource = new List<FilterOption>
         {
-            new FilterOption(string.Empty, "是否可收藏 (全部)"),
-            new FilterOption("1", "是"),
-            new FilterOption("0", "否"),
+            new FilterOption(string.Empty, "可否收藏 (全部)"),
+            new FilterOption("1", "可收藏"),
+            new FilterOption("0", "不可收藏"),
         };
         CollectibleComboBox.SelectedIndex = 0;
 
@@ -240,7 +240,7 @@ public partial class MainWindow : Window
 
             if (results.Count >= MaxDisplay)
             {
-                ResultHintText.Text = "图片一张挨着一张显示，点击打开详情。结果过多，当前仅显示前 300 张。";
+                ResultHintText.Text = "图片一张挨着一张显示，点击打开详情。结果过多，当前仅显示前 100 张。";
             }
         }
         catch (Exception ex)
