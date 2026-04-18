@@ -4,11 +4,11 @@ const state = {
 };
 
 const elements = {
-    totalCardsValue: document.getElementById("totalCardsValue"),
-    maxDisplayValue: document.getElementById("maxDisplayValue"),
     queryInput: document.getElementById("queryInput"),
     modeSelect: document.getElementById("modeSelect"),
-    setSelect: document.getElementById("setSelect"),
+    setPicker: document.getElementById("setPicker"),
+    setPickerButton: document.getElementById("setPickerButton"),
+    setPickerPanel: document.getElementById("setPickerPanel"),
     costSelect: document.getElementById("costSelect"),
     classSelect: document.getElementById("classSelect"),
     raritySelect: document.getElementById("raritySelect"),
@@ -20,16 +20,17 @@ const elements = {
     searchButton: document.getElementById("searchButton"),
     resetButton: document.getElementById("resetButton"),
     statusText: document.getElementById("statusText"),
-    hintText: document.getElementById("hintText"),
-    searchModeBadge: document.getElementById("searchModeBadge"),
     results: document.getElementById("results"),
+    backToTopButton: document.getElementById("backToTopButton"),
+    copyToast: document.getElementById("copyToast"),
     detailModal: document.getElementById("detailModal"),
+    detailModalPanel: document.getElementById("detailModalPanel"),
     closeModalButton: document.getElementById("closeModalButton"),
     detailBadge: document.getElementById("detailBadge"),
-    detailName: document.getElementById("detailName"),
+    copyNameButton: document.getElementById("copyNameButton"),
+    copyCardIdButton: document.getElementById("copyCardIdButton"),
+    copyDbfIdButton: document.getElementById("copyDbfIdButton"),
     detailDescription: document.getElementById("detailDescription"),
-    detailCardId: document.getElementById("detailCardId"),
-    detailDbfId: document.getElementById("detailDbfId"),
     detailVisual: document.getElementById("detailVisual"),
     parentSection: document.getElementById("parentSection"),
     relatedSection: document.getElementById("relatedSection"),
@@ -37,10 +38,10 @@ const elements = {
     parentLinks: document.getElementById("parentLinks"),
     relatedLinks: document.getElementById("relatedLinks"),
     enchantmentLinks: document.getElementById("enchantmentLinks"),
-    tagTableBody: document.getElementById("tagTableBody"),
-    copyCardIdButton: document.getElementById("copyCardIdButton"),
-    copyDbfIdButton: document.getElementById("copyDbfIdButton"),
+    tagList: document.getElementById("tagList"),
 };
+
+let copyToastTimer = null;
 
 void initialize();
 
@@ -51,18 +52,15 @@ async function initialize() {
         const bootstrap = await fetchJson("/api/bootstrap");
         state.bootstrap = bootstrap;
 
-        elements.totalCardsValue.textContent = formatNumber(bootstrap.totalCards);
-        elements.maxDisplayValue.textContent = String(bootstrap.maxDisplay);
-
         populateSelect(elements.modeSelect, bootstrap.modes, null, "wild");
         populateSelect(elements.costSelect, bootstrap.costs);
         populateSelect(elements.collectibleSelect, bootstrap.collectibleOptions);
         populateSelect(elements.keywordSelect, bootstrap.keywordOptions);
-        populateSelect(elements.classSelect, bootstrap.classes, "全部职业");
-        populateSelect(elements.raritySelect, bootstrap.rarities, "全部稀有度");
-        populateSelect(elements.cardTypeSelect, bootstrap.cardTypes, "全部卡牌类型");
-        populateSelect(elements.raceSelect, bootstrap.races, "全部随从种族");
-        populateSelect(elements.schoolSelect, bootstrap.schools, "全部法术派系");
+        populateSelect(elements.classSelect, bootstrap.classes, "职业");
+        populateSelect(elements.raritySelect, bootstrap.rarities, "稀有度");
+        populateSelect(elements.cardTypeSelect, bootstrap.cardTypes, "卡牌类型");
+        populateSelect(elements.raceSelect, bootstrap.races, "随从种族");
+        populateSelect(elements.schoolSelect, bootstrap.schools, "法术派系");
 
         refreshSetOptions();
         await searchCards();
@@ -85,14 +83,41 @@ function bindEvents() {
         refreshSetOptions();
     });
 
-    elements.queryInput.addEventListener("keydown", (event) => {
-        if (event.key !== "Enter") {
-            return;
-        }
-
-        event.preventDefault();
-        void searchCards();
+    elements.setPickerButton.addEventListener("click", () => {
+        const shouldOpen = elements.setPickerPanel.classList.contains("is-hidden");
+        elements.setPickerPanel.classList.toggle("is-hidden", !shouldOpen);
+        elements.setPickerButton.setAttribute("aria-expanded", String(shouldOpen));
     });
+
+    document.addEventListener("click", (event) => {
+        if (!elements.setPicker.contains(event.target)) {
+            closeSetPicker();
+        }
+    });
+
+    const submitOnEnterElements = [
+        elements.queryInput,
+        elements.modeSelect,
+        elements.costSelect,
+        elements.classSelect,
+        elements.raritySelect,
+        elements.cardTypeSelect,
+        elements.raceSelect,
+        elements.schoolSelect,
+        elements.keywordSelect,
+        elements.collectibleSelect,
+    ];
+
+    for (const control of submitOnEnterElements) {
+        control.addEventListener("keydown", (event) => {
+            if (event.key !== "Enter") {
+                return;
+            }
+
+            event.preventDefault();
+            void searchCards();
+        });
+    }
 
     elements.closeModalButton.addEventListener("click", closeModal);
 
@@ -113,20 +138,36 @@ function bindEvents() {
         }
     });
 
-    elements.copyCardIdButton.addEventListener("click", () => {
-        if (!state.activeDetail) {
-            return;
-        }
-
-        void copyText(state.activeDetail.cardId, "CardID 已复制");
+    window.addEventListener("scroll", () => {
+        elements.backToTopButton.classList.toggle("is-hidden", window.scrollY <= 320);
     });
 
-    elements.copyDbfIdButton.addEventListener("click", () => {
+    elements.backToTopButton.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    elements.copyNameButton.addEventListener("click", (event) => {
         if (!state.activeDetail) {
             return;
         }
 
-        void copyText(String(state.activeDetail.dbfId), "DbfId 已复制");
+        void copyText(state.activeDetail.name, `已复制到剪贴板: ${state.activeDetail.name}`, event.currentTarget);
+    });
+
+    elements.copyCardIdButton.addEventListener("click", (event) => {
+        if (!state.activeDetail) {
+            return;
+        }
+
+        void copyText(state.activeDetail.cardId, `已复制到剪贴板: ${state.activeDetail.cardId}`, event.currentTarget);
+    });
+
+    elements.copyDbfIdButton.addEventListener("click", (event) => {
+        if (!state.activeDetail) {
+            return;
+        }
+
+        void copyText(String(state.activeDetail.dbfId), `已复制到剪贴板: ${state.activeDetail.dbfId}`, event.currentTarget);
     });
 }
 
@@ -153,7 +194,7 @@ function refreshSetOptions(preferredValue = null) {
         ? state.bootstrap.standardSets
         : state.bootstrap.wildSets;
 
-    populateSelect(elements.setSelect, sets, "全部扩展包", preferredValue ?? elements.setSelect.value);
+    renderSetPicker(sets, preferredValue ?? elements.setPickerButton.dataset.value ?? "");
 }
 
 async function searchCards() {
@@ -170,7 +211,7 @@ async function searchCards() {
         appendIfPresent(params, "mode", elements.modeSelect.value || "wild");
         appendIfPresent(params, "cost", elements.costSelect.value);
         appendIfPresent(params, "class", elements.classSelect.value);
-        appendIfPresent(params, "set", elements.setSelect.value);
+        appendIfPresent(params, "set", elements.setPickerButton.dataset.value);
         appendIfPresent(params, "rarity", elements.raritySelect.value);
         appendIfPresent(params, "cardType", elements.cardTypeSelect.value);
         appendIfPresent(params, "race", elements.raceSelect.value);
@@ -180,22 +221,15 @@ async function searchCards() {
         params.set("limit", String(state.bootstrap.maxDisplay));
 
         const response = await fetchJson(`/api/cards?${params.toString()}`);
-
-        elements.searchModeBadge.textContent = response.searchMode;
-        elements.statusText.textContent = `卡牌库共 ${formatNumber(response.totalCards)} 张，当前显示 ${formatNumber(response.displayedCount)} 张。`;
-
         if (response.displayedCount === 0) {
-            elements.hintText.textContent = "没有找到符合条件的卡牌。你可以试试中文名、英文名、CardID，或者使用 `标签:值` 和 `EnumID:值` 搜索。";
-        } else if (response.displayedCount >= response.maxDisplay) {
-            elements.hintText.textContent = `结果较多，当前仅显示前 ${formatNumber(response.maxDisplay)} 张。你可以继续加筛选条件缩小范围。`;
+            elements.statusText.textContent = `卡牌库共 ${formatNumber(response.totalCards)} 张。未找到符合条件的卡牌。`;
         } else {
-            elements.hintText.textContent = "点击任意卡牌即可打开详情弹层，查看关联卡牌、附魔卡牌和完整标签。";
+            elements.statusText.textContent = `卡牌库共 ${formatNumber(response.totalCards)} 张，当前显示 ${formatNumber(response.displayedCount)} 张卡牌。`;
         }
 
         renderResults(response.items);
     } catch (error) {
-        elements.statusText.textContent = "搜索失败";
-        elements.hintText.textContent = normalizeErrorMessage(error);
+        elements.statusText.textContent = "筛选失败";
         renderEmptyState("搜索失败", normalizeErrorMessage(error));
     } finally {
         setSearchBusy(false);
@@ -206,46 +240,38 @@ function renderResults(items) {
     elements.results.replaceChildren();
 
     if (!items || items.length === 0) {
-        renderEmptyState("没有符合条件的卡牌", "可以试试放宽筛选条件，或者直接输入卡牌中文名、英文名、CardID。");
+        renderEmptyState("没有找到符合条件的卡牌", "可以试试放宽筛选条件，或者直接输入卡牌中文名、英文名、CardID。");
         return;
     }
 
     for (const item of items) {
         const tile = document.createElement("article");
-        tile.className = "card-tile";
+        tile.className = item.hasImage && item.imageUrl ? "card-image-tile" : "card-fallback";
 
         const button = document.createElement("button");
         button.className = "card-button";
         button.type = "button";
+        button.title = `${item.nameZh}\nCardID: ${item.cardId}\nID: ${item.dbfId}`;
         button.addEventListener("click", () => {
             void openDetail(item.cardId);
         });
 
-        const visual = document.createElement("div");
-        visual.className = "card-visual";
         if (item.hasImage && item.imageUrl) {
-            visual.append(createImageElement(item.imageUrl, item.nameZh, item.nameZh));
+            const image = createImageElement(item.imageUrl, item.nameZh, item.nameZh);
+            image.className = "card-image";
+            button.append(image);
         } else {
-            visual.append(createPlaceholder(item.nameZh, item.textZh));
+            const title = document.createElement("h3");
+            title.className = "card-fallback-title";
+            title.textContent = item.nameZh || item.nameEn || item.cardId;
+
+            const description = document.createElement("div");
+            description.className = "card-fallback-text";
+            description.textContent = item.textZh || "暂无图片索引";
+
+            button.append(title, description);
         }
 
-        const body = document.createElement("div");
-        body.className = "card-body";
-
-        const subtitle = document.createElement("div");
-        subtitle.className = "card-subtitle";
-        subtitle.textContent = item.subtitle || `CardID: ${item.cardId}`;
-
-        const title = document.createElement("h3");
-        title.className = "card-title";
-        title.textContent = item.nameZh || item.nameEn || item.cardId;
-
-        const description = document.createElement("div");
-        description.className = "card-text";
-        description.textContent = truncateText(item.textZh || item.nameEn || item.cardId, 110);
-
-        body.append(subtitle, title, description);
-        button.append(visual, body);
         tile.append(button);
         elements.results.append(tile);
     }
@@ -253,36 +279,36 @@ function renderResults(items) {
 
 async function openDetail(cardId) {
     elements.detailModal.classList.remove("is-hidden");
+    elements.detailModalPanel.scrollTop = 0;
     elements.detailBadge.textContent = "正在加载详情";
-    elements.detailName.textContent = "读取中…";
+    elements.copyNameButton.textContent = "读取中…";
+    elements.copyCardIdButton.textContent = cardId;
+    elements.copyDbfIdButton.textContent = "-";
     elements.detailDescription.textContent = "请稍候，正在从服务器读取这张卡牌的详细信息。";
-    elements.detailCardId.textContent = cardId;
-    elements.detailDbfId.textContent = "-";
     elements.detailVisual.replaceChildren(createPlaceholder("加载中", "正在读取卡牌图片和关联信息。"));
+    hideSections();
 
     try {
         const detail = await fetchJson(`/api/cards/${encodeURIComponent(cardId)}`);
         state.activeDetail = detail;
         renderDetail(detail);
+        elements.detailModalPanel.scrollTop = 0;
     } catch (error) {
         state.activeDetail = null;
         elements.detailBadge.textContent = "加载失败";
-        elements.detailName.textContent = "无法打开详情";
+        elements.copyNameButton.textContent = "无法打开详情";
         elements.detailDescription.textContent = normalizeErrorMessage(error);
         elements.detailVisual.replaceChildren(createPlaceholder("加载失败", normalizeErrorMessage(error)));
-        elements.parentSection.classList.add("is-hidden");
-        elements.relatedSection.classList.add("is-hidden");
-        elements.enchantmentSection.classList.add("is-hidden");
-        elements.tagTableBody.replaceChildren();
+        elements.tagList.replaceChildren();
     }
 }
 
 function renderDetail(detail) {
-    elements.detailBadge.textContent = detail.isEnchantment ? "附魔卡牌" : "卡牌详情";
-    elements.detailName.textContent = detail.name;
+    elements.detailBadge.textContent = detail.isEnchantment ? "附魔" : "卡牌详情";
+    elements.copyNameButton.textContent = detail.name;
+    elements.copyCardIdButton.textContent = detail.cardId;
+    elements.copyDbfIdButton.textContent = String(detail.dbfId);
     elements.detailDescription.textContent = detail.text || "（无描述）";
-    elements.detailCardId.textContent = detail.cardId;
-    elements.detailDbfId.textContent = String(detail.dbfId);
 
     elements.detailVisual.replaceChildren(
         detail.hasImage && detail.imageUrl
@@ -290,13 +316,59 @@ function renderDetail(detail) {
             : createPlaceholder(detail.name, detail.text || "暂无图片索引")
     );
 
-    renderLinkSection(elements.parentSection, elements.parentLinks, detail.parentCards);
-    renderLinkSection(elements.relatedSection, elements.relatedLinks, detail.relatedCards);
-    renderLinkSection(elements.enchantmentSection, elements.enchantmentLinks, detail.enchantmentCards);
+    renderLinkSection(elements.parentSection, elements.parentLinks, detail.parentCards, true);
+    renderLinkSection(elements.relatedSection, elements.relatedLinks, detail.relatedCards, true);
+    renderLinkSection(elements.enchantmentSection, elements.enchantmentLinks, detail.enchantmentCards, false);
     renderTags(detail.tags);
 }
 
-function renderLinkSection(section, container, items) {
+function renderSetPicker(items, preferredValue) {
+    const currentValue = preferredValue ?? "";
+    const selected = items.find((item) => item.value === currentValue) ?? null;
+    elements.setPickerButton.dataset.value = selected?.value ?? "";
+    elements.setPickerButton.textContent = selected?.label ?? "扩展包";
+    elements.setPickerButton.title = selected?.label ?? "扩展包";
+    elements.setPickerButton.setAttribute("aria-expanded", "false");
+
+    const grid = document.createElement("div");
+    grid.className = "set-picker-grid";
+
+    const allButton = document.createElement("button");
+    allButton.type = "button";
+    allButton.className = `set-picker-option${selected ? "" : " is-selected"}`;
+    allButton.textContent = "扩展包";
+    allButton.addEventListener("click", () => {
+        elements.setPickerButton.dataset.value = "";
+        elements.setPickerButton.textContent = "扩展包";
+        elements.setPickerButton.title = "扩展包";
+        closeSetPicker();
+    });
+    grid.append(allButton);
+
+    for (const item of items) {
+        const option = document.createElement("button");
+        option.type = "button";
+        option.className = `set-picker-option${item.value === selected?.value ? " is-selected" : ""}`;
+        option.textContent = item.label;
+        option.title = item.label;
+        option.addEventListener("click", () => {
+            elements.setPickerButton.dataset.value = item.value;
+            elements.setPickerButton.textContent = item.label;
+            elements.setPickerButton.title = item.label;
+            closeSetPicker();
+        });
+        grid.append(option);
+    }
+
+    elements.setPickerPanel.replaceChildren(grid);
+}
+
+function closeSetPicker() {
+    elements.setPickerPanel.classList.add("is-hidden");
+    elements.setPickerButton.setAttribute("aria-expanded", "false");
+}
+
+function renderLinkSection(section, container, items, enablePreview) {
     container.replaceChildren();
 
     if (!items || items.length === 0) {
@@ -307,53 +379,55 @@ function renderLinkSection(section, container, items) {
     section.classList.remove("is-hidden");
 
     for (const item of items) {
+        const wrap = document.createElement("div");
+        wrap.className = "related-link-wrap";
+
         const button = document.createElement("button");
         button.className = "related-link-button";
         button.type = "button";
-        button.textContent = `${item.name} · ${item.reason}`;
-        button.title = `CardID: ${item.cardId}\nDbfId: ${item.dbfId}`;
+        button.textContent = item.name;
+        button.title = item.reason;
         button.addEventListener("click", () => {
             void openDetail(item.cardId);
         });
-        container.append(button);
+
+        wrap.append(button);
+
+        if (enablePreview && item.hasImage && item.imageUrl) {
+            const preview = document.createElement("div");
+            preview.className = "related-link-preview";
+            const image = createImageElement(item.imageUrl, item.name, item.name);
+            preview.append(image);
+            wrap.append(preview);
+        }
+
+        container.append(wrap);
     }
 }
 
 function renderTags(tags) {
-    elements.tagTableBody.replaceChildren();
+    elements.tagList.replaceChildren();
 
     if (!tags || tags.length === 0) {
-        const row = document.createElement("tr");
-        row.append(
-            createTextCell("暂无标签"),
-            createTextCell("-"),
-            createTextCell("-"),
-        );
-        elements.tagTableBody.append(row);
+        const line = document.createElement("div");
+        line.className = "tag-line";
+        line.textContent = "暂无标签";
+        elements.tagList.append(line);
         return;
     }
 
     for (const tag of tags) {
-        const row = document.createElement("tr");
-        row.append(createTextCell(tag.displayName), createTextCell(tag.value));
-
-        const actionCell = document.createElement("td");
-        if (tag.targetCardId) {
-            const button = document.createElement("button");
-            button.className = "tag-link-button";
-            button.type = "button";
-            button.textContent = `查看 ${tag.targetCardId}`;
-            button.addEventListener("click", () => {
-                void openDetail(tag.targetCardId);
-            });
-            actionCell.append(button);
-        } else {
-            actionCell.textContent = "-";
-        }
-
-        row.append(actionCell);
-        elements.tagTableBody.append(row);
+        const line = document.createElement("div");
+        line.className = "tag-line";
+        line.textContent = `${tag.displayName} = ${tag.value}`;
+        elements.tagList.append(line);
     }
+}
+
+function hideSections() {
+    elements.parentSection.classList.add("is-hidden");
+    elements.relatedSection.classList.add("is-hidden");
+    elements.enchantmentSection.classList.add("is-hidden");
 }
 
 function renderEmptyState(title, description) {
@@ -383,15 +457,9 @@ function createImageElement(url, alt, fallbackTitle) {
 
 function createPlaceholder(title, description) {
     const block = document.createElement("div");
-    block.className = "card-placeholder";
+    block.className = "detail-placeholder";
     block.textContent = `${title || "暂无图片"}\n\n${truncateText(description || "暂无描述", 160)}`;
     return block;
-}
-
-function createTextCell(value) {
-    const cell = document.createElement("td");
-    cell.textContent = value;
-    return cell;
 }
 
 function populateSelect(select, items, placeholder = null, preferredValue = "") {
@@ -434,23 +502,74 @@ function setSearchBusy(isBusy, statusText = null, hintText = null) {
     if (statusText) {
         elements.statusText.textContent = statusText;
     }
-
-    if (hintText) {
-        elements.hintText.textContent = hintText;
-    }
 }
 
 function closeModal() {
     elements.detailModal.classList.add("is-hidden");
 }
 
-async function copyText(value, successMessage) {
+async function copyText(value, successMessage, anchorElement) {
     try {
-        await navigator.clipboard.writeText(value);
-        elements.hintText.textContent = successMessage;
+        if (navigator.clipboard?.writeText) {
+            await navigator.clipboard.writeText(value);
+        } else {
+            fallbackCopyText(value);
+        }
+        showCopyToast(successMessage, anchorElement);
     } catch {
-        elements.hintText.textContent = `复制失败，请手动复制：${value}`;
+        try {
+            fallbackCopyText(value);
+            showCopyToast(successMessage, anchorElement);
+        } catch {
+            showCopyToast(`复制失败，请手动复制：${value}`, anchorElement);
+        }
     }
+}
+
+function fallbackCopyText(value) {
+    const textarea = document.createElement("textarea");
+    textarea.value = value;
+    textarea.setAttribute("readonly", "true");
+    textarea.style.position = "fixed";
+    textarea.style.top = "-1000px";
+    textarea.style.left = "-1000px";
+    document.body.append(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, value.length);
+
+    const copied = document.execCommand("copy");
+    textarea.remove();
+
+    if (!copied) {
+        throw new Error("copy failed");
+    }
+}
+
+function showCopyToast(message, anchorElement) {
+    if (copyToastTimer) {
+        window.clearTimeout(copyToastTimer);
+    }
+
+    elements.copyToast.textContent = message;
+    elements.copyToast.classList.remove("is-hidden");
+
+    const fallbackLeft = Math.max(12, window.innerWidth - 260);
+    const fallbackTop = Math.max(12, window.innerHeight - 84);
+
+    if (anchorElement instanceof HTMLElement) {
+        const rect = anchorElement.getBoundingClientRect();
+        const left = Math.min(Math.max(12, rect.left), window.innerWidth - 280);
+        const top = Math.min(window.innerHeight - 54, rect.bottom + 10);
+        elements.copyToast.style.left = `${left}px`;
+        elements.copyToast.style.top = `${top}px`;
+    } else {
+        elements.copyToast.style.left = `${fallbackLeft}px`;
+        elements.copyToast.style.top = `${fallbackTop}px`;
+    }
+
+    copyToastTimer = window.setTimeout(() => {
+        elements.copyToast.classList.add("is-hidden");
+    }, 1800);
 }
 
 async function fetchJson(url) {
@@ -471,7 +590,6 @@ async function fetchJson(url) {
 function showFatalError(error) {
     const message = normalizeErrorMessage(error);
     elements.statusText.textContent = "初始化失败";
-    elements.hintText.textContent = message;
     renderEmptyState("应用未能启动", message);
 }
 

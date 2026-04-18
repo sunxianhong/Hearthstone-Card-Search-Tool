@@ -41,13 +41,13 @@ app.MapGet("/api/bootstrap", (RepositoryState state) =>
             DefaultMaxDisplay,
             BuildModeOptions(),
             BuildCostOptions(),
-            MapOptions(state.Repository.Bootstrap.Classes),
-            MapOptions(state.Repository.Bootstrap.Rarities),
-            MapOptions(state.Repository.Bootstrap.CardTypes),
-            MapOptions(CardDataMaps.GetSetsForMode("wild")),
-            MapOptions(CardDataMaps.GetSetsForMode("standard")),
-            MapOptions(state.Repository.Bootstrap.Races),
-            MapOptions(state.Repository.Bootstrap.Schools),
+            BuildMappedOptions(CardDataMaps.ClassMap, state.Repository.Bootstrap.Classes.Select(static item => item.Value)),
+            BuildMappedOptions(CardDataMaps.RarityMap, state.Repository.Bootstrap.Rarities.Select(static item => item.Value)),
+            BuildMappedOptions(CardDataMaps.CardTypeMap, state.Repository.Bootstrap.CardTypes.Select(static item => item.Value)),
+            BuildPresentOptions(CardDataMaps.GetSetsForMode("wild")),
+            BuildPresentOptions(CardDataMaps.GetSetsForMode("standard")),
+            BuildPresentOptions(state.Repository.Bootstrap.Races),
+            BuildPresentOptions(state.Repository.Bootstrap.Schools),
             BuildCollectibleOptions(),
             BuildKeywordOptions()));
 });
@@ -209,11 +209,39 @@ static IReadOnlyList<OptionDto> BuildKeywordOptions()
     ];
 }
 
-static IReadOnlyList<OptionDto> MapOptions(IEnumerable<FilterOption> items)
+static IReadOnlyList<OptionDto> BuildMappedOptions(
+    IReadOnlyDictionary<string, string> map,
+    IEnumerable<string> presentValues)
+{
+    var present = new HashSet<string>(presentValues.Where(static value => !string.IsNullOrWhiteSpace(value)), StringComparer.Ordinal);
+
+    return map
+        .Where(pair => present.Contains(pair.Key))
+        .Select(pair => BuildLabeledOption(pair.Key, pair.Value))
+        .OrderBy(static item => SortKey(item.Value))
+        .ThenBy(static item => item.Label, StringComparer.Ordinal)
+        .ToList();
+}
+
+static IReadOnlyList<OptionDto> BuildPresentOptions(IEnumerable<FilterOption> items)
 {
     return items
-        .Select(item => new OptionDto(item.Value, item.Label))
+        .Select(static item => BuildLabeledOption(item.Value, item.Label))
+        .OrderBy(static item => SortKey(item.Value))
+        .ThenBy(static item => item.Label, StringComparer.Ordinal)
         .ToList();
+}
+
+static OptionDto BuildLabeledOption(string value, string label)
+{
+    return new OptionDto(value, $"{label.Trim()} ({value})");
+}
+
+static int SortKey(string value)
+{
+    return int.TryParse(value, out var parsed)
+        ? parsed
+        : int.MaxValue;
 }
 
 static CardSummaryDto MapCardSummary(CardRecord card)
