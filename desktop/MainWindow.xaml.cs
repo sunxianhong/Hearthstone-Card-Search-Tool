@@ -102,7 +102,7 @@ public partial class MainWindow : Window
 
         CollectibleComboBox.ItemsSource = new List<FilterOption>
         {
-            new FilterOption(string.Empty, "可否收藏 (全部)"),
+            new FilterOption(string.Empty, "可否收藏"),
             new FilterOption("1", "可收藏"),
             new FilterOption("0", "不可收藏"),
         };
@@ -110,7 +110,7 @@ public partial class MainWindow : Window
 
         KeywordComboBox.ItemsSource = new List<FilterOption>
         {
-            new FilterOption(string.Empty, "关键词 (无)"),
+            new FilterOption(string.Empty, "关键词"),
             new FilterOption("BATTLECRY", "战吼 (BATTLECRY)"),
             new FilterOption("TAUNT", "嘲讽 (TAUNT)"),
             new FilterOption("DIVINE_SHIELD", "圣盾 (DIVINE_SHIELD)"),
@@ -131,19 +131,19 @@ public partial class MainWindow : Window
             return;
         }
 
-        FillComboBox(SetComboBox, "扩展包 (全部)", BuildPresentOptions(repository.Bootstrap.Sets));
-        FillComboBox(ClassComboBox, "职业 (全部)", BuildMappedOptions(CardDataMaps.ClassMap));
-        FillComboBox(RarityComboBox, "稀有度 (全部)", BuildMappedOptions(CardDataMaps.RarityMap));
-        FillComboBox(TypeComboBox, "卡牌类型 (全部)", BuildMappedOptions(CardDataMaps.CardTypeMap));
-        FillComboBox(RaceComboBox, "随从类型 (全部)", BuildPresentOptions(repository.Bootstrap.Races));
-        FillComboBox(SchoolComboBox, "法术派系 (全部)", BuildPresentOptions(repository.Bootstrap.Schools));
+        FillComboBox(SetComboBox, "扩展包", BuildPresentOptions(repository.Bootstrap.Sets));
+        FillComboBox(ClassComboBox, "职业", BuildMappedOptions(CardDataMaps.ClassMap));
+        FillComboBox(RarityComboBox, "稀有度", BuildMappedOptions(CardDataMaps.RarityMap));
+        FillComboBox(TypeComboBox, "卡牌类型", BuildMappedOptions(CardDataMaps.CardTypeMap));
+        FillComboBox(RaceComboBox, "随从类型", BuildPresentOptions(repository.Bootstrap.Races));
+        FillComboBox(SchoolComboBox, "法术派系", BuildPresentOptions(repository.Bootstrap.Schools));
     }
 
     private static List<FilterOption> BuildCostOptions()
     {
         var items = new List<FilterOption>
         {
-            new(string.Empty, "法力值 (全部)"),
+            new(string.Empty, "法力值"),
         };
 
         for (var cost = 0; cost <= 9; cost++)
@@ -151,7 +151,7 @@ public partial class MainWindow : Window
             items.Add(new FilterOption(cost.ToString(), cost.ToString()));
         }
 
-        items.Add(new FilterOption("10", "10及以上"));
+        items.Add(new FilterOption("10", "10+"));
         return items;
     }
 
