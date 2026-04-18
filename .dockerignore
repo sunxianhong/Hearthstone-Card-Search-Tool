@@ -1,0 +1,9 @@
+.git
+.gitignore
+dist/
+desktop/
+desktop-tests/
+cardpng/
+CardDefs.xml
+**/bin/
+**/obj/

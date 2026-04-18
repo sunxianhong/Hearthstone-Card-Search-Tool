@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>炉石卡牌检索器</title>
+    <link rel="stylesheet" href="/app.css">
+    <script type="module" src="/app.js" defer></script>
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">Synology Docker Ready</p>
+                <h1>炉石卡牌检索器</h1>
+                <p class="hero-text">
+                    这是适合群晖容器部署的浏览器版本。打开群晖 IP 加容器端口后，就可以直接搜索、筛选和查看卡牌详情。
+                </p>
+            </div>
+            <div class="hero-stat">
+                <div class="hero-stat-label">卡牌总量</div>
+                <div id="totalCardsValue" class="hero-stat-value">-</div>
+                <div class="hero-stat-meta">默认最多显示 <span id="maxDisplayValue">300</span> 张</div>
+            </div>
+        </header>
+
+        <section class="control-panel">
+            <div class="control-header">
+                <div>
+                    <h2>搜索与筛选</h2>
+                    <p class="control-subtitle">支持普通搜索、标签搜索（如 `RARITY:5`）和 EnumID 搜索（如 `45:5`）。</p>
+                </div>
+                <div class="control-actions">
+                    <button id="searchButton" class="primary-button" type="button">搜索</button>
+                    <button id="resetButton" class="secondary-button" type="button">重置</button>
+                </div>
+            </div>
+
+            <div class="search-row">
+                <label class="field field-wide">
+                    <span>关键字</span>
+                    <input id="queryInput" type="text" placeholder="中文名 / 英文名 / CardID / DbfId / 标签:值">
+                </label>
+                <label class="field">
+                    <span>模式</span>
+                    <select id="modeSelect"></select>
+                </label>
+                <label class="field">
+                    <span>扩展包</span>
+                    <select id="setSelect"></select>
+                </label>
+            </div>
+
+            <div class="filter-grid">
+                <label class="field">
+                    <span>法力值</span>
+                    <select id="costSelect"></select>
+                </label>
+                <label class="field">
+                    <span>职业</span>
+                    <select id="classSelect"></select>
+                </label>
+                <label class="field">
+                    <span>稀有度</span>
+                    <select id="raritySelect"></select>
+                </label>
+                <label class="field">
+                    <span>卡牌类型</span>
+                    <select id="cardTypeSelect"></select>
+                </label>
+                <label class="field">
+                    <span>随从种族</span>
+                    <select id="raceSelect"></select>
+                </label>
+                <label class="field">
+                    <span>法术派系</span>
+                    <select id="schoolSelect"></select>
+                </label>
+                <label class="field">
+                    <span>可收藏</span>
+                    <select id="collectibleSelect"></select>
+                </label>
+                <label class="field">
+                    <span>关键词</span>
+                    <select id="keywordSelect"></select>
+                </label>
+            </div>
+        </section>
+
+        <section class="status-panel">
+            <div class="status-top">
+                <div id="statusText" class="status-text">正在加载卡牌数据…</div>
+                <div id="searchModeBadge" class="mode-badge">全库浏览</div>
+            </div>
+            <div id="hintText" class="hint-text">首次加载时会读取 `CardDefs.xml` 和 `cardpng/`，请稍等片刻。</div>
+        </section>
+
+        <section id="results" class="results-grid" aria-live="polite"></section>
+    </div>
+
+    <div id="detailModal" class="modal-shell is-hidden">
+        <div class="modal-backdrop" data-close-modal="true"></div>
+        <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="detailName">
+            <button id="closeModalButton" class="modal-close" type="button" aria-label="关闭详情">×</button>
+
+            <div class="detail-layout">
+                <div id="detailVisual" class="detail-visual">
+                    <div class="detail-placeholder">选择一张卡牌查看详情</div>
+                </div>
+
+                <div class="detail-content">
+                    <div class="detail-heading">
+                        <div>
+                            <p id="detailBadge" class="detail-badge">卡牌详情</p>
+                            <h2 id="detailName">-</h2>
+                        </div>
+                        <div class="detail-copy-actions">
+                            <button id="copyCardIdButton" class="copy-chip" type="button">复制 CardID</button>
+                            <button id="copyDbfIdButton" class="copy-chip" type="button">复制 DbfId</button>
+                        </div>
+                    </div>
+
+                    <p id="detailDescription" class="detail-description">-</p>
+
+                    <div class="detail-identity-grid">
+                        <div class="identity-card">
+                            <div class="identity-label">CardID</div>
+                            <div id="detailCardId" class="identity-value">-</div>
+                        </div>
+                        <div class="identity-card">
+                            <div class="identity-label">DbfId</div>
+                            <div id="detailDbfId" class="identity-value">-</div>
+                        </div>
+                    </div>
+
+                    <section id="parentSection" class="detail-section is-hidden">
+                        <div class="section-title">来源卡牌</div>
+                        <div id="parentLinks" class="detail-link-list"></div>
+                    </section>
+
+                    <section id="relatedSection" class="detail-section is-hidden">
+                        <div class="section-title">关联卡牌</div>
+                        <div id="relatedLinks" class="detail-link-list"></div>
+                    </section>
+
+                    <section id="enchantmentSection" class="detail-section is-hidden">
+                        <div class="section-title">附魔卡牌</div>
+                        <div id="enchantmentLinks" class="detail-link-list"></div>
+                    </section>
+
+                    <section class="detail-section">
+                        <div class="section-title">完整标签</div>
+                        <div class="tag-table-wrap">
+                            <table class="tag-table">
+                                <thead>
+                                    <tr>
+                                        <th>标签</th>
+                                        <th>值</th>
+                                        <th>跳转</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tagTableBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

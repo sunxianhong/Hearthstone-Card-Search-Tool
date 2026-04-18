@@ -8,4 +8,7 @@
   <Folder Name="/desktop/">
     <Project Path="desktop/HearthstoneCardSearchTool.csproj" />
   </Folder>
+  <Folder Name="/webapp/">
+    <Project Path="webapp/HearthstoneCardSearchTool.Web.csproj" />
+  </Folder>
 </Solution>
