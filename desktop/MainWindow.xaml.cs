@@ -14,6 +14,7 @@ public partial class MainWindow : Window
     private const int CardsPerRow = 6;
     private const double CardTileAspectRatio = 300d / 214d;
     private const double CardTileGap = 18d;
+    private const double FilterControlGap = 8d;
 
     private readonly FileImageConverter imageConverter = new();
     private readonly List<CardRecord> currentResults = [];
@@ -33,6 +34,7 @@ public partial class MainWindow : Window
         ResetFiltersButton.Click += async (_, _) => await ResetFiltersAsync();
         BackToTopButton.Click += (_, _) => MainScrollViewer.ScrollToTop();
         CardWallPanel.SizeChanged += (_, _) => UpdateCardWallLayout();
+        FilterGrid.SizeChanged += (_, _) => UpdateSearchRowLayout();
         DetailOverlay.MouseDown += DetailOverlay_MouseDown;
         RegisterSingleClickCopy(DetailNameText);
         RegisterSingleClickCopy(DetailCardIdValueText);
@@ -152,6 +154,7 @@ public partial class MainWindow : Window
         FillComboBox(TypeComboBox, "卡牌类型", BuildMappedOptions(CardDataMaps.CardTypeMap));
         FillComboBox(RaceComboBox, "随从类型", BuildPresentOptions(repository.Bootstrap.Races));
         FillComboBox(SchoolComboBox, "法术派系", BuildPresentOptions(repository.Bootstrap.Schools));
+        Dispatcher.BeginInvoke(UpdateSearchRowLayout, DispatcherPriority.Loaded);
     }
 
     private static List<FilterOption> BuildCostOptions()
@@ -492,6 +495,16 @@ public partial class MainWindow : Window
                 ? new GridLength(tileHeight)
                 : new GridLength(CardTileGap);
         }
+    }
+
+    private void UpdateSearchRowLayout()
+    {
+        if (ModeComboBox.ActualWidth <= 0 || SetComboBox.ActualWidth <= 0)
+        {
+            return;
+        }
+
+        SearchInputPanel.Width = ModeComboBox.ActualWidth + FilterControlGap + SetComboBox.ActualWidth;
     }
 
     private static string? SelectedValue(ComboBox comboBox)

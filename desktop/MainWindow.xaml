@@ -190,15 +190,12 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <Grid Grid.Row="0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <StackPanel Grid.Column="0"
-                                            Margin="0,0,12,0">
+                            <StackPanel Grid.Row="0"
+                                        x:Name="SearchControlsPanel"
+                                        Orientation="Horizontal"
+                                        HorizontalAlignment="Left">
+                                <StackPanel x:Name="SearchInputPanel"
+                                            Margin="0,0,8,0">
                                     <TextBox Style="{StaticResource SelectableDisplayTextBoxStyle}"
                                              FontSize="13"
                                              FontWeight="Bold"
@@ -217,8 +214,7 @@
                                 </StackPanel>
 
                                 <Button x:Name="ApplyFiltersButton"
-                                        Grid.Column="1"
-                                        Width="124"
+                                        Width="{Binding ElementName=CostComboBox, Path=ActualWidth}"
                                         Height="42"
                                         Margin="0,19,8,0"
                                         FontSize="15"
@@ -226,16 +222,16 @@
                                         Content="筛选 / 搜索" />
 
                                 <Button x:Name="ResetFiltersButton"
-                                        Grid.Column="2"
                                         Width="92"
                                         Height="42"
                                         Margin="0,19,0,0"
                                         FontSize="15"
                                         FontWeight="Bold"
                                         Content="重置" />
-                            </Grid>
+                            </StackPanel>
 
-                            <Grid Grid.Row="1"
+                            <Grid x:Name="FilterGrid"
+                                  Grid.Row="1"
                                   Margin="0,12,0,0">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
