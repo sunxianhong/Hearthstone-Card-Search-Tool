@@ -60,8 +60,8 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <ContentPresenter HorizontalAlignment="Center"
-                                          VerticalAlignment="Center" />
+                        <ContentPresenter HorizontalAlignment="Stretch"
+                                          VerticalAlignment="Stretch" />
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -376,9 +376,9 @@
                                      Text="图片一张挨着一张显示，点击打开详情。" />
                         </StackPanel>
 
-                        <WrapPanel x:Name="CardWallPanel"
-                                   Grid.Row="1"
-                                   Margin="4,8,0,0" />
+                        <Grid x:Name="CardWallPanel"
+                              Grid.Row="1"
+                              Margin="0,8,0,0" />
                     </Grid>
                 </Border>
             </Grid>
@@ -387,16 +387,19 @@
         <Grid x:Name="DetailOverlay"
               Background="#9A140D08"
               Visibility="Collapsed">
-            <Border x:Name="DetailModal"
-                    Width="1120"
-                    Height="720"
-                    Margin="28"
-                    Padding="24"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    CornerRadius="26"
-                    BorderBrush="#40FFF7EC"
-                    BorderThickness="1.2">
+            <Viewbox x:Name="DetailModalHost"
+                     Margin="28"
+                     HorizontalAlignment="Stretch"
+                     VerticalAlignment="Stretch"
+                     Stretch="Uniform"
+                     StretchDirection="DownOnly">
+                <Border x:Name="DetailModal"
+                        Width="980"
+                        Height="630"
+                        Padding="24"
+                        CornerRadius="26"
+                        BorderBrush="#40FFF7EC"
+                        BorderThickness="1.2">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
                         <GradientStop Color="#FFF9F0" Offset="0" />
@@ -566,6 +569,7 @@
                     </StackPanel>
                 </ScrollViewer>
             </Border>
+            </Viewbox>
         </Grid>
 
         <Button x:Name="BackToTopButton"

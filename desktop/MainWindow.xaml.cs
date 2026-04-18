@@ -11,9 +11,13 @@ namespace HearthstoneCardSearchTool;
 public partial class MainWindow : Window
 {
     private const int MaxDisplay = 100;
+    private const int CardsPerRow = 6;
+    private const double CardTileAspectRatio = 300d / 214d;
+    private const double CardTileGap = 18d;
 
     private readonly FileImageConverter imageConverter = new();
     private readonly List<CardRecord> currentResults = [];
+    private readonly List<Button> cardTileButtons = [];
     private readonly DispatcherTimer toastTimer = new() { Interval = TimeSpan.FromSeconds(2.2) };
     private CardRepository? repository;
 
@@ -28,6 +32,7 @@ public partial class MainWindow : Window
         ApplyFiltersButton.Click += async (_, _) => await ApplyFiltersAsync();
         ResetFiltersButton.Click += async (_, _) => await ResetFiltersAsync();
         BackToTopButton.Click += (_, _) => MainScrollViewer.ScrollToTop();
+        CardWallPanel.SizeChanged += (_, _) => UpdateCardWallLayout();
         DetailOverlay.MouseDown += DetailOverlay_MouseDown;
         RegisterSingleClickCopy(DetailNameText);
         RegisterSingleClickCopy(DetailCardIdValueText);
@@ -308,13 +313,18 @@ public partial class MainWindow : Window
     private void RenderCards(IReadOnlyList<CardRecord> cards)
     {
         CardWallPanel.Children.Clear();
+        CardWallPanel.RowDefinitions.Clear();
+        CardWallPanel.ColumnDefinitions.Clear();
+        cardTileButtons.Clear();
+
+        BuildCardWallColumns();
 
         if (cards.Count == 0)
         {
+            CardWallPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             CardWallPanel.Children.Add(
                 new Border
                 {
-                    Width = 1320,
                     Padding = new Thickness(28),
                     Background = new SolidColorBrush(Color.FromRgb(249, 241, 228)),
                     CornerRadius = new CornerRadius(0),
@@ -329,13 +339,40 @@ public partial class MainWindow : Window
                         TextAlignment = TextAlignment.Center,
                     },
                 });
+
+            if (CardWallPanel.Children[0] is Border emptyState)
+            {
+                Grid.SetColumnSpan(emptyState, CardWallPanel.ColumnDefinitions.Count);
+            }
+
             return;
         }
 
-        foreach (var card in cards)
+        var rowCount = (cards.Count + CardsPerRow - 1) / CardsPerRow;
+        for (var row = 0; row < rowCount; row++)
         {
-            CardWallPanel.Children.Add(CreateCardTile(card));
+            CardWallPanel.RowDefinitions.Add(new RowDefinition());
+
+            if (row < rowCount - 1)
+            {
+                CardWallPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(CardTileGap) });
+            }
         }
+
+        for (var index = 0; index < cards.Count; index++)
+        {
+            var button = CreateCardTile(cards[index]);
+            var row = index / CardsPerRow;
+            var column = index % CardsPerRow;
+
+            Grid.SetRow(button, row * 2);
+            Grid.SetColumn(button, column * 2);
+
+            cardTileButtons.Add(button);
+            CardWallPanel.Children.Add(button);
+        }
+
+        Dispatcher.BeginInvoke(UpdateCardWallLayout, DispatcherPriority.Loaded);
     }
 
     private Button CreateCardTile(CardRecord card)
@@ -349,8 +386,6 @@ public partial class MainWindow : Window
 
             content = new Border
             {
-                Width = 214,
-                Height = 300,
                 Background = new SolidColorBrush(Color.FromRgb(246, 236, 218)),
                 BorderBrush = new SolidColorBrush(Color.FromRgb(201, 180, 137)),
                 BorderThickness = new Thickness(1),
@@ -394,8 +429,6 @@ public partial class MainWindow : Window
         {
             content = new Image
             {
-                Width = 214,
-                Height = 300,
                 Stretch = Stretch.Uniform,
                 Source = imageConverter.Convert(card.ImagePath, typeof(ImageSource), null!, System.Globalization.CultureInfo.CurrentUICulture) as ImageSource,
             };
@@ -403,12 +436,11 @@ public partial class MainWindow : Window
 
         var button = new Button
         {
-            Width = 214,
-            Height = 300,
-            Margin = new Thickness(0, 0, 18, 18),
             Padding = new Thickness(0),
             BorderThickness = new Thickness(0),
             Background = Brushes.Transparent,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
             ToolTip = $"{card.NameZh}\nCardID: {card.CardId}\nID: {card.DbfId}",
             Content = content,
             Tag = card.CardId,
@@ -417,6 +449,49 @@ public partial class MainWindow : Window
 
         button.Click += (_, _) => ShowCardDetail(card.CardId);
         return button;
+    }
+
+    private void BuildCardWallColumns()
+    {
+        for (var column = 0; column < CardsPerRow; column++)
+        {
+            CardWallPanel.ColumnDefinitions.Add(new ColumnDefinition
+            {
+                Width = new GridLength(1, GridUnitType.Star),
+            });
+
+            if (column < CardsPerRow - 1)
+            {
+                CardWallPanel.ColumnDefinitions.Add(new ColumnDefinition
+                {
+                    Width = new GridLength(CardTileGap),
+                });
+            }
+        }
+    }
+
+    private void UpdateCardWallLayout()
+    {
+        if (cardTileButtons.Count == 0 || CardWallPanel.ActualWidth <= 0)
+        {
+            return;
+        }
+
+        var totalGapWidth = CardTileGap * (CardsPerRow - 1);
+        var tileWidth = (CardWallPanel.ActualWidth - totalGapWidth) / CardsPerRow;
+        if (tileWidth <= 0)
+        {
+            return;
+        }
+
+        var tileHeight = tileWidth * CardTileAspectRatio;
+
+        for (var row = 0; row < CardWallPanel.RowDefinitions.Count; row++)
+        {
+            CardWallPanel.RowDefinitions[row].Height = row % 2 == 0
+                ? new GridLength(tileHeight)
+                : new GridLength(CardTileGap);
+        }
     }
 
     private static string? SelectedValue(ComboBox comboBox)
@@ -560,7 +635,7 @@ public partial class MainWindow : Window
 
     private void DetailOverlay_MouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (ReferenceEquals(e.Source, DetailOverlay))
+        if (ReferenceEquals(e.Source, DetailOverlay) || ReferenceEquals(e.Source, DetailModalHost))
         {
             CloseDetailOverlay();
         }
