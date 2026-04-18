@@ -1151,6 +1151,7 @@ public static class CardDataMaps
             ["DevState"] = "攻击视觉类型",
             ["CARDNAME"] = "开发阶段",
             ["FLAVORTEXT"] = "卡牌趣文",
+            ["DECK_RULE_COUNT_AS_COPY_OF_CARD_ID"] = "套牌规则_算作指定卡牌ID的复制",
             ["ARTISTNAME"] = "画师",
         };
 
@@ -1290,6 +1291,38 @@ public static class CardDataMaps
             ["1980"] = "大地的裂变",
         };
 
+    // Hide non-user-facing, test-only, and reserved sets from the filter bar.
+    private static readonly HashSet<string> SetFilterBlacklist = new(StringComparer.Ordinal)
+    {
+        "0",
+        "1",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "19",
+        "22",
+        "24",
+        "26",
+        "1003",
+        "1439",
+        "1586",
+        "1705",
+        "1810",
+    };
+
+    private static readonly HashSet<string> StandardSetWhitelist = new(StringComparer.Ordinal)
+    {
+        "1637",
+        "1941",
+        "1946",
+        "1952",
+        "1957",
+        "1980",
+    };
+
     private static IReadOnlyDictionary<string, string> unknownEnumMap = FallbackUnknownEnumMap;
     private static IReadOnlyDictionary<string, string> tagLabels = FallbackTagLabels;
     private static IReadOnlyDictionary<string, string> classMap = FallbackClassMap;
@@ -1317,36 +1350,6 @@ public static class CardDataMaps
             }
 
             initialized = true;
-
-            var htmlPath = FindLegacyHtml(resourceRoot);
-            if (htmlPath is null)
-            {
-                return;
-            }
-
-            try
-            {
-                var html = File.ReadAllText(htmlPath);
-                unknownEnumMap = Merge(FallbackUnknownEnumMap, ParseObjectMap(html, "unknownEnumMap"));
-                tagLabels = FallbackTagLabels;
-                classMap = Merge(FallbackClassMap, ParseObjectMap(html, "classMap"));
-                rarityMap = Merge(FallbackRarityMap, ParseObjectMap(html, "rarityMap"));
-                cardTypeMap = Merge(FallbackCardTypeMap, ParseObjectMap(html, "typeMap"));
-                raceMap = Merge(FallbackRaceMap, ParseObjectMap(html, "raceMap"));
-                schoolMap = Merge(FallbackSchoolMap, ParseObjectMap(html, "schoolMap"));
-                setMap = Merge(FallbackSetMap, ParseObjectMap(html, "setMap"));
-            }
-            catch
-            {
-                unknownEnumMap = FallbackUnknownEnumMap;
-                tagLabels = FallbackTagLabels;
-                classMap = FallbackClassMap;
-                rarityMap = FallbackRarityMap;
-                cardTypeMap = FallbackCardTypeMap;
-                raceMap = FallbackRaceMap;
-                schoolMap = FallbackSchoolMap;
-                setMap = FallbackSetMap;
-            }
         }
     }
 
@@ -1397,17 +1400,56 @@ public static class CardDataMaps
         return !string.IsNullOrWhiteSpace(setCode) && setMap.ContainsKey(setCode);
     }
 
-    private static IReadOnlyDictionary<string, string> Merge(
-        IReadOnlyDictionary<string, string> fallback,
-        IReadOnlyDictionary<string, string> overrides)
+    public static bool ShouldShowSetInFilters(string? setCode)
     {
-        var merged = new Dictionary<string, string>(fallback, StringComparer.Ordinal);
-        foreach (var pair in overrides)
+        return !string.IsNullOrWhiteSpace(setCode)
+            && setMap.ContainsKey(setCode)
+            && !SetFilterBlacklist.Contains(setCode);
+    }
+
+    public static bool IsStandardMode(string? mode)
+    {
+        return string.Equals(mode, "standard", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool IsWildMode(string? mode)
+    {
+        return string.Equals(mode, "wild", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public static bool MatchesMode(string? mode, string? setCode)
+    {
+        if (!IsKnownSet(setCode))
         {
-            merged[pair.Key] = pair.Value;
+            return false;
         }
 
-        return merged;
+        if (IsStandardMode(mode))
+        {
+            return StandardSetWhitelist.Contains(setCode!);
+        }
+
+        if (IsWildMode(mode))
+        {
+            return ShouldShowSetInFilters(setCode);
+        }
+
+        return true;
+    }
+
+    public static IReadOnlyList<FilterOption> GetSetsForMode(string? mode)
+    {
+        return setMap
+            .Where(pair => MatchesMode(mode, pair.Key))
+            .Select(static pair => new FilterOption(pair.Key, pair.Value))
+            .OrderBy(static item => item.Label, StringComparer.Ordinal)
+            .ThenBy(static item => item.Value, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    public static IReadOnlyList<FilterOption> GetFilterableSets()
+    {
+        return GetSetsForMode("wild");
     }
 
     private static string MapWithFallback(IReadOnlyDictionary<string, string> map, string value)
@@ -1422,273 +1464,6 @@ public static class CardDataMaps
         return string.IsNullOrWhiteSpace(enumId)
             ? prefix
             : $"{prefix}-（{enumId}）";
-    }
-
-    private static string? FindLegacyHtml(string resourceRoot)
-    {
-        var expectedPath = Path.Combine(resourceRoot, "查询卡牌工具.html");
-        if (File.Exists(expectedPath))
-        {
-            return expectedPath;
-        }
-
-        foreach (var htmlPath in Directory.EnumerateFiles(resourceRoot, "*.html", SearchOption.TopDirectoryOnly))
-        {
-            try
-            {
-                using var stream = File.OpenRead(htmlPath);
-                using var reader = new StreamReader(stream);
-                var head = reader.ReadToEnd();
-                if (head.Contains("const tagDict = {", StringComparison.Ordinal))
-                {
-                    return htmlPath;
-                }
-            }
-            catch
-            {
-                // Ignore unreadable files and continue probing.
-            }
-        }
-
-        return null;
-    }
-
-    private static IReadOnlyDictionary<string, string> ParseObjectMap(string html, string objectName)
-    {
-        var body = ExtractObjectBody(html, objectName);
-        if (string.IsNullOrWhiteSpace(body))
-        {
-            return new Dictionary<string, string>(StringComparer.Ordinal);
-        }
-
-        var result = new Dictionary<string, string>(StringComparer.Ordinal);
-        var index = 0;
-
-        while (index < body.Length)
-        {
-            SkipSeparators(body, ref index);
-            if (index >= body.Length)
-            {
-                break;
-            }
-
-            var key = ParseToken(body, ref index);
-            if (!string.IsNullOrWhiteSpace(key))
-            {
-                SkipWhitespace(body, ref index);
-                if (index < body.Length && body[index] == ':')
-                {
-                    index++;
-                    SkipWhitespace(body, ref index);
-                    var value = ParseToken(body, ref index);
-                    result[key.Trim()] = value.Trim();
-                }
-            }
-
-            SkipUntilNextPair(body, ref index);
-        }
-
-        return result;
-    }
-
-    private static string? ExtractObjectBody(string html, string objectName)
-    {
-        var start = html.IndexOf($"const {objectName}", StringComparison.Ordinal);
-        if (start < 0)
-        {
-            return null;
-        }
-
-        var braceStart = html.IndexOf('{', start);
-        if (braceStart < 0)
-        {
-            return null;
-        }
-
-        var depth = 0;
-        var inString = false;
-        var quote = '\0';
-        var escaped = false;
-
-        for (var index = braceStart; index < html.Length; index++)
-        {
-            var current = html[index];
-
-            if (inString)
-            {
-                if (escaped)
-                {
-                    escaped = false;
-                    continue;
-                }
-
-                if (current == '\\')
-                {
-                    escaped = true;
-                    continue;
-                }
-
-                if (current == quote)
-                {
-                    inString = false;
-                }
-
-                continue;
-            }
-
-            if (current is '"' or '\'')
-            {
-                inString = true;
-                quote = current;
-                continue;
-            }
-
-            if (current == '{')
-            {
-                depth++;
-                continue;
-            }
-
-            if (current != '}')
-            {
-                continue;
-            }
-
-            depth--;
-            if (depth == 0)
-            {
-                return html[(braceStart + 1)..index];
-            }
-        }
-
-        return null;
-    }
-
-    private static string ParseToken(string input, ref int index)
-    {
-        if (index >= input.Length)
-        {
-            return string.Empty;
-        }
-
-        return input[index] is '"' or '\''
-            ? ParseQuotedToken(input, ref index)
-            : ParseBareToken(input, ref index);
-    }
-
-    private static string ParseQuotedToken(string input, ref int index)
-    {
-        var quote = input[index];
-        index++;
-
-        var builder = new StringBuilder();
-        while (index < input.Length)
-        {
-            var current = input[index++];
-            if (current == '\\' && index < input.Length)
-            {
-                var escaped = input[index++];
-                builder.Append(escaped switch
-                {
-                    'n' => '\n',
-                    'r' => '\r',
-                    't' => '\t',
-                    '\\' => '\\',
-                    '"' => '"',
-                    '\'' => '\'',
-                    _ => escaped,
-                });
-                continue;
-            }
-
-            if (current == quote)
-            {
-                break;
-            }
-
-            builder.Append(current);
-        }
-
-        return builder.ToString();
-    }
-
-    private static string ParseBareToken(string input, ref int index)
-    {
-        var start = index;
-        while (index < input.Length && input[index] is not ':' and not ',' and not '\r' and not '\n')
-        {
-            index++;
-        }
-
-        return input[start..index];
-    }
-
-    private static void SkipSeparators(string input, ref int index)
-    {
-        while (index < input.Length && (char.IsWhiteSpace(input[index]) || input[index] == ','))
-        {
-            index++;
-        }
-    }
-
-    private static void SkipWhitespace(string input, ref int index)
-    {
-        while (index < input.Length && char.IsWhiteSpace(input[index]))
-        {
-            index++;
-        }
-    }
-
-    private static void SkipUntilNextPair(string input, ref int index)
-    {
-        var inString = false;
-        var quote = '\0';
-        var escaped = false;
-
-        while (index < input.Length)
-        {
-            var current = input[index];
-
-            if (inString)
-            {
-                index++;
-
-                if (escaped)
-                {
-                    escaped = false;
-                    continue;
-                }
-
-                if (current == '\\')
-                {
-                    escaped = true;
-                    continue;
-                }
-
-                if (current == quote)
-                {
-                    inString = false;
-                }
-
-                continue;
-            }
-
-            if (current is '"' or '\'')
-            {
-                inString = true;
-                quote = current;
-                index++;
-                continue;
-            }
-
-            if (current == ',')
-            {
-                index++;
-                return;
-            }
-
-            index++;
-        }
     }
 }
 

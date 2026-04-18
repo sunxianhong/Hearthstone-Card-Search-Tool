@@ -52,7 +52,6 @@ public sealed class CardRepository
         var classLabels = new Dictionary<string, string>(StringComparer.Ordinal);
         var rarityLabels = new Dictionary<string, string>(StringComparer.Ordinal);
         var cardTypeLabels = new Dictionary<string, string>(StringComparer.Ordinal);
-        var setLabels = new Dictionary<string, string>(StringComparer.Ordinal);
         var raceLabels = new Dictionary<string, string>(StringComparer.Ordinal);
         var schoolLabels = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -108,7 +107,6 @@ public sealed class CardRepository
             RememberLabel(classLabels, tagMap, "CLASS", CardDataMaps.ClassMap);
             RememberLabel(rarityLabels, tagMap, "RARITY", CardDataMaps.RarityMap);
             RememberLabel(cardTypeLabels, tagMap, "CARDTYPE", CardDataMaps.CardTypeMap);
-            RememberLabel(setLabels, tagMap, "CARD_SET", CardDataMaps.SetMap);
             RememberLabel(raceLabels, tagMap, "CARDRACE", CardDataMaps.RaceMap);
             RememberLabel(schoolLabels, tagMap, "SPELL_SCHOOL", CardDataMaps.SchoolMap);
 
@@ -143,7 +141,7 @@ public sealed class CardRepository
                 Classes = MapToOptions(classLabels),
                 Rarities = MapToOptions(rarityLabels),
                 CardTypes = MapToOptions(cardTypeLabels),
-                Sets = MapToOptions(setLabels),
+                Sets = CardDataMaps.GetFilterableSets(),
                 Races = MapToOptions(raceLabels),
                 Schools = MapToOptions(schoolLabels),
             });
@@ -347,6 +345,11 @@ public sealed class CardRepository
             return false;
         }
 
+        if (!MatchesMode(cardSet, filters.Mode))
+        {
+            return false;
+        }
+
         if (!MatchesCost(card, filters.Cost))
         {
             return false;
@@ -406,6 +409,11 @@ public sealed class CardRepository
         return expected == "10"
             ? actual >= 10
             : int.TryParse(expected, out var parsed) && actual == parsed;
+    }
+
+    private static bool MatchesMode(string? actualSet, string? mode)
+    {
+        return string.IsNullOrWhiteSpace(mode) || CardDataMaps.MatchesMode(mode, actualSet);
     }
 
     private static bool MatchesExact(CardRecord card, string key, string? expected)

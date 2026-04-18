@@ -36,6 +36,7 @@ public partial class MainWindow : Window
 
         foreach (var comboBox in new[]
                  {
+                     ModeComboBox,
                      CostComboBox,
                      ClassComboBox,
                      SetComboBox,
@@ -49,6 +50,8 @@ public partial class MainWindow : Window
         {
             comboBox.KeyDown += SearchInput_KeyDown;
         }
+
+        ModeComboBox.SelectionChanged += ModeComboBox_SelectionChanged;
 
         BuildStaticFilters();
     }
@@ -97,6 +100,13 @@ public partial class MainWindow : Window
 
     private void BuildStaticFilters()
     {
+        ModeComboBox.ItemsSource = new List<FilterOption>
+        {
+            new("standard", "标准"),
+            new("wild", "狂野"),
+        };
+        ModeComboBox.SelectedValue = "wild";
+
         CostComboBox.ItemsSource = BuildCostOptions();
         CostComboBox.SelectedIndex = 0;
 
@@ -131,7 +141,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        FillComboBox(SetComboBox, "扩展包", BuildPresentOptions(repository.Bootstrap.Sets));
+        RefreshSetComboBox();
         FillComboBox(ClassComboBox, "职业", BuildMappedOptions(CardDataMaps.ClassMap));
         FillComboBox(RarityComboBox, "稀有度", BuildMappedOptions(CardDataMaps.RarityMap));
         FillComboBox(TypeComboBox, "卡牌类型", BuildMappedOptions(CardDataMaps.CardTypeMap));
@@ -155,12 +165,29 @@ public partial class MainWindow : Window
         return items;
     }
 
-    private static void FillComboBox(ComboBox comboBox, string defaultLabel, IEnumerable<FilterOption> items)
+    private void RefreshSetComboBox()
     {
-        comboBox.ItemsSource = new[]
+        var selectedSet = SelectedValue(SetComboBox);
+        var mode = SelectedValue(ModeComboBox) ?? "wild";
+        FillComboBox(SetComboBox, "扩展包", BuildPresentOptions(CardDataMaps.GetSetsForMode(mode)), selectedSet);
+    }
+
+    private static void FillComboBox(ComboBox comboBox, string defaultLabel, IEnumerable<FilterOption> items, string? selectedValue = null)
+    {
+        var options = new[]
         {
             new FilterOption(string.Empty, defaultLabel),
         }.Concat(items).ToList();
+
+        comboBox.ItemsSource = options;
+
+        if (!string.IsNullOrWhiteSpace(selectedValue))
+        {
+            var selectedIndex = options.FindIndex(item => item.Value == selectedValue);
+            comboBox.SelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
+            return;
+        }
+
         comboBox.SelectedIndex = 0;
     }
 
@@ -207,6 +234,7 @@ public partial class MainWindow : Window
 
             var filters = new SearchFilters
             {
+                Mode = SelectedValue(ModeComboBox) ?? "wild",
                 Cost = SelectedValue(CostComboBox),
                 Class = SelectedValue(ClassComboBox),
                 Set = SelectedValue(SetComboBox),
@@ -258,6 +286,7 @@ public partial class MainWindow : Window
     private async Task ResetFiltersAsync()
     {
         SearchTextBox.Text = string.Empty;
+        ModeComboBox.SelectedValue = "wild";
         CostComboBox.SelectedIndex = 0;
         ClassComboBox.SelectedIndex = 0;
         SetComboBox.SelectedIndex = 0;
@@ -269,6 +298,11 @@ public partial class MainWindow : Window
         KeywordComboBox.SelectedIndex = 0;
 
         await ApplyFiltersAsync();
+    }
+
+    private void ModeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        RefreshSetComboBox();
     }
 
     private void RenderCards(IReadOnlyList<CardRecord> cards)

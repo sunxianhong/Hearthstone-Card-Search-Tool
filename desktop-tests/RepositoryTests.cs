@@ -69,7 +69,7 @@ public sealed class RepositoryTests
     }
 
     [Fact]
-    public void LoadsLegacyTagDictionaryFromHtml()
+    public void UsesFallbackMappings()
     {
         var _ = Repository.Value;
 
@@ -79,18 +79,35 @@ public sealed class RepositoryTests
     }
 
     [Fact]
-    public void BootstrapSetOptionsFollowXmlData()
+    public void BootstrapSetOptionsFollowFallbackMapAndBlacklist()
     {
         var sets = Repository.Value.Bootstrap.Sets;
 
+        Assert.Equal(CardDataMaps.GetFilterableSets(), sets);
         Assert.Contains(sets, item => item.Value == "1980" && item.Label == "大地的裂变");
+        Assert.Contains(sets, item => item.Value == "1637" && item.Label == "核心");
+        Assert.Contains(sets, item => item.Value == "1941" && item.Label == "活动礼物");
         Assert.DoesNotContain(sets, item => item.Value == "22");
         Assert.DoesNotContain(sets, item => item.Value == "7");
         Assert.DoesNotContain(sets, item => item.Value == "8");
     }
 
     [Fact]
-    public void EnchantmentTypeDisplaysLikeLegacyHtml()
+    public void StandardModeUsesExpectedSets()
+    {
+        var standardSets = CardDataMaps.GetSetsForMode("standard");
+        var wildSets = CardDataMaps.GetSetsForMode("wild");
+
+        Assert.Contains(standardSets, item => item.Value == "1637");
+        Assert.Contains(standardSets, item => item.Value == "1941");
+        Assert.Contains(standardSets, item => item.Value == "1980");
+        Assert.DoesNotContain(standardSets, item => item.Value == "1466");
+        Assert.Contains(wildSets, item => item.Value == "1941");
+        Assert.DoesNotContain(wildSets, item => item.Value == "22");
+    }
+
+    [Fact]
+    public void EnchantmentTypeUsesFallbackDisplay()
     {
         Assert.Equal("附魔 (6)", CardDataMaps.MapTagValue("CARDTYPE", "6"));
     }
