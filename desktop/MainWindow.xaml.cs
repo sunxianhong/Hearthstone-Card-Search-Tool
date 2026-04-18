@@ -5,6 +5,7 @@ using System.Windows.Media;
 using System.Windows.Controls.Primitives;
 using System.Windows.Shapes;
 using System.IO;
+using System.Globalization;
 using System.Windows.Threading;
 using HearthstoneCardSearchTool.Core;
 
@@ -570,6 +571,7 @@ public partial class MainWindow : Window
         DetailDescriptionText.Text = string.IsNullOrWhiteSpace(detail.Text) ? "（无描述）" : detail.Text;
         DetailCardIdValueText.Text = detail.CardId;
         DetailDbfIdValueText.Text = detail.DbfId.ToString();
+        UpdateDetailIdentityLayout();
         EnchantBadge.Visibility = detail.IsEnchantment ? Visibility.Visible : Visibility.Collapsed;
         DetailImage.Source = imageConverter.Convert(detail.ImagePath ?? string.Empty, typeof(ImageSource), null!, System.Globalization.CultureInfo.CurrentUICulture) as ImageSource;
 
@@ -676,6 +678,28 @@ public partial class MainWindow : Window
 
             TagsPanel.Children.Add(lineBlock);
         }
+    }
+
+    private void UpdateDetailIdentityLayout()
+    {
+        DetailCardIdValueText.Width = Math.Clamp(MeasureDisplayTextWidth(DetailCardIdValueText), 72d, 220d);
+    }
+
+    private static double MeasureDisplayTextWidth(TextBox textBox)
+    {
+        var text = string.IsNullOrWhiteSpace(textBox.Text) ? " " : textBox.Text;
+        var typeface = new Typeface(textBox.FontFamily, textBox.FontStyle, textBox.FontWeight, textBox.FontStretch);
+        var pixelsPerDip = VisualTreeHelper.GetDpi(textBox).PixelsPerDip;
+        var formattedText = new FormattedText(
+            text,
+            CultureInfo.CurrentUICulture,
+            textBox.FlowDirection,
+            typeface,
+            textBox.FontSize,
+            Brushes.Black,
+            pixelsPerDip);
+
+        return Math.Ceiling(formattedText.WidthIncludingTrailingWhitespace + 4);
     }
 
     private void CopyText(string? text)

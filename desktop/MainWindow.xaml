@@ -459,7 +459,9 @@
                                              Width="96"
                                              Margin="0,0,5,0"
                                              FontSize="16"
-                                             Foreground="#8B5A1A" />
+                                             Foreground="#8B5A1A"
+                                             AcceptsReturn="False"
+                                             TextWrapping="NoWrap" />
                                     <TextBox Style="{StaticResource SelectableDisplayTextBoxStyle}"
                                              Width="28"
                                              FontSize="16"
@@ -469,7 +471,9 @@
                                              Style="{StaticResource SelectableDisplayTextBoxStyle}"
                                              Width="120"
                                              FontSize="16"
-                                             Foreground="#8B5A1A" />
+                                             Foreground="#8B5A1A"
+                                             AcceptsReturn="False"
+                                             TextWrapping="NoWrap" />
                                 </WrapPanel>
 
                                 <Border Margin="0,6,0,0"
