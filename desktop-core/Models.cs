@@ -68,7 +68,7 @@ public sealed class CardRecord
             : null;
 }
 
-public sealed record RelatedCardLink(string CardId, int DbfId, string Name, string Reason);
+public sealed record RelatedCardLink(string CardId, int DbfId, string Name, string Reason, string? ImagePath);
 
 public sealed record CardTagView(
     string Key,

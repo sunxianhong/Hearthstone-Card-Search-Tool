@@ -189,7 +189,7 @@ public sealed class CardRepository
         {
             if (byDbfId.TryGetValue(reverseId, out var parent))
             {
-                parentCards.Add(new RelatedCardLink(parent.CardId, parent.DbfId, parent.NameZh, $"ID: {parent.DbfId}"));
+                parentCards.Add(new RelatedCardLink(parent.CardId, parent.DbfId, parent.NameZh, $"ID: {parent.DbfId}", parent.ImagePath));
             }
         }
 
@@ -200,7 +200,7 @@ public sealed class CardRepository
                 continue;
             }
 
-            var row = new RelatedCardLink(target.CardId, target.DbfId, target.NameZh, $"{forward.Reason} (ID: {target.DbfId})");
+            var row = new RelatedCardLink(target.CardId, target.DbfId, target.NameZh, $"{forward.Reason} (ID: {target.DbfId})", target.ImagePath);
             if (target.IsEnchantment)
             {
                 enchantmentCards.Add(row);

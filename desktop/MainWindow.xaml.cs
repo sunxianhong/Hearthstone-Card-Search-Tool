@@ -2,6 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Controls.Primitives;
+using System.Windows.Shapes;
 using System.IO;
 using System.Windows.Threading;
 using HearthstoneCardSearchTool.Core;
@@ -571,9 +573,9 @@ public partial class MainWindow : Window
         EnchantBadge.Visibility = detail.IsEnchantment ? Visibility.Visible : Visibility.Collapsed;
         DetailImage.Source = imageConverter.Convert(detail.ImagePath ?? string.Empty, typeof(ImageSource), null!, System.Globalization.CultureInfo.CurrentUICulture) as ImageSource;
 
-        RenderRelatedGroup(ParentSection, ParentLinksPanel, detail.ParentCards, Color.FromRgb(40, 99, 124));
-        RenderRelatedGroup(RelatedSection, RelatedLinksPanel, detail.RelatedCards, Color.FromRgb(111, 76, 32));
-        RenderRelatedGroup(EnchantmentSection, EnchantmentLinksPanel, detail.EnchantmentCards, Color.FromRgb(154, 101, 13));
+        RenderRelatedGroup(ParentSection, ParentLinksPanel, detail.ParentCards, Color.FromRgb(40, 99, 124), enablePreview: true);
+        RenderRelatedGroup(RelatedSection, RelatedLinksPanel, detail.RelatedCards, Color.FromRgb(111, 76, 32), enablePreview: true);
+        RenderRelatedGroup(EnchantmentSection, EnchantmentLinksPanel, detail.EnchantmentCards, Color.FromRgb(154, 101, 13), enablePreview: false);
         RenderTags(detail.Tags);
 
         DetailOverlay.Visibility = Visibility.Visible;
@@ -583,7 +585,7 @@ public partial class MainWindow : Window
             DispatcherPriority.Loaded);
     }
 
-    private void RenderRelatedGroup(Border section, WrapPanel panel, IReadOnlyList<RelatedCardLink> links, Color foregroundColor)
+    private void RenderRelatedGroup(Border section, WrapPanel panel, IReadOnlyList<RelatedCardLink> links, Color foregroundColor, bool enablePreview)
     {
         panel.Children.Clear();
         section.Visibility = links.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -599,12 +601,62 @@ public partial class MainWindow : Window
                 Foreground = new SolidColorBrush(foregroundColor),
                 Content = link.Name,
                 Tag = link.CardId,
-                ToolTip = link.Reason,
             };
+
+            if (enablePreview)
+            {
+                button.ToolTip = CreateRelatedCardToolTip(link);
+                button.SetValue(ToolTipService.InitialShowDelayProperty, 200);
+            }
 
             button.Click += (_, _) => ShowCardDetail(link.CardId);
             panel.Children.Add(button);
         }
+    }
+
+    private object CreateRelatedCardToolTip(RelatedCardLink link)
+    {
+        if (string.IsNullOrWhiteSpace(link.ImagePath) || !File.Exists(link.ImagePath))
+        {
+            return link.Reason;
+        }
+
+        var imageSource = imageConverter.Convert(link.ImagePath, typeof(ImageSource), null!, System.Globalization.CultureInfo.CurrentUICulture) as ImageSource;
+        if (imageSource is null)
+        {
+            return link.Reason;
+        }
+
+        var content = new Image
+        {
+            Source = imageSource,
+            Width = 180,
+            Stretch = Stretch.Uniform,
+        };
+
+        return new ToolTip
+        {
+            Background = Brushes.Transparent,
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(0),
+            Padding = new Thickness(0),
+            Margin = new Thickness(0),
+            HasDropShadow = false,
+            OverridesDefaultStyle = true,
+            Content = content,
+            Placement = PlacementMode.Mouse,
+            Template = CreateImageOnlyToolTipTemplate(),
+        };
+    }
+
+    private static ControlTemplate CreateImageOnlyToolTipTemplate()
+    {
+        var template = new ControlTemplate(typeof(ToolTip));
+        var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
+        presenter.SetValue(ContentPresenter.MarginProperty, new Thickness(0));
+        presenter.SetValue(ContentPresenter.SnapsToDevicePixelsProperty, true);
+        template.VisualTree = presenter;
+        return template;
     }
 
     private void RenderTags(IReadOnlyList<CardTagView> tags)
