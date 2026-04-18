@@ -10,6 +10,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <AssemblyName>&#x7089;&#x77F3;&#x5361;&#x724C;&#x6D4F;&#x89C8;&#x5668;</AssemblyName>
+    <Title>&#x7089;&#x77F3;&#x5361;&#x724C;&#x6D4F;&#x89C8;&#x5668;</Title>
+    <Product>&#x7089;&#x77F3;&#x5361;&#x724C;&#x6D4F;&#x89C8;&#x5668;</Product>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
 
 </Project>

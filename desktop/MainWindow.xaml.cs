@@ -10,7 +10,7 @@ namespace HearthstoneCardSearchTool;
 
 public partial class MainWindow : Window
 {
-    private const int MaxDisplay = 100;
+    private const int MaxDisplay = 300;
     private const int CardsPerRow = 6;
     private const double CardTileAspectRatio = 300d / 214d;
     private const double CardTileGap = 18d;
@@ -276,7 +276,7 @@ public partial class MainWindow : Window
 
             if (results.Count >= MaxDisplay)
             {
-                ResultHintText.Text = "图片一张挨着一张显示，点击打开详情。结果过多，当前仅显示前 100 张。";
+                ResultHintText.Text = "图片一张挨着一张显示，点击打开详情。结果过多，当前仅显示前 300 张。";
             }
         }
         catch (Exception ex)

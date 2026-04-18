@@ -28,6 +28,6 @@ if errorlevel 1 (
 
 echo.
 echo [3/3] Done.
-echo Output: "%~dp0dist\HearthstoneCardSearchTool\HearthstoneCardSearchTool.exe"
+echo Output folder: "%~dp0dist"
 echo.
 pause

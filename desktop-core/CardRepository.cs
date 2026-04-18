@@ -24,15 +24,18 @@ public sealed class CardRepository
         IReadOnlyList<CardRecord> cards,
         Dictionary<string, CardRecord> byCardId,
         Dictionary<int, CardRecord> byDbfId,
-        BootstrapData bootstrap)
+        BootstrapData bootstrap,
+        bool hasAnyImages)
     {
         this.cards = cards;
         this.byCardId = byCardId;
         this.byDbfId = byDbfId;
         Bootstrap = bootstrap;
+        HasAnyImages = hasAnyImages;
     }
 
     public BootstrapData Bootstrap { get; }
+    public bool HasAnyImages { get; }
 
     public static CardRepository Load(string resourceRoot)
     {
@@ -144,7 +147,8 @@ public sealed class CardRepository
                 Sets = CardDataMaps.GetFilterableSets(),
                 Races = MapToOptions(raceLabels),
                 Schools = MapToOptions(schoolLabels),
-            });
+            },
+            imageIndex.Count > 0);
     }
 
     public IReadOnlyList<CardRecord> Search(string query, SearchFilters filters, int limit)
@@ -311,12 +315,38 @@ public sealed class CardRepository
             return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
 
-        return Directory
-            .EnumerateFiles(imageRoot, "*.png", SearchOption.AllDirectories)
-            .ToDictionary(
-                static path => Path.GetFileNameWithoutExtension(path).ToLowerInvariant(),
-                static path => Path.GetFullPath(path),
-                StringComparer.OrdinalIgnoreCase);
+        var imageIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var path in Directory
+                     .EnumerateFiles(imageRoot, "*.png", SearchOption.AllDirectories)
+                     .Select(static path => Path.GetFullPath(path))
+                     .OrderBy(static path => GetImagePathPriority(path))
+                     .ThenBy(static path => path, StringComparer.OrdinalIgnoreCase))
+        {
+            var key = Path.GetFileNameWithoutExtension(path);
+            imageIndex.TryAdd(key, path);
+        }
+
+        return imageIndex;
+    }
+
+    private static int GetImagePathPriority(string path)
+    {
+        var normalized = path.Replace('/', '\\');
+        var priority = 0;
+
+        if (normalized.Contains("\\0000_INVALID_UNKNOWN\\", StringComparison.OrdinalIgnoreCase))
+        {
+            priority += 100;
+        }
+
+        if (normalized.Contains("INVALID", StringComparison.OrdinalIgnoreCase)
+            || normalized.Contains("UNKNOWN", StringComparison.OrdinalIgnoreCase))
+        {
+            priority += 10;
+        }
+
+        return priority;
     }
 
     private static string ChildText(XElement parent, string name)
