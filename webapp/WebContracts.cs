@@ -19,6 +19,20 @@ public sealed record BootstrapResponse(
     IReadOnlyList<OptionDto> CollectibleOptions,
     IReadOnlyList<OptionDto> KeywordOptions);
 
+public sealed record CardDataMapConfigResponse(
+    IReadOnlyList<CardDataMapLibraryDto> Libraries);
+
+public sealed record CardDataMapLibraryDto(
+    string Key,
+    string Label,
+    string Description,
+    int DefaultCount,
+    int OverrideCount,
+    int EffectiveCount,
+    IReadOnlyDictionary<string, string> Overrides,
+    IReadOnlyDictionary<string, string> DefaultEntries,
+    IReadOnlyDictionary<string, string> EffectiveEntries);
+
 public sealed record SearchRequest(
     string? Query,
     string? Mode,

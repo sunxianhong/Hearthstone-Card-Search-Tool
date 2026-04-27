@@ -7,6 +7,7 @@ public sealed record FilterOption(string Value, string Label);
 public sealed class SearchFilters
 {
     public string? Mode { get; init; }
+    public IReadOnlySet<string>? ModeSetValues { get; init; }
     public string? Cost { get; init; }
     public string? Class { get; init; }
     public string? Rarity { get; init; }

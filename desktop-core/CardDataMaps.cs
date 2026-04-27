@@ -1291,39 +1291,6 @@ public static class CardDataMaps
             ["1980"] = "大地的裂变",
         };
 
-    // Hide non-user-facing, test-only, and reserved sets from the filter bar.
-    private static readonly HashSet<string> SetFilterBlacklist = new(StringComparer.Ordinal)
-    {
-        "0",
-        "1",
-        "4",
-        "6",
-        "7",
-        "8",
-        "9",
-        "10",
-        "11",
-        "19",
-        "22",
-        "24",
-        "26",
-        "1003",
-        "1439",
-        "1586",
-        "1705",
-        "1810",
-    };
-
-    private static readonly HashSet<string> StandardSetWhitelist = new(StringComparer.Ordinal)
-    {
-        "1637",
-        "1941",
-        "1946",
-        "1952",
-        "1957",
-        "1980",
-    };
-
     private static IReadOnlyDictionary<string, string> unknownEnumMap = FallbackUnknownEnumMap;
     private static IReadOnlyDictionary<string, string> tagLabels = FallbackTagLabels;
     private static IReadOnlyDictionary<string, string> classMap = FallbackClassMap;
@@ -1333,7 +1300,16 @@ public static class CardDataMaps
     private static IReadOnlyDictionary<string, string> schoolMap = FallbackSchoolMap;
     private static IReadOnlyDictionary<string, string> setMap = FallbackSetMap;
 
+    public static IReadOnlyDictionary<string, string> DefaultUnknownEnumMap => FallbackUnknownEnumMap;
+    public static IReadOnlyDictionary<string, string> DefaultTagLabels => FallbackTagLabels;
+    public static IReadOnlyDictionary<string, string> DefaultClassMap => FallbackClassMap;
+    public static IReadOnlyDictionary<string, string> DefaultRarityMap => FallbackRarityMap;
+    public static IReadOnlyDictionary<string, string> DefaultRaceMap => FallbackRaceMap;
+    public static IReadOnlyDictionary<string, string> DefaultSchoolMap => FallbackSchoolMap;
+    public static IReadOnlyDictionary<string, string> DefaultSetMap => FallbackSetMap;
+
     public static IReadOnlyDictionary<string, string> UnknownEnumMap => unknownEnumMap;
+    public static IReadOnlyDictionary<string, string> TagLabels => tagLabels;
     public static IReadOnlyDictionary<string, string> ClassMap => classMap;
     public static IReadOnlyDictionary<string, string> RarityMap => rarityMap;
     public static IReadOnlyDictionary<string, string> CardTypeMap => cardTypeMap;
@@ -1359,6 +1335,25 @@ public static class CardDataMaps
         return tagLabels.TryGetValue(tagKey, out var label)
             ? label
             : tagKey;
+    }
+
+    public static void ApplyOverrides(CardDataMapOverrideConfig? overrides)
+    {
+        lock (SyncRoot)
+        {
+            unknownEnumMap = MergeMap(FallbackUnknownEnumMap, overrides?.UnknownEnumMap);
+            tagLabels = MergeMap(FallbackTagLabels, overrides?.TagLabels);
+            classMap = MergeMap(FallbackClassMap, overrides?.ClassMap);
+            rarityMap = MergeMap(FallbackRarityMap, overrides?.RarityMap);
+            raceMap = MergeMap(FallbackRaceMap, overrides?.RaceMap);
+            schoolMap = MergeMap(FallbackSchoolMap, overrides?.SchoolMap);
+            setMap = MergeMap(FallbackSetMap, overrides?.SetMap);
+        }
+    }
+
+    public static void ResetOverrides()
+    {
+        ApplyOverrides(null);
     }
 
     public static string BuildDisplayTagName(string tagKey, string? enumId)
@@ -1401,56 +1396,23 @@ public static class CardDataMaps
         return !string.IsNullOrWhiteSpace(setCode) && setMap.ContainsKey(setCode);
     }
 
-    public static bool ShouldShowSetInFilters(string? setCode)
-    {
-        return !string.IsNullOrWhiteSpace(setCode)
-            && setMap.ContainsKey(setCode)
-            && !SetFilterBlacklist.Contains(setCode);
-    }
-
-    public static bool IsStandardMode(string? mode)
-    {
-        return string.Equals(mode, "standard", StringComparison.OrdinalIgnoreCase);
-    }
-
-    public static bool IsWildMode(string? mode)
-    {
-        return string.Equals(mode, "wild", StringComparison.OrdinalIgnoreCase);
-    }
-
-    public static bool MatchesMode(string? mode, string? setCode)
-    {
-        if (!IsKnownSet(setCode))
-        {
-            return false;
-        }
-
-        if (IsStandardMode(mode))
-        {
-            return StandardSetWhitelist.Contains(setCode!);
-        }
-
-        if (IsWildMode(mode))
-        {
-            return ShouldShowSetInFilters(setCode);
-        }
-
-        return true;
-    }
-
-    public static IReadOnlyList<FilterOption> GetSetsForMode(string? mode)
+    public static IReadOnlyList<FilterOption> GetAllSets()
     {
         return setMap
-            .Where(pair => MatchesMode(mode, pair.Key))
             .Select(static pair => new FilterOption(pair.Key, pair.Value))
             .OrderBy(static item => item.Label, StringComparer.Ordinal)
             .ThenBy(static item => item.Value, StringComparer.Ordinal)
             .ToList();
     }
 
+    public static IReadOnlyList<FilterOption> GetSetsForMode(string? mode)
+    {
+        return GetAllSets();
+    }
+
     public static IReadOnlyList<FilterOption> GetFilterableSets()
     {
-        return GetSetsForMode("wild");
+        return GetAllSets();
     }
 
     private static string MapWithFallback(IReadOnlyDictionary<string, string> map, string value)
@@ -1465,6 +1427,31 @@ public static class CardDataMaps
         return string.IsNullOrWhiteSpace(enumId)
             ? prefix
             : $"{prefix}-（{enumId}）";
+    }
+
+    private static IReadOnlyDictionary<string, string> MergeMap(
+        IReadOnlyDictionary<string, string> fallback,
+        IReadOnlyDictionary<string, string>? overrides)
+    {
+        var merged = new Dictionary<string, string>(fallback, StringComparer.Ordinal);
+        if (overrides is null)
+        {
+            return merged;
+        }
+
+        foreach (var pair in overrides)
+        {
+            var key = pair.Key.Trim();
+            var value = pair.Value.Trim();
+            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
+
+            merged[key] = value;
+        }
+
+        return merged;
     }
 }
 

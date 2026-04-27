@@ -2,7 +2,12 @@ using System.Text.Json;
 
 namespace HearthstoneCardSearchTool.Web;
 
-public sealed record FilterBarOptionConfig(string Value, string Label, bool Visible);
+public sealed record FilterBarOptionConfig(
+    string Value,
+    string Label,
+    bool Visible,
+    bool? VisibleInWild = null,
+    bool? VisibleInStandard = null);
 
 public sealed record FilterBarSectionConfig(
     string Key,
@@ -165,12 +170,19 @@ public sealed class FilterBarConfigStore
                             return defaultOption;
                         }
 
+                        var visibleInWild = currentSection.Key.Equals("set", StringComparison.OrdinalIgnoreCase)
+                            ? currentOption.VisibleInWild ?? currentOption.Visible
+                            : currentOption.VisibleInWild ?? defaultOption.VisibleInWild;
+
+                        var visibleInStandard = currentSection.Key.Equals("set", StringComparison.OrdinalIgnoreCase)
+                            ? currentOption.VisibleInStandard ?? currentOption.Visible
+                            : currentOption.VisibleInStandard ?? defaultOption.VisibleInStandard;
+
                         return defaultOption with
                         {
                             Visible = currentOption.Visible,
-                            Label = string.IsNullOrWhiteSpace(currentOption.Label)
-                                ? defaultOption.Label
-                                : currentOption.Label,
+                            VisibleInWild = visibleInWild,
+                            VisibleInStandard = visibleInStandard,
                         };
                     })
                     .ToList();

@@ -14,7 +14,7 @@
                 <h1>炉石卡牌检索器</h1>
                 <div class="hero-status-actions">
                     <div id="statusText" class="hero-status-text">正在加载卡牌数据…</div>
-                    <button id="filterConfigButton" class="icon-button" type="button" aria-label="打开筛选栏设置" title="筛选栏设置">⚙</button>
+                    <button id="filterConfigButton" class="icon-button" type="button" aria-label="打开设置" title="设置">⚙</button>
                 </div>
             </div>
         </header>
@@ -120,29 +120,50 @@
     <div id="filterConfigModal" class="modal-shell is-hidden">
         <div class="modal-backdrop" data-close-filter-config="true"></div>
         <div id="filterConfigModalPanel" class="modal-panel settings-modal-panel" role="dialog" aria-modal="true" aria-labelledby="filterConfigTitle">
-            <button id="closeFilterConfigButton" class="modal-close" type="button" aria-label="关闭筛选栏设置">×</button>
+            <button id="closeFilterConfigButton" class="modal-close" type="button" aria-label="关闭设置">×</button>
 
             <div class="settings-modal-layout">
                 <div class="settings-modal-header">
-                    <p class="detail-badge">筛选栏设置</p>
-                    <h2 id="filterConfigTitle" class="settings-modal-title">自定义筛选栏显示内容</h2>
-                    <p class="settings-modal-description">可以控制显示哪些筛选项，以及每个筛选项里显示哪些具体选项。</p>
+                    <p class="detail-badge">设置中心</p>
+                    <h2 id="filterConfigTitle" class="settings-modal-title">筛选栏与映射库配置</h2>
+                    <p class="settings-modal-description">可以控制筛选栏显示内容，也可以直接在网页里维护职业、稀有度、种族、法术派系、扩展包等映射库。</p>
                 </div>
 
-                <div class="settings-modal-body">
-                    <section class="settings-section">
-                        <div class="section-title">筛选项列表</div>
-                        <div id="filterConfigSectionList" class="settings-placeholder">这里将显示筛选项分组配置。</div>
-                    </section>
+                <div class="settings-tabs" role="tablist" aria-label="设置分类">
+                    <button id="filterConfigTabButton" class="settings-tab-button is-active" type="button" role="tab" aria-selected="true">筛选栏</button>
+                    <button id="cardDataMapTabButton" class="settings-tab-button" type="button" role="tab" aria-selected="false">映射库</button>
+                </div>
 
-                    <section class="settings-section">
-                        <div class="section-title">选项明细</div>
-                        <div id="filterConfigOptionList" class="settings-placeholder">这里将显示当前筛选项下可勾选的具体选项。</div>
-                    </section>
+                <div id="filterConfigView" class="settings-view">
+                    <div class="settings-modal-body">
+                        <section class="settings-section">
+                            <div class="section-title">筛选项列表</div>
+                            <div id="filterConfigSectionList" class="settings-placeholder">这里将显示筛选项分组配置。</div>
+                        </section>
+
+                        <section class="settings-section">
+                            <div class="section-title">选项明细</div>
+                            <div id="filterConfigOptionList" class="settings-placeholder">这里将显示当前筛选项下可勾选的具体选项。</div>
+                        </section>
+                    </div>
+                </div>
+
+                <div id="cardDataMapView" class="settings-view is-hidden">
+                    <div class="settings-modal-body">
+                        <section class="settings-section">
+                            <div class="section-title">映射库列表</div>
+                            <div id="cardDataMapLibraryList" class="settings-placeholder">这里将显示可编辑的映射库。</div>
+                        </section>
+
+                        <section class="settings-section">
+                            <div class="section-title">映射库编辑</div>
+                            <div id="cardDataMapEditor" class="settings-placeholder">请选择左侧要编辑的映射库。</div>
+                        </section>
+                    </div>
                 </div>
 
                 <div class="settings-modal-footer">
-                    <button id="resetFilterConfigButton" class="secondary-button" type="button">恢复默认</button>
+                    <button id="resetFilterConfigButton" class="secondary-button" type="button">恢复默认 / 清空覆盖</button>
                     <button id="saveFilterConfigButton" class="primary-button" type="button">保存设置</button>
                 </div>
             </div>

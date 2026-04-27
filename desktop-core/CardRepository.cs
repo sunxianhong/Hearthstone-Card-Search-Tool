@@ -144,7 +144,7 @@ public sealed class CardRepository
                 Classes = MapToOptions(classLabels),
                 Rarities = MapToOptions(rarityLabels),
                 CardTypes = MapToOptions(cardTypeLabels),
-                Sets = CardDataMaps.GetFilterableSets(),
+                Sets = CardDataMaps.GetAllSets(),
                 Races = MapToOptions(raceLabels),
                 Schools = MapToOptions(schoolLabels),
             },
@@ -279,9 +279,11 @@ public sealed class CardRepository
         string key,
         IReadOnlyDictionary<string, string> dictionary)
     {
-        if (tagMap.TryGetValue(key, out var code) && !string.IsNullOrWhiteSpace(code) && dictionary.TryGetValue(code, out var label))
+        if (tagMap.TryGetValue(key, out var code) && !string.IsNullOrWhiteSpace(code))
         {
-            labels[code] = label;
+            labels[code] = dictionary.TryGetValue(code, out var label)
+                ? label
+                : code;
         }
     }
 
@@ -375,7 +377,7 @@ public sealed class CardRepository
             return false;
         }
 
-        if (!MatchesMode(cardSet, filters.Mode))
+        if (!MatchesMode(cardSet, filters))
         {
             return false;
         }
@@ -441,9 +443,16 @@ public sealed class CardRepository
             : int.TryParse(expected, out var parsed) && actual == parsed;
     }
 
-    private static bool MatchesMode(string? actualSet, string? mode)
+    private static bool MatchesMode(string? actualSet, SearchFilters filters)
     {
-        return string.IsNullOrWhiteSpace(mode) || CardDataMaps.MatchesMode(mode, actualSet);
+        if (string.IsNullOrWhiteSpace(filters.Mode))
+        {
+            return true;
+        }
+
+        return !string.IsNullOrWhiteSpace(actualSet)
+            && filters.ModeSetValues is not null
+            && filters.ModeSetValues.Contains(actualSet);
     }
 
     private static bool MatchesExact(CardRecord card, string key, string? expected)

@@ -79,21 +79,21 @@ public sealed class RepositoryTests
     }
 
     [Fact]
-    public void BootstrapSetOptionsFollowFallbackMapAndBlacklist()
+    public void BootstrapSetOptionsFollowFallbackMap()
     {
         var sets = Repository.Value.Bootstrap.Sets;
 
-        Assert.Equal(CardDataMaps.GetFilterableSets(), sets);
+        Assert.Equal(CardDataMaps.GetAllSets(), sets);
         Assert.Contains(sets, item => item.Value == "1980" && item.Label == "大地的裂变");
         Assert.Contains(sets, item => item.Value == "1637" && item.Label == "核心");
         Assert.Contains(sets, item => item.Value == "1941" && item.Label == "活动礼物");
-        Assert.DoesNotContain(sets, item => item.Value == "22");
-        Assert.DoesNotContain(sets, item => item.Value == "7");
-        Assert.DoesNotContain(sets, item => item.Value == "8");
+        Assert.Contains(sets, item => item.Value == "22");
+        Assert.Contains(sets, item => item.Value == "7");
+        Assert.Contains(sets, item => item.Value == "8");
     }
 
     [Fact]
-    public void StandardModeUsesExpectedSets()
+    public void StandardAndWildModeSetListsReturnAllSets()
     {
         var standardSets = CardDataMaps.GetSetsForMode("standard");
         var wildSets = CardDataMaps.GetSetsForMode("wild");
@@ -101,9 +101,9 @@ public sealed class RepositoryTests
         Assert.Contains(standardSets, item => item.Value == "1637");
         Assert.Contains(standardSets, item => item.Value == "1941");
         Assert.Contains(standardSets, item => item.Value == "1980");
-        Assert.DoesNotContain(standardSets, item => item.Value == "1466");
+        Assert.Contains(standardSets, item => item.Value == "1466");
         Assert.Contains(wildSets, item => item.Value == "1941");
-        Assert.DoesNotContain(wildSets, item => item.Value == "22");
+        Assert.Contains(wildSets, item => item.Value == "22");
     }
 
     [Fact]

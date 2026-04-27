@@ -24,15 +24,33 @@ const FILTER_FIELD_LABELS = {
     collectible: "是否可收藏",
 };
 
+const CARD_DATA_MAP_KEYS = [
+    "unknownEnumMap",
+    "tagLabels",
+    "classMap",
+    "rarityMap",
+    "raceMap",
+    "schoolMap",
+    "setMap",
+];
+
+const SETTINGS_VIEW_FILTER = "filter";
+const SETTINGS_VIEW_MAPS = "maps";
+
 const state = {
     bootstrap: null,
     filterConfig: null,
     draftFilterConfig: null,
     activeConfigSectionKey: null,
+    cardDataMaps: null,
+    draftCardDataMaps: null,
+    activeCardDataMapKey: null,
+    activeSettingsView: SETTINGS_VIEW_FILTER,
     activeDetail: null,
 };
 
 const elements = {
+    pageTitle: document.querySelector(".hero-copy h1"),
     queryInput: document.getElementById("queryInput"),
     modeSelect: document.getElementById("modeSelect"),
     setPicker: document.getElementById("setPicker"),
@@ -54,8 +72,17 @@ const elements = {
     filterConfigModal: document.getElementById("filterConfigModal"),
     filterConfigModalPanel: document.getElementById("filterConfigModalPanel"),
     closeFilterConfigButton: document.getElementById("closeFilterConfigButton"),
+    settingsHeaderBadge: document.querySelector("#filterConfigModalPanel .settings-modal-header .detail-badge"),
+    settingsTitle: document.getElementById("filterConfigTitle"),
+    settingsDescription: document.querySelector("#filterConfigModalPanel .settings-modal-description"),
+    filterConfigTabButton: document.getElementById("filterConfigTabButton"),
+    cardDataMapTabButton: document.getElementById("cardDataMapTabButton"),
+    filterConfigView: document.getElementById("filterConfigView"),
+    cardDataMapView: document.getElementById("cardDataMapView"),
     filterConfigSectionList: document.getElementById("filterConfigSectionList"),
     filterConfigOptionList: document.getElementById("filterConfigOptionList"),
+    cardDataMapLibraryList: document.getElementById("cardDataMapLibraryList"),
+    cardDataMapEditor: document.getElementById("cardDataMapEditor"),
     resetFilterConfigButton: document.getElementById("resetFilterConfigButton"),
     saveFilterConfigButton: document.getElementById("saveFilterConfigButton"),
     backToTopButton: document.getElementById("backToTopButton"),
@@ -72,6 +99,10 @@ const elements = {
     parentSection: document.getElementById("parentSection"),
     relatedSection: document.getElementById("relatedSection"),
     enchantmentSection: document.getElementById("enchantmentSection"),
+    parentSectionTitle: document.querySelector("#parentSection .section-title"),
+    relatedSectionTitle: document.querySelector("#relatedSection .section-title"),
+    enchantmentSectionTitle: document.querySelector("#enchantmentSection .section-title"),
+    tagSectionTitle: document.querySelector(".tag-section .section-title"),
     parentLinks: document.getElementById("parentLinks"),
     relatedLinks: document.getElementById("relatedLinks"),
     enchantmentLinks: document.getElementById("enchantmentLinks"),
@@ -83,17 +114,22 @@ let copyToastTimer = null;
 void initialize();
 
 async function initialize() {
+    injectRuntimeStyles();
+    synchronizeStaticText();
     bindEvents();
 
     try {
         state.bootstrap = await fetchJson("/api/bootstrap");
         state.filterConfig = await fetchJson("/api/filter-bar-config");
         state.draftFilterConfig = cloneFilterConfig(state.filterConfig);
+        state.cardDataMaps = hydrateCardDataMapConfig(await fetchJson("/api/card-data-maps"));
+        state.draftCardDataMaps = cloneCardDataMapConfig(state.cardDataMaps);
     } catch (error) {
         showFatalError(error);
         return;
     }
 
+    synchronizeStaticText();
     initializeStaticControls();
     renderConfiguredFilters();
     await searchCards();
@@ -152,6 +188,20 @@ function bindEvents() {
     elements.filterConfigButton.addEventListener("click", openFilterConfigModal);
     elements.closeFilterConfigButton.addEventListener("click", closeFilterConfigModal);
 
+    if (elements.filterConfigTabButton) {
+        elements.filterConfigTabButton.addEventListener("click", () => {
+            state.activeSettingsView = SETTINGS_VIEW_FILTER;
+            renderSettingsModal();
+        });
+    }
+
+    if (elements.cardDataMapTabButton) {
+        elements.cardDataMapTabButton.addEventListener("click", () => {
+            state.activeSettingsView = SETTINGS_VIEW_MAPS;
+            renderSettingsModal();
+        });
+    }
+
     elements.filterConfigModal.addEventListener("click", (event) => {
         const target = event.target;
         if (!(target instanceof HTMLElement)) {
@@ -165,9 +215,7 @@ function bindEvents() {
 
     elements.resetFilterConfigButton.addEventListener("click", async () => {
         try {
-            state.draftFilterConfig = await fetchJson("/api/filter-bar-config/default");
-            ensureActiveConfigSection();
-            renderFilterConfigEditor();
+            await resetSettingsDraft();
         } catch (error) {
             showCopyToast(normalizeErrorMessage(error), elements.resetFilterConfigButton);
         }
@@ -175,7 +223,7 @@ function bindEvents() {
 
     elements.saveFilterConfigButton.addEventListener("click", async () => {
         try {
-            await saveFilterConfig();
+            await saveSettings();
         } catch (error) {
             showCopyToast(normalizeErrorMessage(error), elements.saveFilterConfigButton);
         }
@@ -230,6 +278,228 @@ function bindEvents() {
             void copyText(String(state.activeDetail.dbfId), `已复制到剪贴板：${state.activeDetail.dbfId}`, event.currentTarget);
         }
     });
+}
+
+function synchronizeStaticText() {
+    const appName = state.bootstrap?.appName || "炉石卡牌检索器";
+    document.title = appName;
+
+    if (elements.pageTitle) {
+        elements.pageTitle.textContent = appName;
+    }
+
+    elements.statusText.textContent = state.bootstrap
+        ? elements.statusText.textContent
+        : "正在加载卡牌数据…";
+
+    elements.queryInput.placeholder = "中文名 / 英文名 / CardID / DbfId / 标签:值 / EnumID:值";
+    elements.searchButton.textContent = "筛选 / 搜索";
+    elements.resetButton.textContent = "重置";
+    elements.setPickerButton.textContent = elements.setPickerButton.dataset.value || FILTER_FIELD_LABELS.set;
+    elements.setPickerButton.title = elements.setPickerButton.dataset.value || FILTER_FIELD_LABELS.set;
+    elements.filterConfigButton.textContent = "⚙";
+    elements.filterConfigButton.setAttribute("aria-label", "打开设置中心");
+    elements.filterConfigButton.title = "设置中心";
+
+    elements.closeModalButton.textContent = "×";
+    elements.closeModalButton.setAttribute("aria-label", "关闭详情");
+    elements.closeFilterConfigButton.textContent = "×";
+    elements.closeFilterConfigButton.setAttribute("aria-label", "关闭设置中心");
+
+    if (elements.parentSectionTitle) {
+        elements.parentSectionTitle.textContent = "【衍生自 / 主卡牌】";
+    }
+
+    if (elements.relatedSectionTitle) {
+        elements.relatedSectionTitle.textContent = "【衍生 / 相关牌】";
+    }
+
+    if (elements.enchantmentSectionTitle) {
+        elements.enchantmentSectionTitle.textContent = "【附魔】";
+    }
+
+    if (elements.tagSectionTitle) {
+        elements.tagSectionTitle.textContent = "完整标签";
+    }
+
+    if (elements.filterConfigTabButton) {
+        elements.filterConfigTabButton.textContent = "筛选栏";
+    }
+
+    if (elements.cardDataMapTabButton) {
+        elements.cardDataMapTabButton.textContent = "映射库";
+    }
+
+    elements.backToTopButton.textContent = "置顶";
+
+    syncSettingsHeader();
+}
+
+function injectRuntimeStyles() {
+    if (document.getElementById("appRuntimeStyles")) {
+        return;
+    }
+
+    const style = document.createElement("style");
+    style.id = "appRuntimeStyles";
+    style.textContent = `
+        .settings-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .settings-tab-button {
+            min-height: 40px;
+            padding: 0 16px;
+            border: 1px solid rgba(127, 95, 55, 0.18);
+            border-radius: 999px;
+            background: rgba(255, 252, 246, 0.88);
+            color: var(--ink);
+            cursor: pointer;
+            font-weight: 700;
+            transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+        }
+
+        .settings-tab-button.is-active {
+            background: rgba(198, 118, 45, 0.16);
+            border-color: rgba(198, 118, 45, 0.36);
+            color: var(--accent);
+            box-shadow: 0 10px 24px rgba(141, 79, 24, 0.08);
+        }
+
+        .settings-tab-button:hover {
+            transform: translateY(-1px);
+        }
+
+        .settings-view.is-hidden {
+            display: none;
+        }
+
+        .settings-library-card {
+            width: 100%;
+            border: 0;
+            text-align: left;
+            cursor: pointer;
+            font: inherit;
+        }
+
+        .settings-text-hint {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255, 252, 246, 0.88);
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .settings-map-stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .settings-stat-chip {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255, 243, 222, 0.92);
+            color: var(--accent);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .settings-map-status {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(251, 244, 232, 0.82);
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .settings-map-status.is-success {
+            background: rgba(224, 241, 220, 0.92);
+            color: #2d5a28;
+        }
+
+        .settings-map-status.is-warning {
+            background: rgba(255, 239, 214, 0.94);
+            color: #8d4f18;
+        }
+
+        .settings-map-textarea {
+            width: 100%;
+            min-height: 320px;
+            padding: 14px;
+            border: 1px solid rgba(127, 95, 55, 0.2);
+            border-radius: 16px;
+            background: rgba(255, 252, 246, 0.96);
+            color: var(--ink);
+            font: 14px/1.65 Consolas, "SFMono-Regular", "Cascadia Mono", monospace;
+            resize: vertical;
+        }
+
+        .settings-set-mode-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .settings-set-mode-head,
+        .settings-set-mode-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 96px 96px;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .settings-set-mode-head {
+            padding: 0 8px;
+            color: var(--muted);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .settings-set-mode-item {
+            padding: 12px 14px;
+            border: 1px solid rgba(127, 95, 55, 0.14);
+            border-radius: 14px;
+            background: rgba(255, 252, 246, 0.9);
+        }
+
+        .settings-set-mode-name {
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        .settings-set-mode-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 40px;
+            padding: 0 10px;
+            border-radius: 12px;
+            background: rgba(255, 249, 239, 0.94);
+            cursor: pointer;
+            font-weight: 700;
+        }
+
+        @media (max-width: 720px) {
+            .settings-set-mode-head,
+            .settings-set-mode-item {
+                grid-template-columns: 1fr;
+            }
+
+            .settings-set-mode-head {
+                display: none;
+            }
+
+            .settings-set-mode-toggle {
+                justify-content: flex-start;
+            }
+        }
+    `;
+
+    document.head.append(style);
 }
 
 function initializeStaticControls() {
@@ -340,6 +610,41 @@ function cloneFilterConfig(config) {
         : { sections: [] };
 }
 
+function hydrateCardDataMapConfig(config) {
+    if (!config || !Array.isArray(config.libraries)) {
+        return { libraries: [] };
+    }
+
+    return {
+        libraries: config.libraries.map(normalizeCardDataMapLibrary),
+    };
+}
+
+function cloneCardDataMapConfig(config) {
+    return config
+        ? hydrateCardDataMapConfig(JSON.parse(JSON.stringify(config)))
+        : { libraries: [] };
+}
+
+function normalizeCardDataMapLibrary(library) {
+    const overrides = { ...(library.overrides ?? {}) };
+    const defaultEntries = { ...(library.defaultEntries ?? {}) };
+    const effectiveEntries = mergeMapEntries(defaultEntries, overrides);
+
+    return {
+        ...library,
+        overrides,
+        defaultEntries,
+        effectiveEntries,
+        defaultCount: Object.keys(defaultEntries).length,
+        overrideCount: Object.keys(overrides).length,
+        effectiveCount: Object.keys(effectiveEntries).length,
+        rawText: typeof library.rawText === "string" ? library.rawText : formatMapOverrides(overrides),
+        parseErrors: Array.isArray(library.parseErrors) ? [...library.parseErrors] : [],
+        parseWarnings: Array.isArray(library.parseWarnings) ? [...library.parseWarnings] : [],
+    };
+}
+
 function renderConfiguredFilters() {
     applyModeFilterOptions();
     applySelectFilterOptions("cost", elements.costSelect);
@@ -359,7 +664,7 @@ function applyModeFilterOptions() {
     const section = getConfigSection("mode");
     const isVisible = Boolean(section?.enabled) && visibleOptions.length > 0;
 
-    wrapper.classList.toggle("is-hidden", !isVisible);
+    wrapper?.classList.toggle("is-hidden", !isVisible);
     if (!isVisible) {
         elements.modeSelect.value = "";
         return;
@@ -378,17 +683,13 @@ function applySelectFilterOptions(key, select) {
     const visibleOptions = getVisibleSectionOptions(key);
     const isVisible = Boolean(section?.enabled) && visibleOptions.length > 0;
 
-    wrapper.classList.toggle("is-hidden", !isVisible);
+    wrapper?.classList.toggle("is-hidden", !isVisible);
     if (!isVisible) {
         select.value = "";
         return;
     }
 
-    populateSelect(
-        select,
-        visibleOptions,
-        FILTER_FIELD_LABELS[key],
-        select.value);
+    populateSelect(select, visibleOptions, FILTER_FIELD_LABELS[key], select.value);
 }
 
 function refreshSetOptions(preferredValue = null) {
@@ -457,8 +758,11 @@ function closeSetPicker() {
 
 function openFilterConfigModal() {
     state.draftFilterConfig = cloneFilterConfig(state.filterConfig);
+    state.draftCardDataMaps = cloneCardDataMapConfig(state.cardDataMaps);
     ensureActiveConfigSection();
-    renderFilterConfigEditor();
+    ensureActiveCardDataMapLibrary();
+    renderSettingsModal();
+    elements.filterConfigModalPanel.scrollTop = 0;
     elements.filterConfigModal.classList.remove("is-hidden");
     closeSetPicker();
 }
@@ -478,6 +782,66 @@ function ensureActiveConfigSection() {
     if (!exists) {
         state.activeConfigSectionKey = sections[0].key;
     }
+}
+
+function ensureActiveCardDataMapLibrary() {
+    const libraries = state.draftCardDataMaps?.libraries ?? [];
+    if (libraries.length === 0) {
+        state.activeCardDataMapKey = null;
+        return;
+    }
+
+    const exists = libraries.some((library) => library.key === state.activeCardDataMapKey);
+    if (!exists) {
+        state.activeCardDataMapKey = libraries[0].key;
+    }
+}
+
+function renderSettingsModal() {
+    const showFilter = state.activeSettingsView !== SETTINGS_VIEW_MAPS;
+
+    if (elements.filterConfigTabButton) {
+        elements.filterConfigTabButton.classList.toggle("is-active", showFilter);
+        elements.filterConfigTabButton.setAttribute("aria-selected", String(showFilter));
+    }
+
+    if (elements.cardDataMapTabButton) {
+        elements.cardDataMapTabButton.classList.toggle("is-active", !showFilter);
+        elements.cardDataMapTabButton.setAttribute("aria-selected", String(!showFilter));
+    }
+
+    if (elements.filterConfigView) {
+        elements.filterConfigView.classList.toggle("is-hidden", !showFilter);
+    }
+
+    if (elements.cardDataMapView) {
+        elements.cardDataMapView.classList.toggle("is-hidden", showFilter);
+    }
+
+    syncSettingsHeader();
+    renderFilterConfigEditor();
+    renderCardDataMapLibraries();
+    renderCardDataMapEditor();
+}
+
+function syncSettingsHeader() {
+    if (!elements.settingsTitle || !elements.settingsDescription || !elements.settingsHeaderBadge) {
+        return;
+    }
+
+    if (state.activeSettingsView === SETTINGS_VIEW_MAPS) {
+        elements.settingsHeaderBadge.textContent = "映射库";
+        elements.settingsTitle.textContent = "在线维护职业、稀有度、种族与扩展包映射";
+        elements.settingsDescription.textContent = "这里保存的是覆盖项，不用再改源码。新增职业、种族、法术派系、扩展包代码时，直接在网页里写 key=value 并保存即可。";
+        elements.resetFilterConfigButton.textContent = "清空全部覆盖";
+    } else {
+        elements.settingsHeaderBadge.textContent = "设置中心";
+        elements.settingsTitle.textContent = "筛选栏与映射库配置";
+        elements.settingsDescription.textContent = "可以控制筛选栏显示内容，也可以直接在网页里维护职业、稀有度、种族、法术派系、扩展包等映射库。";
+        elements.resetFilterConfigButton.textContent = "恢复筛选默认";
+    }
+
+    elements.saveFilterConfigButton.textContent = "保存全部设置";
 }
 
 function renderFilterConfigEditor() {
@@ -521,7 +885,9 @@ function renderFilterConfigSections() {
 
         const count = document.createElement("div");
         count.className = "settings-section-count";
-        count.textContent = `${section.options.filter((item) => item.visible).length} / ${section.options.length}`;
+        count.textContent = section.key === "set"
+            ? `标准 ${countSetOptionsForMode(section, "standard")} / 狂野 ${countSetOptionsForMode(section, "wild")}`
+            : `${section.options.filter((item) => item.visible).length} / ${section.options.length}`;
 
         textWrap.append(title, count);
         toggleLabel.append(checkbox, textWrap);
@@ -547,6 +913,11 @@ function renderFilterConfigOptions() {
     if (!section) {
         elements.filterConfigOptionList.classList.add("settings-placeholder");
         elements.filterConfigOptionList.textContent = "请选择左侧要配置的筛选项。";
+        return;
+    }
+
+    if (section.key === "set") {
+        renderSetFilterConfigOptions(section);
         return;
     }
 
@@ -616,6 +987,113 @@ function renderFilterConfigOptions() {
     elements.filterConfigOptionList.replaceChildren(wrapper);
 }
 
+function renderSetFilterConfigOptions(section) {
+    elements.filterConfigOptionList.classList.remove("settings-placeholder");
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "settings-option-editor";
+
+    const toolbar = document.createElement("div");
+    toolbar.className = "settings-option-toolbar";
+
+    const title = document.createElement("div");
+    title.className = "settings-option-title";
+    title.textContent = section.label;
+
+    const actions = document.createElement("div");
+    actions.className = "settings-option-actions";
+
+    actions.append(
+        createModeBatchButton("标准全选", section, "standard", true),
+        createModeBatchButton("标准清空", section, "standard", false),
+        createModeBatchButton("狂野全选", section, "wild", true),
+        createModeBatchButton("狂野清空", section, "wild", false));
+
+    toolbar.append(title, actions);
+
+    const hint = document.createElement("div");
+    hint.className = "settings-text-hint";
+    hint.textContent = "这里分别控制标准模式和狂野模式下，扩展包筛选器会显示哪些扩展包；同时也会影响按标准/狂野模式搜索时允许出现哪些扩展包卡牌。";
+
+    const grid = document.createElement("div");
+    grid.className = "settings-set-mode-grid";
+
+    const header = document.createElement("div");
+    header.className = "settings-set-mode-head";
+    header.innerHTML = "<span>扩展包</span><span>标准</span><span>狂野</span>";
+    grid.append(header);
+
+    for (const option of section.options) {
+        syncSetOptionVisibleFlag(option);
+
+        const row = document.createElement("div");
+        row.className = "settings-set-mode-item";
+
+        const name = document.createElement("div");
+        name.className = "settings-set-mode-name";
+        name.textContent = option.label;
+
+        const standardLabel = document.createElement("label");
+        standardLabel.className = "settings-set-mode-toggle";
+
+        const standardCheckbox = document.createElement("input");
+        standardCheckbox.type = "checkbox";
+        standardCheckbox.checked = Boolean(option.visibleInStandard);
+        standardCheckbox.addEventListener("change", () => {
+            option.visibleInStandard = standardCheckbox.checked;
+            syncSetOptionVisibleFlag(option);
+            renderFilterConfigSections();
+        });
+
+        const standardText = document.createElement("span");
+        standardText.textContent = "标准";
+        standardLabel.append(standardCheckbox, standardText);
+
+        const wildLabel = document.createElement("label");
+        wildLabel.className = "settings-set-mode-toggle";
+
+        const wildCheckbox = document.createElement("input");
+        wildCheckbox.type = "checkbox";
+        wildCheckbox.checked = Boolean(option.visibleInWild);
+        wildCheckbox.addEventListener("change", () => {
+            option.visibleInWild = wildCheckbox.checked;
+            syncSetOptionVisibleFlag(option);
+            renderFilterConfigSections();
+        });
+
+        const wildText = document.createElement("span");
+        wildText.textContent = "狂野";
+        wildLabel.append(wildCheckbox, wildText);
+
+        row.append(name, standardLabel, wildLabel);
+        grid.append(row);
+    }
+
+    wrapper.append(toolbar, hint, grid);
+    elements.filterConfigOptionList.replaceChildren(wrapper);
+}
+
+function createModeBatchButton(label, section, mode, nextValue) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "secondary-button settings-mini-button";
+    button.textContent = label;
+    button.addEventListener("click", () => {
+        for (const option of section.options) {
+            if (mode === "standard") {
+                option.visibleInStandard = nextValue;
+            } else {
+                option.visibleInWild = nextValue;
+            }
+
+            syncSetOptionVisibleFlag(option);
+        }
+
+        renderFilterConfigEditor();
+    });
+    return button;
+}
+
 function getConfigSection(key, source = state.filterConfig) {
     if (!key) {
         return null;
@@ -631,16 +1109,12 @@ function getVisibleSectionOptions(key) {
     }
 
     if (key === "set") {
-        const visibleValues = new Set(
-            section.options
-                .filter((item) => item.visible)
-                .map((item) => item.value));
-
-        const baseOptions = getCurrentMode() === "standard"
-            ? state.bootstrap.standardSets
-            : state.bootstrap.wildSets;
-
-        return baseOptions.filter((item) => visibleValues.has(item.value));
+        return section.options
+            .filter((item) => isSetOptionVisibleForMode(item, getCurrentMode()))
+            .map((item) => ({
+                value: item.value,
+                label: item.label,
+            }));
     }
 
     return section.options.filter((item) => item.visible);
@@ -648,6 +1122,20 @@ function getVisibleSectionOptions(key) {
 
 function getCurrentMode() {
     return elements.modeSelect.value || "wild";
+}
+
+function syncSetOptionVisibleFlag(option) {
+    option.visible = Boolean(option.visibleInStandard) || Boolean(option.visibleInWild);
+}
+
+function isSetOptionVisibleForMode(option, mode) {
+    return mode === "standard"
+        ? Boolean(option.visibleInStandard)
+        : Boolean(option.visibleInWild);
+}
+
+function countSetOptionsForMode(section, mode) {
+    return section.options.filter((option) => isSetOptionVisibleForMode(option, mode)).length;
 }
 
 function resetFilters() {
@@ -666,22 +1154,434 @@ function resetFilters() {
     refreshSetOptions("");
 }
 
-async function saveFilterConfig() {
-    const saved = await fetchJson("/api/filter-bar-config", {
-        method: "PUT",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(state.draftFilterConfig),
+function getCardDataMapLibrary(key, source = state.cardDataMaps) {
+    if (!key) {
+        return null;
+    }
+
+    return source?.libraries?.find((library) => library.key === key) ?? null;
+}
+
+function renderCardDataMapLibraries() {
+    const libraries = state.draftCardDataMaps?.libraries ?? [];
+    if (libraries.length === 0) {
+        elements.cardDataMapLibraryList.classList.add("settings-placeholder");
+        elements.cardDataMapLibraryList.textContent = "没有可编辑的映射库。";
+        return;
+    }
+
+    elements.cardDataMapLibraryList.classList.remove("settings-placeholder");
+
+    const fragment = document.createDocumentFragment();
+    for (const library of libraries) {
+        const card = document.createElement("button");
+        card.type = "button";
+        card.className = `settings-section-card settings-library-card${library.key === state.activeCardDataMapKey ? " is-active" : ""}`;
+        card.addEventListener("click", () => {
+            state.activeCardDataMapKey = library.key;
+            renderSettingsModal();
+        });
+
+        const textWrap = document.createElement("div");
+        textWrap.className = "settings-section-meta";
+
+        const title = document.createElement("div");
+        title.className = "settings-section-name";
+        title.textContent = library.label;
+
+        const count = document.createElement("div");
+        count.className = "settings-section-count";
+        count.textContent = buildCardDataMapLibrarySummary(library);
+
+        textWrap.append(title, count);
+        card.append(textWrap);
+        fragment.append(card);
+    }
+
+    elements.cardDataMapLibraryList.replaceChildren(fragment);
+}
+
+function buildCardDataMapLibrarySummary(library) {
+    const summary = `默认 ${library.defaultCount} / 覆盖 ${library.overrideCount} / 生效 ${library.effectiveCount}`;
+    if (library.parseErrors.length > 0) {
+        return `${summary} · 有 ${library.parseErrors.length} 处格式问题`;
+    }
+
+    if (library.parseWarnings.length > 0) {
+        return `${summary} · ${library.parseWarnings[0]}`;
+    }
+
+    return summary;
+}
+
+function renderCardDataMapEditor() {
+    const library = getCardDataMapLibrary(state.activeCardDataMapKey, state.draftCardDataMaps);
+    if (!library) {
+        elements.cardDataMapEditor.classList.add("settings-placeholder");
+        elements.cardDataMapEditor.textContent = "请选择左侧要编辑的映射库。";
+        return;
+    }
+
+    elements.cardDataMapEditor.classList.remove("settings-placeholder");
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "settings-option-editor";
+
+    const toolbar = document.createElement("div");
+    toolbar.className = "settings-option-toolbar";
+
+    const titleWrap = document.createElement("div");
+
+    const title = document.createElement("div");
+    title.className = "settings-option-title";
+    title.textContent = library.label;
+
+    const description = document.createElement("div");
+    description.className = "settings-section-count";
+    description.textContent = library.description;
+
+    titleWrap.append(title, description);
+
+    const actions = document.createElement("div");
+    actions.className = "settings-option-actions";
+
+    const clearButton = document.createElement("button");
+    clearButton.type = "button";
+    clearButton.className = "secondary-button settings-mini-button";
+    clearButton.textContent = "清空当前库覆盖";
+    clearButton.addEventListener("click", () => {
+        updateCardDataMapLibraryDraft(library, "");
+        renderSettingsModal();
     });
 
-    state.filterConfig = saved;
-    state.draftFilterConfig = cloneFilterConfig(saved);
+    actions.append(clearButton);
+    toolbar.append(titleWrap, actions);
+
+    const hint = document.createElement("div");
+    hint.className = "settings-text-hint";
+    hint.textContent = "每行一条，格式为 key=value。这里只写新增或覆盖项即可，不需要把默认库整份复制过来。空行和 # 开头的注释行会被忽略。";
+
+    const stats = document.createElement("div");
+    stats.className = "settings-map-stats";
+
+    const defaultChip = createMapStatChip();
+    const overrideChip = createMapStatChip();
+    const effectiveChip = createMapStatChip();
+    stats.append(defaultChip, overrideChip, effectiveChip);
+
+    const status = document.createElement("div");
+    status.className = "settings-map-status";
+
+    const textarea = document.createElement("textarea");
+    textarea.className = "settings-map-textarea";
+    textarea.spellcheck = false;
+    textarea.value = library.rawText;
+
+    const copyActions = document.createElement("div");
+    copyActions.className = "settings-option-actions";
+
+    const copyOverridesButton = createPreviewActionButton("复制当前覆盖", () => {
+        void copyText(
+            library.rawText.trim() || "当前没有覆盖项。",
+            `已复制 ${library.label} 的当前覆盖`,
+            copyOverridesButton);
+    });
+
+    const copyEffectiveButton = createPreviewActionButton("复制当前生效库", () => {
+        void copyText(
+            formatMapOverrides(library.effectiveEntries) || "当前没有可显示条目。",
+            `已复制 ${library.label} 的当前生效库`,
+            copyEffectiveButton);
+    });
+
+    const copyDefaultButton = createPreviewActionButton("复制默认库", () => {
+        void copyText(
+            formatMapOverrides(library.defaultEntries) || "默认库为空。",
+            `已复制 ${library.label} 的默认库`,
+            copyDefaultButton);
+    });
+
+    copyActions.append(copyOverridesButton, copyEffectiveButton, copyDefaultButton);
+
+    const effectivePreview = createMapPreviewBlock();
+    const defaultPreview = createMapPreviewBlock();
+
+    function refreshEditorState() {
+        defaultChip.textContent = `默认 ${formatNumber(library.defaultCount)} 条`;
+        overrideChip.textContent = `覆盖 ${formatNumber(library.overrideCount)} 条`;
+        effectiveChip.textContent = `生效 ${formatNumber(library.effectiveCount)} 条`;
+
+        const statusInfo = describeCardDataMapDraftState(library);
+        status.className = `settings-map-status${statusInfo.tone ? ` is-${statusInfo.tone}` : ""}`;
+        status.textContent = statusInfo.text;
+
+        effectivePreview.summary.textContent = `查看当前生效条目（${formatNumber(library.effectiveCount)}）`;
+        effectivePreview.body.textContent = formatMapOverrides(library.effectiveEntries) || "当前没有可显示条目。";
+
+        defaultPreview.summary.textContent = `查看默认条目（${formatNumber(library.defaultCount)}）`;
+        defaultPreview.body.textContent = formatMapOverrides(library.defaultEntries) || "默认库为空。";
+    }
+
+    textarea.addEventListener("input", () => {
+        updateCardDataMapLibraryDraft(library, textarea.value);
+        renderCardDataMapLibraries();
+        refreshEditorState();
+    });
+
+    refreshEditorState();
+
+    wrapper.append(
+        toolbar,
+        hint,
+        stats,
+        status,
+        textarea,
+        copyActions,
+        effectivePreview.element,
+        defaultPreview.element);
+
+    elements.cardDataMapEditor.replaceChildren(wrapper);
+}
+
+function createMapStatChip() {
+    const chip = document.createElement("div");
+    chip.className = "settings-stat-chip";
+    return chip;
+}
+
+function createPreviewActionButton(label, onClick) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "secondary-button settings-mini-button";
+    button.textContent = label;
+    button.addEventListener("click", onClick);
+    return button;
+}
+
+function createMapPreviewBlock() {
+    const details = document.createElement("details");
+    details.className = "settings-text-hint";
+
+    const summary = document.createElement("summary");
+    summary.style.cursor = "pointer";
+    summary.style.fontWeight = "700";
+
+    const body = document.createElement("pre");
+    body.style.margin = "12px 0 0";
+    body.style.overflow = "auto";
+    body.style.whiteSpace = "pre-wrap";
+    body.style.wordBreak = "break-word";
+    body.style.font = '13px/1.65 Consolas, "SFMono-Regular", "Cascadia Mono", monospace';
+
+    details.append(summary, body);
+    return { element: details, summary, body };
+}
+
+function updateCardDataMapLibraryDraft(library, rawText) {
+    const parsed = parseMapOverrideText(rawText);
+    library.rawText = rawText;
+    library.overrides = parsed.overrides;
+    library.parseErrors = parsed.errors;
+    library.parseWarnings = parsed.warnings;
+    library.overrideCount = Object.keys(parsed.overrides).length;
+    library.effectiveEntries = mergeMapEntries(library.defaultEntries, parsed.overrides);
+    library.effectiveCount = Object.keys(library.effectiveEntries).length;
+}
+
+function describeCardDataMapDraftState(library) {
+    if (library.parseErrors.length > 0) {
+        return {
+            tone: "warning",
+            text: `当前有 ${library.parseErrors.length} 行格式不正确。${library.parseErrors[0]}。保存前请修正，格式必须是 key=value。`,
+        };
+    }
+
+    if (library.parseWarnings.length > 0) {
+        return {
+            tone: "warning",
+            text: `已识别 ${library.overrideCount} 条覆盖。${library.parseWarnings[0]}。`,
+        };
+    }
+
+    if (library.overrideCount === 0) {
+        return {
+            tone: "",
+            text: "当前没有覆盖项。保存后会完全使用内置默认库。",
+        };
+    }
+
+    return {
+        tone: "success",
+        text: `已识别 ${library.overrideCount} 条覆盖。保存后会优先使用这里的值覆盖默认库。`,
+    };
+}
+
+function formatMapOverrides(entries) {
+    return Object.entries(entries ?? {})
+        .sort((left, right) => left[0].localeCompare(right[0], "zh-CN"))
+        .map(([key, value]) => `${key}=${value}`)
+        .join("\n");
+}
+
+function parseMapOverrideText(text) {
+    const overrides = {};
+    const errors = [];
+    const warnings = [];
+    const seenKeys = new Map();
+    const lines = (text ?? "").split(/\r?\n/);
+
+    lines.forEach((rawLine, index) => {
+        const lineNumber = index + 1;
+        const line = rawLine.trim();
+        if (!line || line.startsWith("#")) {
+            return;
+        }
+
+        const separatorIndex = rawLine.indexOf("=");
+        if (separatorIndex <= 0) {
+            errors.push(`第 ${lineNumber} 行缺少等号`);
+            return;
+        }
+
+        const key = rawLine.slice(0, separatorIndex).trim();
+        const value = rawLine.slice(separatorIndex + 1).trim();
+
+        if (!key) {
+            errors.push(`第 ${lineNumber} 行的 key 为空`);
+            return;
+        }
+
+        if (!value) {
+            errors.push(`第 ${lineNumber} 行的 value 为空`);
+            return;
+        }
+
+        if (seenKeys.has(key)) {
+            warnings.push(`键 ${key} 重复出现，已以后面的值为准`);
+        }
+
+        seenKeys.set(key, lineNumber);
+        overrides[key] = value;
+    });
+
+    return { overrides, errors, warnings };
+}
+
+function mergeMapEntries(defaultEntries, overrides) {
+    return {
+        ...(defaultEntries ?? {}),
+        ...(overrides ?? {}),
+    };
+}
+
+async function resetSettingsDraft() {
+    if (state.activeSettingsView === SETTINGS_VIEW_MAPS) {
+        state.draftCardDataMaps = cloneCardDataMapConfig(state.cardDataMaps);
+        for (const library of state.draftCardDataMaps.libraries) {
+            updateCardDataMapLibraryDraft(library, "");
+        }
+        ensureActiveCardDataMapLibrary();
+        renderSettingsModal();
+        return;
+    }
+
+    state.draftFilterConfig = await fetchJson("/api/filter-bar-config/default");
+    ensureActiveConfigSection();
+    renderSettingsModal();
+}
+
+async function saveSettings() {
+    validateCardDataMapDraft(state.draftCardDataMaps);
+
+    const mapChanged = hasCardDataMapChanges();
+    const filterChanged = hasFilterConfigChanges();
+
+    let savedMaps = state.cardDataMaps;
+    let savedFilterConfig = state.filterConfig;
+
+    if (mapChanged) {
+        savedMaps = hydrateCardDataMapConfig(await fetchJson("/api/card-data-maps", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(buildCardDataMapOverridePayload(state.draftCardDataMaps)),
+        }));
+    }
+
+    if (filterChanged) {
+        savedFilterConfig = await fetchJson("/api/filter-bar-config", {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(state.draftFilterConfig),
+        });
+    } else if (mapChanged) {
+        savedFilterConfig = await fetchJson("/api/filter-bar-config");
+    }
+
+    if (mapChanged) {
+        state.bootstrap = await fetchJson("/api/bootstrap");
+    }
+
+    state.cardDataMaps = savedMaps;
+    state.draftCardDataMaps = cloneCardDataMapConfig(savedMaps);
+    state.filterConfig = savedFilterConfig;
+    state.draftFilterConfig = cloneFilterConfig(savedFilterConfig);
+
+    initializeStaticControls();
     renderConfiguredFilters();
-    resetFilters();
+    ensureActiveConfigSection();
+    ensureActiveCardDataMapLibrary();
+    renderSettingsModal();
     await searchCards();
+
+    if (mapChanged && state.activeDetail && !elements.detailModal.classList.contains("is-hidden")) {
+        await openDetail(state.activeDetail.cardId);
+    }
+
     closeFilterConfigModal();
-    showCopyToast("筛选栏设置已保存", elements.saveFilterConfigButton);
+
+    if (mapChanged && filterChanged) {
+        showCopyToast("筛选栏设置和映射库已保存", elements.saveFilterConfigButton);
+    } else if (mapChanged) {
+        showCopyToast("映射库已保存", elements.saveFilterConfigButton);
+    } else if (filterChanged) {
+        showCopyToast("筛选栏设置已保存", elements.saveFilterConfigButton);
+    } else {
+        showCopyToast("没有检测到需要保存的变更", elements.saveFilterConfigButton);
+    }
+}
+
+function validateCardDataMapDraft(config) {
+    for (const library of config?.libraries ?? []) {
+        if (library.parseErrors.length > 0) {
+            throw new Error(`映射库「${library.label}」存在格式问题：${library.parseErrors[0]}`);
+        }
+    }
+}
+
+function hasFilterConfigChanges() {
+    return JSON.stringify(state.draftFilterConfig ?? { sections: [] })
+        !== JSON.stringify(state.filterConfig ?? { sections: [] });
+}
+
+function hasCardDataMapChanges() {
+    return JSON.stringify(buildCardDataMapOverridePayload(state.draftCardDataMaps))
+        !== JSON.stringify(buildCardDataMapOverridePayload(state.cardDataMaps));
+}
+
+function buildCardDataMapOverridePayload(config) {
+    const payload = Object.fromEntries(CARD_DATA_MAP_KEYS.map((key) => [key, {}]));
+
+    for (const library of config?.libraries ?? []) {
+        if (CARD_DATA_MAP_KEYS.includes(library.key)) {
+            payload[library.key] = { ...(library.overrides ?? {}) };
+        }
+    }
+
+    return payload;
 }
 
 async function searchCards() {
@@ -866,9 +1766,23 @@ function renderTags(tags) {
     }
 
     for (const tag of tags) {
+        const text = `${tag.displayName} = ${tag.value}`;
+        if (tag.targetCardId) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "tag-line-button";
+            button.textContent = `${text}  →  ${tag.targetCardId}`;
+            button.title = `打开关联卡牌 ${tag.targetCardId}`;
+            button.addEventListener("click", () => {
+                void openDetail(tag.targetCardId);
+            });
+            elements.tagList.append(button);
+            continue;
+        }
+
         const line = document.createElement("div");
         line.className = "tag-line";
-        line.textContent = `${tag.displayName} = ${tag.value}`;
+        line.textContent = text;
         elements.tagList.append(line);
     }
 }
