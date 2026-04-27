@@ -15,6 +15,7 @@ builder.Services.AddSingleton(_ =>
         Repository = CardRepository.Load(resourceRoot),
     };
 });
+builder.Services.AddSingleton<FilterBarConfigStore>();
 
 var app = builder.Build();
 
@@ -50,6 +51,23 @@ app.MapGet("/api/bootstrap", (RepositoryState state) =>
             BuildPresentOptions(state.Repository.Bootstrap.Schools),
             BuildCollectibleOptions(),
             BuildKeywordOptions()));
+});
+
+app.MapGet("/api/filter-bar-config", async (RepositoryState state, FilterBarConfigStore store, CancellationToken cancellationToken) =>
+{
+    var config = await store.LoadAsync(() => BuildDefaultFilterBarConfig(state), cancellationToken);
+    return Results.Ok(config);
+});
+
+app.MapGet("/api/filter-bar-config/default", (RepositoryState state) =>
+{
+    return Results.Ok(BuildDefaultFilterBarConfig(state));
+});
+
+app.MapPut("/api/filter-bar-config", async (FilterBarConfig config, RepositoryState state, FilterBarConfigStore store, CancellationToken cancellationToken) =>
+{
+    var saved = await store.SaveAsync(config, () => BuildDefaultFilterBarConfig(state), cancellationToken);
+    return Results.Ok(saved);
 });
 
 app.MapGet("/api/cards", ([AsParameters] SearchRequest request, RepositoryState state) =>
@@ -238,6 +256,44 @@ static IReadOnlyList<OptionDto> BuildPresentOptions(IEnumerable<FilterOption> it
 static OptionDto BuildLabeledOption(string value, string label)
 {
     return new OptionDto(value, $"{label.Trim()} ({value})");
+}
+
+static FilterBarConfig BuildDefaultFilterBarConfig(RepositoryState state)
+{
+    return new FilterBarConfig(
+    [
+        BuildFilterBarSection("mode", "模式", BuildModeOptions()),
+        BuildFilterBarSection("set", "扩展包", BuildPresentOptions(CardDataMaps.GetSetsForMode("wild"))),
+        BuildFilterBarSection("cost", "法力值", BuildCostOptions()),
+        BuildFilterBarSection(
+            "class",
+            "职业",
+            BuildMappedOptions(CardDataMaps.ClassMap, state.Repository.Bootstrap.Classes.Select(static item => item.Value))),
+        BuildFilterBarSection(
+            "rarity",
+            "稀有度",
+            BuildMappedOptions(CardDataMaps.RarityMap, state.Repository.Bootstrap.Rarities.Select(static item => item.Value))),
+        BuildFilterBarSection(
+            "cardType",
+            "卡片类型",
+            BuildMappedOptions(CardDataMaps.CardTypeMap, state.Repository.Bootstrap.CardTypes.Select(static item => item.Value))),
+        BuildFilterBarSection("race", "随从种族", BuildPresentOptions(state.Repository.Bootstrap.Races)),
+        BuildFilterBarSection("school", "法术派系", BuildPresentOptions(state.Repository.Bootstrap.Schools)),
+        BuildFilterBarSection("keyword", "关键词", BuildKeywordOptions()),
+        BuildFilterBarSection("collectible", "是否可收藏", BuildCollectibleOptions()),
+    ]);
+}
+
+static FilterBarSectionConfig BuildFilterBarSection(string key, string label, IEnumerable<OptionDto> options)
+{
+    return new FilterBarSectionConfig(
+        key,
+        label,
+        Enabled: true,
+        options
+            .Where(static option => !string.IsNullOrWhiteSpace(option.Value))
+            .Select(static option => new FilterBarOptionConfig(option.Value, option.Label, Visible: true))
+            .ToList());
 }
 
 static int SortKey(string value)

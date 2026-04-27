@@ -1,0 +1,649 @@
+{
+  "sections": [
+    {
+      "key": "mode",
+      "label": "\u6A21\u5F0F",
+      "enabled": true,
+      "options": [
+        {
+          "value": "wild",
+          "label": "\u72C2\u91CE",
+          "visible": true
+        },
+        {
+          "value": "standard",
+          "label": "\u6807\u51C6",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "key": "set",
+      "label": "\u6269\u5C55\u5305",
+      "enabled": true,
+      "options": [
+        {
+          "value": "3",
+          "label": "\u7ECF\u5178 (3)",
+          "visible": true
+        },
+        {
+          "value": "12",
+          "label": "\u7EB3\u514B\u8428\u739B\u65AF (12)",
+          "visible": true
+        },
+        {
+          "value": "13",
+          "label": "\u5730\u7CBE\u5927\u6218\u4F8F\u5112 (13)",
+          "visible": true
+        },
+        {
+          "value": "14",
+          "label": "\u9ED1\u77F3\u5C71\u7684\u706B\u7130 (14)",
+          "visible": true
+        },
+        {
+          "value": "15",
+          "label": "\u51A0\u519B\u7684\u8BD5\u70BC (15)",
+          "visible": true
+        },
+        {
+          "value": "17",
+          "label": "\u82F1\u96C4\u76AE\u80A4\u548C\u6280\u80FD (17)",
+          "visible": true
+        },
+        {
+          "value": "20",
+          "label": "\u63A2\u9669\u8005\u534F\u4F1A (20)",
+          "visible": true
+        },
+        {
+          "value": "21",
+          "label": "\u4E0A\u53E4\u4E4B\u795E\u7684\u4F4E\u8BED (21)",
+          "visible": true
+        },
+        {
+          "value": "23",
+          "label": "\u5361\u62C9\u8D5E\u4E4B\u591C (23)",
+          "visible": true
+        },
+        {
+          "value": "25",
+          "label": "\u9F99\u4E89\u864E\u6597\u52A0\u57FA\u68EE (25)",
+          "visible": true
+        },
+        {
+          "value": "27",
+          "label": "\u52C7\u95EF\u5B89\u6208\u6D1B (27)",
+          "visible": true
+        },
+        {
+          "value": "1001",
+          "label": "\u51B0\u5C01\u738B\u5EA7\u7684\u9A91\u58EB (1001)",
+          "visible": true
+        },
+        {
+          "value": "1004",
+          "label": "\u72D7\u5934\u4EBA\u4E0E\u5730\u4E0B\u4E16\u754C (1004)",
+          "visible": true
+        },
+        {
+          "value": "1125",
+          "label": "\u5973\u5DEB\u68EE\u6797 (1125)",
+          "visible": true
+        },
+        {
+          "value": "1127",
+          "label": "\u7830\u7830\u8BA1\u5212 (1127)",
+          "visible": true
+        },
+        {
+          "value": "1129",
+          "label": "\u62C9\u65AF\u5854\u54C8\u7684\u5927\u4E71\u6597 (1129)",
+          "visible": true
+        },
+        {
+          "value": "1130",
+          "label": "\u6697\u5F71\u5D1B\u8D77 (1130)",
+          "visible": true
+        },
+        {
+          "value": "1158",
+          "label": "\u5965\u4E39\u59C6\u5947\u5175 (1158)",
+          "visible": true
+        },
+        {
+          "value": "1347",
+          "label": "\u5DE8\u9F99\u964D\u4E34 (1347)",
+          "visible": true
+        },
+        {
+          "value": "1403",
+          "label": "\u8FE6\u62C9\u514B\u9686\u7684\u89C9\u9192 (1403)",
+          "visible": true
+        },
+        {
+          "value": "1414",
+          "label": "\u5916\u57DF\u7684\u7070\u70EC (1414)",
+          "visible": true
+        },
+        {
+          "value": "1443",
+          "label": "\u901A\u7075\u5B66\u56ED (1443)",
+          "visible": true
+        },
+        {
+          "value": "1463",
+          "label": "\u6076\u9B54\u730E\u624B\u65B0\u5175 (1463)",
+          "visible": true
+        },
+        {
+          "value": "1466",
+          "label": "\u75AF\u72C2\u7684\u6697\u6708\u9A6C\u620F\u56E2 (1466)",
+          "visible": true
+        },
+        {
+          "value": "1525",
+          "label": "\u8D2B\u7620\u4E4B\u5730\u7684\u9524\u70BC (1525)",
+          "visible": true
+        },
+        {
+          "value": "1578",
+          "label": "\u66B4\u98CE\u57CE\u4E0B\u7684\u96C6\u7ED3 (1578)",
+          "visible": true
+        },
+        {
+          "value": "1626",
+          "label": "\u5965\u7279\u5170\u514B\u7684\u51B3\u88C2 (1626)",
+          "visible": true
+        },
+        {
+          "value": "1635",
+          "label": "\u6000\u65E7 (1635)",
+          "visible": true
+        },
+        {
+          "value": "1637",
+          "label": "\u6838\u5FC3 (1637)",
+          "visible": true
+        },
+        {
+          "value": "1658",
+          "label": "\u63A2\u7D22\u6C89\u6CA1\u4E4B\u57CE (1658)",
+          "visible": true
+        },
+        {
+          "value": "1691",
+          "label": "\u7EB3\u65AF\u5229\u4E9A\u5821\u7684\u60AC\u6848 (1691)",
+          "visible": true
+        },
+        {
+          "value": "1776",
+          "label": "\u5DEB\u5996\u738B\u7684\u8FDB\u519B (1776)",
+          "visible": true
+        },
+        {
+          "value": "1809",
+          "label": "\u4F20\u5947\u97F3\u4E50\u8282 (1809)",
+          "visible": true
+        },
+        {
+          "value": "1858",
+          "label": "\u6CF0\u5766\u8BF8\u795E (1858)",
+          "visible": true
+        },
+        {
+          "value": "1869",
+          "label": "\u963F\u5C14\u8428\u65AF\u4E4B\u8DEF (1869)",
+          "visible": true
+        },
+        {
+          "value": "1892",
+          "label": "\u51B3\u6218\u8352\u829C\u4E4B\u5730 (1892)",
+          "visible": true
+        },
+        {
+          "value": "1897",
+          "label": "\u5A01\u5179\u73ED\u7684\u5DE5\u574A (1897)",
+          "visible": true
+        },
+        {
+          "value": "1898",
+          "label": "\u65F6\u5149\u4E4B\u7A74 (1898)",
+          "visible": true
+        },
+        {
+          "value": "1905",
+          "label": "\u80DC\u5730\u5386\u9669\u8BB0 (1905)",
+          "visible": true
+        },
+        {
+          "value": "1935",
+          "label": "\u6DF1\u6697\u9886\u57DF (1935)",
+          "visible": true
+        },
+        {
+          "value": "1941",
+          "label": "\u6D3B\u52A8\u793C\u7269 (1941)",
+          "visible": true
+        },
+        {
+          "value": "1946",
+          "label": "\u7FE1\u7FE0\u68A6\u5883 (1946)",
+          "visible": true
+        },
+        {
+          "value": "1952",
+          "label": "\u5B89\u6208\u6D1B\u9F9F\u9014 (1952)",
+          "visible": true
+        },
+        {
+          "value": "1957",
+          "label": "\u7A7F\u8D8A\u65F6\u95F4\u6D41 (1957)",
+          "visible": true
+        },
+        {
+          "value": "1980",
+          "label": "\u5927\u5730\u7684\u88C2\u53D8 (1980)",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "key": "cost",
+      "label": "\u6CD5\u529B\u503C",
+      "enabled": true,
+      "options": [
+        {
+          "value": "0",
+          "label": "0",
+          "visible": true
+        },
+        {
+          "value": "1",
+          "label": "1",
+          "visible": true
+        },
+        {
+          "value": "2",
+          "label": "2",
+          "visible": true
+        },
+        {
+          "value": "3",
+          "label": "3",
+          "visible": true
+        },
+        {
+          "value": "4",
+          "label": "4",
+          "visible": true
+        },
+        {
+          "value": "5",
+          "label": "5",
+          "visible": true
+        },
+        {
+          "value": "6",
+          "label": "6",
+          "visible": true
+        },
+        {
+          "value": "7",
+          "label": "7",
+          "visible": true
+        },
+        {
+          "value": "8",
+          "label": "8",
+          "visible": true
+        },
+        {
+          "value": "9",
+          "label": "9",
+          "visible": true
+        },
+        {
+          "value": "10",
+          "label": "10\u002B",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "key": "class",
+      "label": "\u804C\u4E1A",
+      "enabled": true,
+      "options": [
+        {
+          "value": "1",
+          "label": "\u6B7B\u4EA1\u9A91\u58EB (1)",
+          "visible": true
+        },
+        {
+          "value": "2",
+          "label": "\u5FB7\u9C81\u4F0A (2)",
+          "visible": true
+        },
+        {
+          "value": "3",
+          "label": "\u730E\u4EBA (3)",
+          "visible": true
+        },
+        {
+          "value": "4",
+          "label": "\u6CD5\u5E08 (4)",
+          "visible": true
+        },
+        {
+          "value": "5",
+          "label": "\u5723\u9A91\u58EB (5)",
+          "visible": true
+        },
+        {
+          "value": "6",
+          "label": "\u7267\u5E08 (6)",
+          "visible": true
+        },
+        {
+          "value": "7",
+          "label": "\u6F5C\u884C\u8005 (7)",
+          "visible": true
+        },
+        {
+          "value": "8",
+          "label": "\u8428\u6EE1\u796D\u53F8 (8)",
+          "visible": true
+        },
+        {
+          "value": "9",
+          "label": "\u672F\u58EB (9)",
+          "visible": true
+        },
+        {
+          "value": "10",
+          "label": "\u6218\u58EB (10)",
+          "visible": true
+        },
+        {
+          "value": "12",
+          "label": "\u4E2D\u7ACB (12)",
+          "visible": true
+        },
+        {
+          "value": "14",
+          "label": "\u6076\u9B54\u730E\u624B (14)",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "key": "rarity",
+      "label": "\u7A00\u6709\u5EA6",
+      "enabled": true,
+      "options": [
+        {
+          "value": "1",
+          "label": "\u666E\u901A (1)",
+          "visible": true
+        },
+        {
+          "value": "2",
+          "label": "\u514D\u8D39 (2)",
+          "visible": true
+        },
+        {
+          "value": "3",
+          "label": "\u7A00\u6709 (3)",
+          "visible": true
+        },
+        {
+          "value": "4",
+          "label": "\u53F2\u8BD7 (4)",
+          "visible": true
+        },
+        {
+          "value": "5",
+          "label": "\u4F20\u8BF4 (5)",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "key": "cardType",
+      "label": "\u5361\u7247\u7C7B\u578B",
+      "enabled": true,
+      "options": [
+        {
+          "value": "3",
+          "label": "\u82F1\u96C4 (3)",
+          "visible": true
+        },
+        {
+          "value": "4",
+          "label": "\u968F\u4ECE (4)",
+          "visible": true
+        },
+        {
+          "value": "5",
+          "label": "\u6CD5\u672F (5)",
+          "visible": true
+        },
+        {
+          "value": "7",
+          "label": "\u6B66\u5668 (7)",
+          "visible": true
+        },
+        {
+          "value": "10",
+          "label": "\u82F1\u96C4\u6280\u80FD (10)",
+          "visible": true
+        },
+        {
+          "value": "39",
+          "label": "\u5730\u6807 (39)",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "key": "race",
+      "label": "\u968F\u4ECE\u79CD\u65CF",
+      "enabled": true,
+      "options": [
+        {
+          "value": "2",
+          "label": "\u5FB7\u83B1\u5C3C (2)",
+          "visible": true
+        },
+        {
+          "value": "11",
+          "label": "\u4EA1\u7075 (11)",
+          "visible": true
+        },
+        {
+          "value": "14",
+          "label": "\u9C7C\u4EBA (14)",
+          "visible": true
+        },
+        {
+          "value": "15",
+          "label": "\u6076\u9B54 (15)",
+          "visible": true
+        },
+        {
+          "value": "17",
+          "label": "\u673A\u68B0 (17)",
+          "visible": true
+        },
+        {
+          "value": "18",
+          "label": "\u5143\u7D20 (18)",
+          "visible": true
+        },
+        {
+          "value": "20",
+          "label": "\u91CE\u517D (20)",
+          "visible": true
+        },
+        {
+          "value": "21",
+          "label": "\u56FE\u817E (21)",
+          "visible": true
+        },
+        {
+          "value": "23",
+          "label": "\u6D77\u76D7 (23)",
+          "visible": true
+        },
+        {
+          "value": "24",
+          "label": "\u9F99 (24)",
+          "visible": true
+        },
+        {
+          "value": "26",
+          "label": "\u5168\u90E8 (26)",
+          "visible": true
+        },
+        {
+          "value": "43",
+          "label": "\u91CE\u732A\u4EBA (43)",
+          "visible": true
+        },
+        {
+          "value": "92",
+          "label": "\u5A1C\u8FE6 (92)",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "key": "school",
+      "label": "\u6CD5\u672F\u6D3E\u7CFB",
+      "enabled": true,
+      "options": [
+        {
+          "value": "1",
+          "label": "\u5965\u672F (1)",
+          "visible": true
+        },
+        {
+          "value": "2",
+          "label": "\u706B\u7130 (2)",
+          "visible": true
+        },
+        {
+          "value": "3",
+          "label": "\u51B0\u971C (3)",
+          "visible": true
+        },
+        {
+          "value": "4",
+          "label": "\u81EA\u7136 (4)",
+          "visible": true
+        },
+        {
+          "value": "5",
+          "label": "\u795E\u5723 (5)",
+          "visible": true
+        },
+        {
+          "value": "6",
+          "label": "\u6697\u5F71 (6)",
+          "visible": true
+        },
+        {
+          "value": "7",
+          "label": "\u90AA\u80FD (7)",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "key": "keyword",
+      "label": "\u5173\u952E\u8BCD",
+      "enabled": true,
+      "options": [
+        {
+          "value": "BATTLECRY",
+          "label": "\u6218\u543C",
+          "visible": true
+        },
+        {
+          "value": "TAUNT",
+          "label": "\u5632\u8BBD",
+          "visible": true
+        },
+        {
+          "value": "DIVINE_SHIELD",
+          "label": "\u5723\u76FE",
+          "visible": true
+        },
+        {
+          "value": "DEATHRATTLE",
+          "label": "\u4EA1\u8BED",
+          "visible": true
+        },
+        {
+          "value": "DISCOVER",
+          "label": "\u53D1\u73B0",
+          "visible": true
+        },
+        {
+          "value": "RUSH",
+          "label": "\u7A81\u88AD",
+          "visible": true
+        },
+        {
+          "value": "LIFESTEAL",
+          "label": "\u5438\u8840",
+          "visible": true
+        },
+        {
+          "value": "WINDFURY",
+          "label": "\u98CE\u6012",
+          "visible": true
+        },
+        {
+          "value": "STEALTH",
+          "label": "\u6F5C\u884C",
+          "visible": true
+        },
+        {
+          "value": "POISONOUS",
+          "label": "\u5267\u6BD2",
+          "visible": true
+        },
+        {
+          "value": "AURA",
+          "label": "\u5149\u73AF",
+          "visible": true
+        },
+        {
+          "value": "TRIGGER_VISUAL",
+          "label": "\u7279\u6548",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "key": "collectible",
+      "label": "\u662F\u5426\u53EF\u6536\u85CF",
+      "enabled": true,
+      "options": [
+        {
+          "value": "1",
+          "label": "\u53EF\u6536\u85CF",
+          "visible": true
+        },
+        {
+          "value": "0",
+          "label": "\u4E0D\u53EF\u6536\u85CF",
+          "visible": true
+        }
+      ]
+    }
+  ]
+}

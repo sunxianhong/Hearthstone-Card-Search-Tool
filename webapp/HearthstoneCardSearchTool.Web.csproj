@@ -12,7 +12,8 @@
 
   <ItemGroup>
     <ContainerEnvironmentVariable Include="CARD_RESOURCE_ROOT" Value="/data" />
-    <ContainerEnvironmentVariable Include="ASPNETCORE_URLS" Value="http://+:5888" />
+    <ContainerEnvironmentVariable Include="FILTER_BAR_CONFIG_ROOT" Value="/config" />
+    <ContainerEnvironmentVariable Include="ASPNETCORE_HTTP_PORTS" Value="5888" />
     <ContainerPort Include="5888" Type="tcp" />
   </ItemGroup>
 

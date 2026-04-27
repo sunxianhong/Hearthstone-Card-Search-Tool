@@ -5,10 +5,12 @@ services:
       dockerfile: Dockerfile
     container_name: hearthstone-card-search
     environment:
-      ASPNETCORE_URLS: http://+:5888
+      ASPNETCORE_HTTP_PORTS: 5888
       CARD_RESOURCE_ROOT: /data
+      FILTER_BAR_CONFIG_ROOT: /config
     ports:
       - "5888:5888"
     volumes:
       - ./:/data:ro
+      - ./config:/config
     restart: unless-stopped

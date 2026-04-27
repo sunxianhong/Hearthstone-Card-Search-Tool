@@ -12,12 +12,13 @@ RUN dotnet publish webapp/HearthstoneCardSearchTool.Web.csproj -c Release -o /ap
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 
-ENV ASPNETCORE_URLS=http://+:5888
+ENV ASPNETCORE_HTTP_PORTS=5888
 ENV CARD_RESOURCE_ROOT=/data
+ENV FILTER_BAR_CONFIG_ROOT=/config
 
 COPY --from=build /app/publish .
 
 EXPOSE 5888
-VOLUME ["/data"]
+VOLUME ["/data", "/config"]
 
 ENTRYPOINT ["dotnet", "HearthstoneCardSearchTool.Web.dll"]
