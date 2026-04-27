@@ -112,6 +112,15 @@ public sealed class RepositoryTests
         Assert.Equal("附魔 (6)", CardDataMaps.MapTagValue("CARDTYPE", "6"));
     }
 
+    [Fact]
+    public void KeywordOptionsFollowFallbackMap()
+    {
+        var keywords = CardDataMaps.GetAllKeywords();
+
+        Assert.Contains(keywords, item => item.Value == "BATTLECRY" && item.Label == "\u6218\u543c");
+        Assert.Contains(keywords, item => item.Value == "TRIGGER_VISUAL" && item.Label == "\u7279\u6548");
+    }
+
     private static CardRepository LoadRepository()
     {
         var resourceRoot = ResourceLocator.LocateResourceRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory());

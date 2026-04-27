@@ -110,6 +110,7 @@ public sealed class CardDataMapConfigStore
             RarityMap = NormalizeMap(current?.RarityMap),
             RaceMap = NormalizeMap(current?.RaceMap),
             SchoolMap = NormalizeMap(current?.SchoolMap),
+            KeywordMap = NormalizeMap(current?.KeywordMap),
             SetMap = NormalizeMap(current?.SetMap),
         };
     }

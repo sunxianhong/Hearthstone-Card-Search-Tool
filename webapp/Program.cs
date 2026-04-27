@@ -272,22 +272,13 @@ static IReadOnlyList<OptionDto> BuildCollectibleOptions()
 
 static IReadOnlyList<OptionDto> BuildKeywordOptions()
 {
-    return
-    [
-        new OptionDto(string.Empty, "关键字"),
-        new OptionDto("BATTLECRY", "战吼"),
-        new OptionDto("TAUNT", "嘲讽"),
-        new OptionDto("DIVINE_SHIELD", "圣盾"),
-        new OptionDto("DEATHRATTLE", "亡语"),
-        new OptionDto("DISCOVER", "发现"),
-        new OptionDto("RUSH", "突袭"),
-        new OptionDto("LIFESTEAL", "吸血"),
-        new OptionDto("WINDFURY", "风怒"),
-        new OptionDto("STEALTH", "潜行"),
-        new OptionDto("POISONOUS", "剧毒"),
-        new OptionDto("AURA", "光环"),
-        new OptionDto("TRIGGER_VISUAL", "特效"),
-    ];
+    var items = new List<OptionDto>
+    {
+        new(string.Empty, "关键字"),
+    };
+
+    items.AddRange(CardDataMaps.GetAllKeywords().Select(static item => new OptionDto(item.Value, item.Label)));
+    return items;
 }
 
 static IReadOnlyList<OptionDto> BuildMappedOptions(
@@ -526,6 +517,12 @@ static CardDataMapConfigResponse BuildCardDataMapConfigResponse(CardDataMapOverr
             "用于法术派系筛选和详情标签显示。",
             CardDataMaps.DefaultSchoolMap,
             overrides.SchoolMap),
+        BuildCardDataMapLibrary(
+            "keywordMap",
+            "关键词映射",
+            "用于关键词筛选显示名。新增关键字标签时可以在这里维护中文名，保存后网页筛选会立即刷新。",
+            CardDataMaps.DefaultKeywordMap,
+            overrides.KeywordMap),
         BuildCardDataMapLibrary(
             "setMap",
             "扩展包映射",

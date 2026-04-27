@@ -1223,6 +1223,23 @@ public static class CardDataMaps
             ["7"] = "邪能",
         };
 
+    private static readonly IReadOnlyDictionary<string, string> FallbackKeywordMap =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["BATTLECRY"] = "战吼",
+            ["TAUNT"] = "嘲讽",
+            ["DIVINE_SHIELD"] = "圣盾",
+            ["DEATHRATTLE"] = "亡语",
+            ["DISCOVER"] = "发现",
+            ["RUSH"] = "突袭",
+            ["LIFESTEAL"] = "吸血",
+            ["WINDFURY"] = "风怒",
+            ["STEALTH"] = "潜行",
+            ["POISONOUS"] = "剧毒",
+            ["AURA"] = "光环",
+            ["TRIGGER_VISUAL"] = "特效",
+        };
+
     private static readonly IReadOnlyDictionary<string, string> FallbackSetMap =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -1298,6 +1315,7 @@ public static class CardDataMaps
     private static IReadOnlyDictionary<string, string> cardTypeMap = FallbackCardTypeMap;
     private static IReadOnlyDictionary<string, string> raceMap = FallbackRaceMap;
     private static IReadOnlyDictionary<string, string> schoolMap = FallbackSchoolMap;
+    private static IReadOnlyDictionary<string, string> keywordMap = FallbackKeywordMap;
     private static IReadOnlyDictionary<string, string> setMap = FallbackSetMap;
 
     public static IReadOnlyDictionary<string, string> DefaultUnknownEnumMap => FallbackUnknownEnumMap;
@@ -1306,6 +1324,7 @@ public static class CardDataMaps
     public static IReadOnlyDictionary<string, string> DefaultRarityMap => FallbackRarityMap;
     public static IReadOnlyDictionary<string, string> DefaultRaceMap => FallbackRaceMap;
     public static IReadOnlyDictionary<string, string> DefaultSchoolMap => FallbackSchoolMap;
+    public static IReadOnlyDictionary<string, string> DefaultKeywordMap => FallbackKeywordMap;
     public static IReadOnlyDictionary<string, string> DefaultSetMap => FallbackSetMap;
 
     public static IReadOnlyDictionary<string, string> UnknownEnumMap => unknownEnumMap;
@@ -1315,6 +1334,7 @@ public static class CardDataMaps
     public static IReadOnlyDictionary<string, string> CardTypeMap => cardTypeMap;
     public static IReadOnlyDictionary<string, string> RaceMap => raceMap;
     public static IReadOnlyDictionary<string, string> SchoolMap => schoolMap;
+    public static IReadOnlyDictionary<string, string> KeywordMap => keywordMap;
     public static IReadOnlyDictionary<string, string> SetMap => setMap;
 
     public static void Initialize(string resourceRoot)
@@ -1347,6 +1367,7 @@ public static class CardDataMaps
             rarityMap = MergeMap(FallbackRarityMap, overrides?.RarityMap);
             raceMap = MergeMap(FallbackRaceMap, overrides?.RaceMap);
             schoolMap = MergeMap(FallbackSchoolMap, overrides?.SchoolMap);
+            keywordMap = MergeMap(FallbackKeywordMap, overrides?.KeywordMap);
             setMap = MergeMap(FallbackSetMap, overrides?.SetMap);
         }
     }
@@ -1413,6 +1434,13 @@ public static class CardDataMaps
     public static IReadOnlyList<FilterOption> GetFilterableSets()
     {
         return GetAllSets();
+    }
+
+    public static IReadOnlyList<FilterOption> GetAllKeywords()
+    {
+        return keywordMap
+            .Select(static pair => new FilterOption(pair.Key, pair.Value))
+            .ToList();
     }
 
     private static string MapWithFallback(IReadOnlyDictionary<string, string> map, string value)

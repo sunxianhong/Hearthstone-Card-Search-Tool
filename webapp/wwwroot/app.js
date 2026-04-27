@@ -31,6 +31,7 @@ const CARD_DATA_MAP_KEYS = [
     "rarityMap",
     "raceMap",
     "schoolMap",
+    "keywordMap",
     "setMap",
 ];
 
