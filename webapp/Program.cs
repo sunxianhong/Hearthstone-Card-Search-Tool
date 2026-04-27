@@ -206,6 +206,9 @@ static IReadOnlyList<OptionDto> BuildKeywordOptions()
         new OptionDto("LIFESTEAL", "吸血"),
         new OptionDto("WINDFURY", "风怒"),
         new OptionDto("STEALTH", "潜行"),
+        new OptionDto("POISONOUS", "剧毒"),
+        new OptionDto("AURA", "光环"),
+        new OptionDto("TRIGGER_VISUAL", "特效"),
     ];
 }
 
