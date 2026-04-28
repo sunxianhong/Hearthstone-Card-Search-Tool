@@ -152,6 +152,10 @@ function bindEvents() {
 
     elements.setPickerButton.addEventListener("click", () => {
         const shouldOpen = elements.setPickerPanel.classList.contains("is-hidden");
+        if (shouldOpen) {
+            renderSetPicker(getVisibleSectionOptions("set"), elements.setPickerButton.dataset.value ?? "");
+        }
+
         elements.setPickerPanel.classList.toggle("is-hidden", !shouldOpen);
         elements.setPickerButton.setAttribute("aria-expanded", String(shouldOpen));
     });
@@ -714,9 +718,7 @@ function renderSetPicker(items, preferredValue) {
     const currentValue = preferredValue ?? "";
     const selected = items.find((item) => item.value === currentValue) ?? null;
 
-    elements.setPickerButton.dataset.value = selected?.value ?? "";
-    elements.setPickerButton.textContent = selected?.label ?? FILTER_FIELD_LABELS.set;
-    elements.setPickerButton.title = selected?.label ?? FILTER_FIELD_LABELS.set;
+    setSelectedSetValue(selected?.value ?? "", selected?.label ?? FILTER_FIELD_LABELS.set);
     elements.setPickerButton.setAttribute("aria-expanded", "false");
 
     const grid = document.createElement("div");
@@ -726,10 +728,9 @@ function renderSetPicker(items, preferredValue) {
     allButton.type = "button";
     allButton.className = `set-picker-option${selected ? "" : " is-selected"}`;
     allButton.textContent = FILTER_FIELD_LABELS.set;
+    allButton.setAttribute("aria-selected", String(!selected));
     allButton.addEventListener("click", () => {
-        elements.setPickerButton.dataset.value = "";
-        elements.setPickerButton.textContent = FILTER_FIELD_LABELS.set;
-        elements.setPickerButton.title = FILTER_FIELD_LABELS.set;
+        setSelectedSetValue("", FILTER_FIELD_LABELS.set);
         closeSetPicker();
     });
     grid.append(allButton);
@@ -740,16 +741,21 @@ function renderSetPicker(items, preferredValue) {
         option.className = `set-picker-option${item.value === selected?.value ? " is-selected" : ""}`;
         option.textContent = item.label;
         option.title = item.label;
+        option.setAttribute("aria-selected", String(item.value === selected?.value));
         option.addEventListener("click", () => {
-            elements.setPickerButton.dataset.value = item.value;
-            elements.setPickerButton.textContent = item.label;
-            elements.setPickerButton.title = item.label;
+            setSelectedSetValue(item.value, item.label);
             closeSetPicker();
         });
         grid.append(option);
     }
 
     elements.setPickerPanel.replaceChildren(grid);
+}
+
+function setSelectedSetValue(value, label) {
+    elements.setPickerButton.dataset.value = value;
+    elements.setPickerButton.textContent = label;
+    elements.setPickerButton.title = label;
 }
 
 function closeSetPicker() {

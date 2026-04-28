@@ -277,10 +277,10 @@ select {
 }
 
 .set-picker-option.is-selected {
-    background: rgba(198, 118, 45, 0.16);
-    border-color: rgba(198, 118, 45, 0.4);
-    color: var(--accent);
-    font-weight: 800;
+    background: rgba(109, 86, 69, 0.14);
+    border-color: rgba(109, 86, 69, 0.34);
+    color: var(--ink);
+    font-weight: 700;
 }
 
 .mode-badge,
