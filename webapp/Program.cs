@@ -17,6 +17,7 @@ builder.Services.AddSingleton(sp =>
     {
         ResourceRoot = resourceRoot,
         ImageRoot = Path.GetFullPath(Path.Combine(resourceRoot, "cardpng")),
+        EnchantmentImagePath = ResolveEnchantmentImagePath(resourceRoot),
         Repository = CardRepository.Load(resourceRoot),
     };
 });
@@ -170,7 +171,11 @@ app.MapGet("/api/cards/{cardId}/image", (string cardId, RepositoryState state) =
     }
 
     var imagePath = Path.GetFullPath(detail.ImagePath!);
-    if (!imagePath.StartsWith(state.ImageRoot, StringComparison.OrdinalIgnoreCase) || !File.Exists(imagePath))
+    var isCardArt = imagePath.StartsWith(state.ImageRoot, StringComparison.OrdinalIgnoreCase);
+    var isEnchantmentFallback = state.EnchantmentImagePath is not null
+        && string.Equals(imagePath, state.EnchantmentImagePath, StringComparison.OrdinalIgnoreCase);
+
+    if ((!isCardArt && !isEnchantmentFallback) || !File.Exists(imagePath))
     {
         return Results.NotFound();
     }
@@ -208,6 +213,20 @@ static string NormalizeMode(string? mode)
     return string.Equals(mode, "standard", StringComparison.OrdinalIgnoreCase)
         ? "standard"
         : "wild";
+}
+
+static string? ResolveEnchantmentImagePath(string resourceRoot)
+{
+    var resourceImagePath = Path.GetFullPath(Path.Combine(resourceRoot, "enchantment.png"));
+    if (File.Exists(resourceImagePath))
+    {
+        return resourceImagePath;
+    }
+
+    var appImagePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "enchantment.png"));
+    return File.Exists(appImagePath)
+        ? appImagePath
+        : null;
 }
 
 static IReadOnlySet<string>? ResolveModeSetValues(FilterBarConfig config, string? mode)

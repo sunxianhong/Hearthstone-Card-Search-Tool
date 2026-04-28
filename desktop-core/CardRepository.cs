@@ -41,6 +41,7 @@ public sealed class CardRepository
     {
         var xmlPath = Path.Combine(resourceRoot, "CardDefs.xml");
         var imageRoot = Path.Combine(resourceRoot, "cardpng");
+        var enchantmentImagePath = ResolveEnchantmentImagePath(resourceRoot);
 
         CardDataMaps.Initialize(resourceRoot);
 
@@ -114,6 +115,10 @@ public sealed class CardRepository
             RememberLabel(schoolLabels, tagMap, "SPELL_SCHOOL", CardDataMaps.SchoolMap);
 
             imageIndex.TryGetValue(cardId.ToLowerInvariant(), out var imagePath);
+            if (IsEnchantmentCard(tagMap) && enchantmentImagePath is not null)
+            {
+                imagePath = enchantmentImagePath;
+            }
 
             cards.Add(
                 new CardRecord(
@@ -148,7 +153,7 @@ public sealed class CardRepository
                 Races = MapToOptions(raceLabels),
                 Schools = MapToOptions(schoolLabels),
             },
-            imageIndex.Count > 0);
+            imageIndex.Count > 0 || enchantmentImagePath is not null);
     }
 
     public IReadOnlyList<CardRecord> Search(string query, SearchFilters filters, int limit)
@@ -349,6 +354,25 @@ public sealed class CardRepository
         }
 
         return priority;
+    }
+
+    private static bool IsEnchantmentCard(IReadOnlyDictionary<string, string> tagMap)
+    {
+        return tagMap.TryGetValue("CARDTYPE", out var value) && value == "6";
+    }
+
+    private static string? ResolveEnchantmentImagePath(string resourceRoot)
+    {
+        var resourceImagePath = Path.GetFullPath(Path.Combine(resourceRoot, "enchantment.png"));
+        if (File.Exists(resourceImagePath))
+        {
+            return resourceImagePath;
+        }
+
+        var appImagePath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "enchantment.png"));
+        return File.Exists(appImagePath)
+            ? appImagePath
+            : null;
     }
 
     private static string ChildText(XElement parent, string name)

@@ -232,6 +232,13 @@ select {
     font-size: 13px;
 }
 
+.set-picker-button.has-selection {
+    border-color: rgba(198, 118, 45, 0.42);
+    background: rgba(255, 244, 226, 0.98);
+    color: var(--accent);
+    font-weight: 700;
+}
+
 .set-picker-button::after {
     content: "▼";
     float: right;

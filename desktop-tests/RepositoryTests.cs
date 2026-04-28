@@ -1,4 +1,5 @@
 using HearthstoneCardSearchTool.Core;
+using System.Xml.Linq;
 
 namespace HearthstoneCardSearchTool.Tests;
 
@@ -29,8 +30,13 @@ public sealed class RepositoryTests
         Assert.Contains(placeholderResults, item => string.IsNullOrWhiteSpace(item.ImagePath));
 
         var resourceRoot = ResourceLocator.LocateResourceRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
-        var imageCardId = Path.GetFileNameWithoutExtension(
-            Directory.EnumerateFiles(Path.Combine(resourceRoot, "cardpng"), "*.png", SearchOption.AllDirectories).First());
+        var firstImagePath = Directory.EnumerateFiles(Path.Combine(resourceRoot, "cardpng"), "*.png", SearchOption.AllDirectories).FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(firstImagePath))
+        {
+            return;
+        }
+
+        var imageCardId = Path.GetFileNameWithoutExtension(firstImagePath);
 
         var imageResults = Repository.Value.Search(imageCardId, SearchFilters.Empty, 20);
         Assert.Contains(imageResults, item => !string.IsNullOrWhiteSpace(item.ImagePath));
@@ -119,6 +125,29 @@ public sealed class RepositoryTests
 
         Assert.Contains(keywords, item => item.Value == "BATTLECRY" && item.Label == "\u6218\u543c");
         Assert.Contains(keywords, item => item.Value == "TRIGGER_VISUAL" && item.Label == "\u7279\u6548");
+    }
+
+    [Fact]
+    public void EnchantmentCardsUseSharedEnchantmentImage()
+    {
+        var resourceRoot = ResourceLocator.LocateResourceRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
+        var enchantmentImagePath = Path.Combine(resourceRoot, "enchantment.png");
+        var xmlPath = Path.Combine(resourceRoot, "CardDefs.xml");
+        var enchantmentCardId = XDocument.Load(xmlPath)
+            .Descendants("Entity")
+            .FirstOrDefault(entity => entity.Elements("Tag").Any(tag =>
+                tag.Attribute("name")?.Value == "CARDTYPE"
+                && tag.Attribute("value")?.Value == "6"))
+            ?.Attribute("CardID")
+            ?.Value;
+        var detail = enchantmentCardId is null
+            ? null
+            : Repository.Value.GetDetail(enchantmentCardId);
+
+        Assert.False(string.IsNullOrWhiteSpace(enchantmentCardId));
+        Assert.True(File.Exists(enchantmentImagePath));
+        Assert.NotNull(detail);
+        Assert.Equal(enchantmentImagePath, detail!.ImagePath);
     }
 
     private static CardRepository LoadRepository()

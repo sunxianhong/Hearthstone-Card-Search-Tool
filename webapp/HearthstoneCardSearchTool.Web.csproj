@@ -4,6 +4,13 @@
     <ProjectReference Include="..\desktop-core\HearthstoneCardSearchTool.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\enchantment.png" Link="enchantment.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>

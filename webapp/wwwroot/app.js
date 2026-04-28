@@ -153,11 +153,17 @@ function bindEvents() {
     elements.setPickerButton.addEventListener("click", () => {
         const shouldOpen = elements.setPickerPanel.classList.contains("is-hidden");
         if (shouldOpen) {
-            renderSetPicker(getVisibleSectionOptions("set"), elements.setPickerButton.dataset.value ?? "");
+            renderSetPicker(getVisibleSectionOptions("set"), getSelectedSetValue());
         }
 
         elements.setPickerPanel.classList.toggle("is-hidden", !shouldOpen);
         elements.setPickerButton.setAttribute("aria-expanded", String(shouldOpen));
+
+        if (shouldOpen) {
+            requestAnimationFrame(() => {
+                syncSetPickerSelection(getSelectedSetValue(), true);
+            });
+        }
     });
 
     document.addEventListener("click", (event) => {
@@ -300,8 +306,9 @@ function synchronizeStaticText() {
     elements.queryInput.placeholder = "中文名 / 英文名 / CardID / DbfId / 标签:值 / EnumID:值";
     elements.searchButton.textContent = "筛选 / 搜索";
     elements.resetButton.textContent = "重置";
-    elements.setPickerButton.textContent = elements.setPickerButton.dataset.value || FILTER_FIELD_LABELS.set;
-    elements.setPickerButton.title = elements.setPickerButton.dataset.value || FILTER_FIELD_LABELS.set;
+    const selectedSetLabel = getSelectedSetLabel() || FILTER_FIELD_LABELS.set;
+    elements.setPickerButton.textContent = selectedSetLabel;
+    elements.setPickerButton.title = selectedSetLabel;
     elements.filterConfigButton.textContent = "⚙";
     elements.filterConfigButton.setAttribute("aria-label", "打开设置中心");
     elements.filterConfigButton.title = "设置中心";
@@ -704,14 +711,12 @@ function refreshSetOptions(preferredValue = null) {
 
     elements.setPicker.classList.toggle("is-hidden", !isVisible);
     if (!isVisible) {
-        elements.setPickerButton.dataset.value = "";
-        elements.setPickerButton.textContent = FILTER_FIELD_LABELS.set;
-        elements.setPickerButton.title = FILTER_FIELD_LABELS.set;
+        setSelectedSetValue("", FILTER_FIELD_LABELS.set);
         closeSetPicker();
         return;
     }
 
-    renderSetPicker(visibleOptions, preferredValue ?? elements.setPickerButton.dataset.value ?? "");
+    renderSetPicker(visibleOptions, preferredValue ?? getSelectedSetValue());
 }
 
 function renderSetPicker(items, preferredValue) {
@@ -726,9 +731,10 @@ function renderSetPicker(items, preferredValue) {
 
     const allButton = document.createElement("button");
     allButton.type = "button";
-    allButton.className = `set-picker-option${selected ? "" : " is-selected"}`;
+    allButton.className = "set-picker-option";
+    allButton.dataset.value = "";
     allButton.textContent = FILTER_FIELD_LABELS.set;
-    allButton.setAttribute("aria-selected", String(!selected));
+    allButton.setAttribute("role", "option");
     allButton.addEventListener("click", () => {
         setSelectedSetValue("", FILTER_FIELD_LABELS.set);
         closeSetPicker();
@@ -738,10 +744,11 @@ function renderSetPicker(items, preferredValue) {
     for (const item of items) {
         const option = document.createElement("button");
         option.type = "button";
-        option.className = `set-picker-option${item.value === selected?.value ? " is-selected" : ""}`;
+        option.className = "set-picker-option";
+        option.dataset.value = item.value;
         option.textContent = item.label;
         option.title = item.label;
-        option.setAttribute("aria-selected", String(item.value === selected?.value));
+        option.setAttribute("role", "option");
         option.addEventListener("click", () => {
             setSelectedSetValue(item.value, item.label);
             closeSetPicker();
@@ -750,12 +757,56 @@ function renderSetPicker(items, preferredValue) {
     }
 
     elements.setPickerPanel.replaceChildren(grid);
+    syncSetPickerSelection(selected?.value ?? "");
+}
+
+function getSelectedSetValue() {
+    return elements.setPickerButton.dataset.value ?? "";
+}
+
+function getSelectedSetLabel() {
+    return elements.setPickerButton.dataset.label ?? "";
+}
+
+function syncSetPickerSelection(selectedValue, shouldScrollIntoView = false) {
+    const options = elements.setPickerPanel.querySelectorAll(".set-picker-option");
+    let selectedOption = null;
+
+    for (const option of options) {
+        if (!(option instanceof HTMLElement)) {
+            continue;
+        }
+
+        const isSelected = (option.dataset.value ?? "") === (selectedValue ?? "");
+        option.classList.toggle("is-selected", isSelected);
+        option.setAttribute("aria-selected", String(isSelected));
+
+        if (isSelected) {
+            selectedOption = option;
+        }
+    }
+
+    if (!shouldScrollIntoView) {
+        return;
+    }
+
+    if (selectedOption instanceof HTMLElement) {
+        selectedOption.scrollIntoView({
+            block: "nearest",
+            inline: "nearest",
+        });
+        return;
+    }
+
+    elements.setPickerPanel.scrollTop = 0;
 }
 
 function setSelectedSetValue(value, label) {
     elements.setPickerButton.dataset.value = value;
+    elements.setPickerButton.dataset.label = label;
     elements.setPickerButton.textContent = label;
     elements.setPickerButton.title = label;
+    elements.setPickerButton.classList.toggle("has-selection", Boolean(value));
 }
 
 function closeSetPicker() {

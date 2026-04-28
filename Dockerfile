@@ -3,6 +3,7 @@ WORKDIR /src
 
 COPY desktop-core/HearthstoneCardSearchTool.Core.csproj desktop-core/
 COPY webapp/HearthstoneCardSearchTool.Web.csproj webapp/
+COPY enchantment.png .
 RUN dotnet restore webapp/HearthstoneCardSearchTool.Web.csproj
 
 COPY desktop-core/ desktop-core/

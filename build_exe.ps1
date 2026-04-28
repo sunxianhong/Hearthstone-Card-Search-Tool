@@ -41,6 +41,10 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Copy-Item -LiteralPath (Join-Path $projectRoot "CardDefs.xml") -Destination (Join-Path $portableRoot "CardDefs.xml") -Force
+$enchantmentImage = Join-Path $projectRoot "enchantment.png"
+if (Test-Path -LiteralPath $enchantmentImage -PathType Leaf) {
+    Copy-Item -LiteralPath $enchantmentImage -Destination (Join-Path $portableRoot "enchantment.png") -Force
+}
 if (Test-Path -LiteralPath $preservedImageRoot -PathType Container) {
     Move-Item -LiteralPath $preservedImageRoot -Destination $portableRoot -Force
 }

@@ -97,5 +97,6 @@ public sealed class RepositoryState
 {
     public required string ResourceRoot { get; init; }
     public required string ImageRoot { get; init; }
+    public string? EnchantmentImagePath { get; init; }
     public required HearthstoneCardSearchTool.Core.CardRepository Repository { get; init; }
 }
