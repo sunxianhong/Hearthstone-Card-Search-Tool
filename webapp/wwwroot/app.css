@@ -756,7 +756,7 @@ select {
     bottom: calc(100% + 8px);
     z-index: 3;
     display: none;
-    width: 180px;
+    width: 240px;
     transform: translateX(-50%);
     pointer-events: none;
 }
@@ -771,6 +771,8 @@ select {
     width: 100%;
     height: auto;
     background: transparent;
+    transform: scale(1.04);
+    transform-origin: center center;
 }
 
 .tag-list {
@@ -887,6 +889,10 @@ select {
 
     .results-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .related-link-preview {
+        width: 202px;
     }
 
     .filter-strip {
