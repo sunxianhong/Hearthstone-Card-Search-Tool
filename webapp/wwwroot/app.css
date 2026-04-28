@@ -305,10 +305,10 @@ select {
 
 .results-grid {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 186px));
-    gap: 16px 18px;
+    grid-template-columns: repeat(6, minmax(0, 206px));
+    gap: 4px;
     justify-content: center;
-    max-width: 1260px;
+    max-width: 1256px;
     margin: 10px auto 0;
 }
 
@@ -323,6 +323,7 @@ select {
 
 .card-image-tile {
     position: relative;
+    overflow: hidden;
 }
 
 .card-image-tile .card-button {
@@ -338,6 +339,8 @@ select {
     width: 100%;
     aspect-ratio: 214 / 300;
     object-fit: contain;
+    transform: scale(1.06);
+    transform-origin: center center;
 }
 
 .card-fallback {
