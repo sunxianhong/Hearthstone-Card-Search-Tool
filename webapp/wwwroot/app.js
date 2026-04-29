@@ -33,6 +33,7 @@ const CARD_DATA_MAP_KEYS = [
     "schoolMap",
     "keywordMap",
     "setMap",
+    "relatedCardMap",
 ];
 
 const SETTINGS_VIEW_FILTER = "filter";
@@ -651,7 +652,7 @@ function normalizeCardDataMapLibrary(library) {
         defaultCount: Object.keys(defaultEntries).length,
         overrideCount: Object.keys(overrides).length,
         effectiveCount: Object.keys(effectiveEntries).length,
-        rawText: typeof library.rawText === "string" ? library.rawText : formatMapOverrides(overrides),
+        rawText: typeof library.rawText === "string" ? library.rawText : formatMapOverrides(overrides, library.key),
         parseErrors: Array.isArray(library.parseErrors) ? [...library.parseErrors] : [],
         parseWarnings: Array.isArray(library.parseWarnings) ? [...library.parseWarnings] : [],
     };
@@ -889,8 +890,8 @@ function syncSettingsHeader() {
 
     if (state.activeSettingsView === SETTINGS_VIEW_MAPS) {
         elements.settingsHeaderBadge.textContent = "映射库";
-        elements.settingsTitle.textContent = "在线维护职业、稀有度、种族与扩展包映射";
-        elements.settingsDescription.textContent = "这里保存的是覆盖项，不用再改源码。新增职业、种族、法术派系、扩展包代码时，直接在网页里写 key=value 并保存即可。";
+        elements.settingsTitle.textContent = "在线维护显示映射与相关牌跳转";
+        elements.settingsDescription.textContent = "这里保存的是覆盖项，不用再改源码。普通映射写 key=value；相关牌跳转库支持 已有牌<=继承牌 和 A,B=>C,D。";
         elements.resetFilterConfigButton.textContent = "清空全部覆盖";
     } else {
         elements.settingsHeaderBadge.textContent = "设置中心";
@@ -1306,7 +1307,7 @@ function renderCardDataMapEditor() {
     const clearButton = document.createElement("button");
     clearButton.type = "button";
     clearButton.className = "secondary-button settings-mini-button";
-    clearButton.textContent = "清空当前库覆盖";
+    clearButton.textContent = isRelatedCardMapLibrary(library) ? "清空当前库规则" : "清空当前库覆盖";
     clearButton.addEventListener("click", () => {
         updateCardDataMapLibraryDraft(library, "");
         renderSettingsModal();
@@ -1317,7 +1318,7 @@ function renderCardDataMapEditor() {
 
     const hint = document.createElement("div");
     hint.className = "settings-text-hint";
-    hint.textContent = "每行一条，格式为 key=value。这里只写新增或覆盖项即可，不需要把默认库整份复制过来。空行和 # 开头的注释行会被忽略。";
+    hint.textContent = getCardDataMapEditorHint(library);
 
     const stats = document.createElement("div");
     stats.className = "settings-map-stats";
@@ -1338,23 +1339,25 @@ function renderCardDataMapEditor() {
     const copyActions = document.createElement("div");
     copyActions.className = "settings-option-actions";
 
-    const copyOverridesButton = createPreviewActionButton("复制当前覆盖", () => {
+    const currentEntriesLabel = isRelatedCardMapLibrary(library) ? "当前规则" : "当前覆盖";
+    const emptyCurrentEntriesText = isRelatedCardMapLibrary(library) ? "当前没有跳转规则。" : "当前没有覆盖项。";
+    const copyOverridesButton = createPreviewActionButton(`复制${currentEntriesLabel}`, () => {
         void copyText(
-            library.rawText.trim() || "当前没有覆盖项。",
-            `已复制 ${library.label} 的当前覆盖`,
+            library.rawText.trim() || emptyCurrentEntriesText,
+            `已复制 ${library.label} 的${currentEntriesLabel}`,
             copyOverridesButton);
     });
 
     const copyEffectiveButton = createPreviewActionButton("复制当前生效库", () => {
         void copyText(
-            formatMapOverrides(library.effectiveEntries) || "当前没有可显示条目。",
+            formatMapOverrides(library.effectiveEntries, library.key) || "当前没有可显示条目。",
             `已复制 ${library.label} 的当前生效库`,
             copyEffectiveButton);
     });
 
     const copyDefaultButton = createPreviewActionButton("复制默认库", () => {
         void copyText(
-            formatMapOverrides(library.defaultEntries) || "默认库为空。",
+            formatMapOverrides(library.defaultEntries, library.key) || "默认库为空。",
             `已复制 ${library.label} 的默认库`,
             copyDefaultButton);
     });
@@ -1366,7 +1369,7 @@ function renderCardDataMapEditor() {
 
     function refreshEditorState() {
         defaultChip.textContent = `默认 ${formatNumber(library.defaultCount)} 条`;
-        overrideChip.textContent = `覆盖 ${formatNumber(library.overrideCount)} 条`;
+        overrideChip.textContent = `${getCardDataMapEntryLabel(library)} ${formatNumber(library.overrideCount)} 条`;
         effectiveChip.textContent = `生效 ${formatNumber(library.effectiveCount)} 条`;
 
         const statusInfo = describeCardDataMapDraftState(library);
@@ -1374,10 +1377,10 @@ function renderCardDataMapEditor() {
         status.textContent = statusInfo.text;
 
         effectivePreview.summary.textContent = `查看当前生效条目（${formatNumber(library.effectiveCount)}）`;
-        effectivePreview.body.textContent = formatMapOverrides(library.effectiveEntries) || "当前没有可显示条目。";
+        effectivePreview.body.textContent = formatMapOverrides(library.effectiveEntries, library.key) || "当前没有可显示条目。";
 
         defaultPreview.summary.textContent = `查看默认条目（${formatNumber(library.defaultCount)}）`;
-        defaultPreview.body.textContent = formatMapOverrides(library.defaultEntries) || "默认库为空。";
+        defaultPreview.body.textContent = formatMapOverrides(library.defaultEntries, library.key) || "默认库为空。";
     }
 
     textarea.addEventListener("input", () => {
@@ -1436,7 +1439,7 @@ function createMapPreviewBlock() {
 }
 
 function updateCardDataMapLibraryDraft(library, rawText) {
-    const parsed = parseMapOverrideText(rawText);
+    const parsed = parseMapOverrideText(rawText, library.key);
     library.rawText = rawText;
     library.overrides = parsed.overrides;
     library.parseErrors = parsed.errors;
@@ -1450,38 +1453,75 @@ function describeCardDataMapDraftState(library) {
     if (library.parseErrors.length > 0) {
         return {
             tone: "warning",
-            text: `当前有 ${library.parseErrors.length} 行格式不正确。${library.parseErrors[0]}。保存前请修正，格式必须是 key=value。`,
+            text: `当前有 ${library.parseErrors.length} 行格式不正确。${library.parseErrors[0]}。保存前请修正，格式必须是 ${getCardDataMapRequiredFormat(library)}。`,
         };
     }
 
     if (library.parseWarnings.length > 0) {
         return {
             tone: "warning",
-            text: `已识别 ${library.overrideCount} 条覆盖。${library.parseWarnings[0]}。`,
+            text: `已识别 ${library.overrideCount} 条${getCardDataMapEntryLabel(library)}。${library.parseWarnings[0]}。`,
         };
     }
 
     if (library.overrideCount === 0) {
         return {
             tone: "",
-            text: "当前没有覆盖项。保存后会完全使用内置默认库。",
+            text: `当前没有${getCardDataMapEntryLabel(library)}。保存后会完全使用内置默认库。`,
         };
     }
 
     return {
         tone: "success",
-        text: `已识别 ${library.overrideCount} 条覆盖。保存后会优先使用这里的值覆盖默认库。`,
+        text: `已识别 ${library.overrideCount} 条${getCardDataMapEntryLabel(library)}。保存后会优先使用这里的值覆盖默认库。`,
     };
 }
 
-function formatMapOverrides(entries) {
+function getCardDataMapEditorHint(library) {
+    if (isRelatedCardMapLibrary(library)) {
+        return "每行一条。A<=B 表示 B 继承 A 的【衍生 / 相关牌】，不会继承附魔；A,B=>C,D 表示 A/B 增加到 C/D 的跳转。A/B/C/D 可以写中文名、CardID 或 DbfId。空行和 # 开头的注释行会被忽略。";
+    }
+
+    return "每行一条，格式为 key=value。这里只写新增或覆盖项即可，不需要把默认库整份复制过来。空行和 # 开头的注释行会被忽略。";
+}
+
+function getCardDataMapRequiredFormat(library) {
+    return isRelatedCardMapLibrary(library)
+        ? "已有牌<=继承牌 或 A,B=>C,D"
+        : "key=value";
+}
+
+function getCardDataMapEntryLabel(library) {
+    return isRelatedCardMapLibrary(library)
+        ? "跳转规则"
+        : "覆盖";
+}
+
+function isRelatedCardMapLibrary(libraryOrKey) {
+    const key = typeof libraryOrKey === "string" ? libraryOrKey : libraryOrKey?.key;
+    return key === "relatedCardMap";
+}
+
+function formatMapOverrides(entries, libraryOrKey = null) {
+    const isRelatedCardMap = isRelatedCardMapLibrary(libraryOrKey);
     return Object.entries(entries ?? {})
         .sort((left, right) => left[0].localeCompare(right[0], "zh-CN"))
-        .map(([key, value]) => `${key}=${value}`)
+        .map(([key, value]) => isRelatedCardMap ? formatRelatedCardMapEntry(key, value) : `${key}=${value}`)
         .join("\n");
 }
 
-function parseMapOverrideText(text) {
+function formatRelatedCardMapEntry(key, value) {
+    const normalizedKey = String(key ?? "").trim();
+    return normalizedKey.endsWith("=>") || normalizedKey.endsWith("<=")
+        ? `${normalizedKey}${value}`
+        : `${normalizedKey}=${value}`;
+}
+
+function parseMapOverrideText(text, libraryOrKey = null) {
+    if (isRelatedCardMapLibrary(libraryOrKey)) {
+        return parseRelatedCardMapText(text);
+    }
+
     const overrides = {};
     const errors = [];
     const warnings = [];
@@ -1523,6 +1563,72 @@ function parseMapOverrideText(text) {
     });
 
     return { overrides, errors, warnings };
+}
+
+function parseRelatedCardMapText(text) {
+    const overrides = {};
+    const errors = [];
+    const warnings = [];
+    const seenKeys = new Map();
+    const lines = (text ?? "").split(/\r?\n/);
+
+    lines.forEach((rawLine, index) => {
+        const lineNumber = index + 1;
+        const line = rawLine.trim();
+        if (!line || line.startsWith("#")) {
+            return;
+        }
+
+        const addIndex = rawLine.indexOf("=>");
+        const inheritIndex = rawLine.indexOf("<=");
+        if ((addIndex >= 0 && inheritIndex >= 0) || (addIndex < 0 && inheritIndex < 0)) {
+            errors.push(`第 ${lineNumber} 行必须使用 已有牌<=继承牌 或 A,B=>C,D`);
+            return;
+        }
+
+        const operator = addIndex >= 0 ? "=>" : "<=";
+        const separatorIndex = addIndex >= 0 ? addIndex : inheritIndex;
+        const sources = splitRelatedCardIdentifiers(rawLine.slice(0, separatorIndex));
+        const targets = splitRelatedCardIdentifiers(rawLine.slice(separatorIndex + operator.length));
+
+        if (sources.length === 0) {
+            errors.push(`第 ${lineNumber} 行左侧卡牌为空`);
+            return;
+        }
+
+        if (targets.length === 0) {
+            errors.push(`第 ${lineNumber} 行右侧卡牌为空`);
+            return;
+        }
+
+        const key = `${sources.join(",")}${operator}`;
+        if (seenKeys.has(key)) {
+            warnings.push(`规则 ${key} 重复出现，已合并后面的目标`);
+        }
+
+        seenKeys.set(key, lineNumber);
+        overrides[key] = mergeRelatedCardIdentifierValues(overrides[key], targets).join(",");
+    });
+
+    return { overrides, errors, warnings };
+}
+
+function splitRelatedCardIdentifiers(text) {
+    return String(text ?? "")
+        .split(/[,，]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+function mergeRelatedCardIdentifierValues(existingValue, nextItems) {
+    const merged = splitRelatedCardIdentifiers(existingValue);
+    for (const item of nextItems) {
+        if (!merged.includes(item)) {
+            merged.push(item);
+        }
+    }
+
+    return merged;
 }
 
 function mergeMapEntries(defaultEntries, overrides) {

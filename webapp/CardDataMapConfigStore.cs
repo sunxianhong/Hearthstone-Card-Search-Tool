@@ -112,6 +112,7 @@ public sealed class CardDataMapConfigStore
             SchoolMap = NormalizeMap(current?.SchoolMap),
             KeywordMap = NormalizeMap(current?.KeywordMap),
             SetMap = NormalizeMap(current?.SetMap),
+            RelatedCardMap = NormalizeMap(current?.RelatedCardMap),
         };
     }
 

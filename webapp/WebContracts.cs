@@ -1,5 +1,7 @@
 namespace HearthstoneCardSearchTool.Web;
 
+using HearthstoneCardSearchTool.Core;
+
 public sealed record OptionDto(string Value, string Label);
 
 public sealed record BootstrapResponse(
@@ -98,5 +100,10 @@ public sealed class RepositoryState
     public required string ResourceRoot { get; init; }
     public required string ImageRoot { get; init; }
     public string? EnchantmentImagePath { get; init; }
-    public required HearthstoneCardSearchTool.Core.CardRepository Repository { get; init; }
+    public required CardRepository Repository { get; set; }
+
+    public void ReloadRepository()
+    {
+        Repository = CardRepository.Load(ResourceRoot);
+    }
 }

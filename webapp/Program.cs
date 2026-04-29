@@ -81,10 +81,15 @@ app.MapGet("/api/card-data-maps", async (CardDataMapConfigStore store, Cancellat
     return Results.Ok(BuildCardDataMapConfigResponse(config));
 });
 
-app.MapPut("/api/card-data-maps", async (CardDataMapOverrideConfig config, CardDataMapConfigStore store, CancellationToken cancellationToken) =>
+app.MapPut("/api/card-data-maps", async (
+    CardDataMapOverrideConfig config,
+    CardDataMapConfigStore store,
+    RepositoryState state,
+    CancellationToken cancellationToken) =>
 {
     var saved = await store.SaveAsync(config, cancellationToken);
     CardDataMaps.ApplyOverrides(saved);
+    state.ReloadRepository();
     return Results.Ok(BuildCardDataMapConfigResponse(saved));
 });
 
@@ -548,6 +553,12 @@ static CardDataMapConfigResponse BuildCardDataMapConfigResponse(CardDataMapOverr
             "用于扩展包中文名、扩展包筛选显示名和详情标签显示。新版本补包时优先在这里维护。",
             CardDataMaps.DefaultSetMap,
             overrides.SetMap),
+        BuildCardDataMapLibrary(
+            "relatedCardMap",
+            "衍生 / 相关牌跳转",
+            "每行一条：A<=B 表示 B 继承 A 的【衍生 / 相关牌】；A,B=>C,D 表示 A/B 增加到 C/D 的跳转。A/B/C/D 可以写中文名、CardID 或 DbfId。",
+            CardDataMaps.DefaultRelatedCardMap,
+            overrides.RelatedCardMap),
     ]);
 }
 

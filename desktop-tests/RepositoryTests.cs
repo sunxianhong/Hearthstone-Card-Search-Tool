@@ -150,9 +150,99 @@ public sealed class RepositoryTests
         Assert.Equal(enchantmentImagePath, detail!.ImagePath);
     }
 
+    [Fact]
+    public void CustomRelatedMappingsAddAndInheritRelatedCards()
+    {
+        var resourceRoot = CreateTemporaryCardDataRoot();
+        CardDataMaps.ApplyOverrides(
+            new CardDataMapOverrideConfig
+            {
+                RelatedCardMap = new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["CARD_A=>"] = "卡牌C,CARD_D,CARD_E",
+                    ["CARD_A<="] = "卡牌B",
+                },
+            });
+
+        try
+        {
+            var repository = CardRepository.Load(resourceRoot);
+
+            var detailA = repository.GetDetail("CARD_A");
+            var detailB = repository.GetDetail("CARD_B");
+            var detailC = repository.GetDetail("CARD_C");
+            var detailE = repository.GetDetail("CARD_E");
+
+            Assert.NotNull(detailA);
+            Assert.NotNull(detailB);
+            Assert.NotNull(detailC);
+            Assert.NotNull(detailE);
+
+            Assert.Contains(detailA!.RelatedCards, item => item.CardId == "CARD_C");
+            Assert.Contains(detailA.RelatedCards, item => item.CardId == "CARD_D");
+            Assert.Contains(detailA.EnchantmentCards, item => item.CardId == "CARD_E");
+            Assert.Contains(detailB!.RelatedCards, item => item.CardId == "CARD_C");
+            Assert.Contains(detailB.RelatedCards, item => item.CardId == "CARD_D");
+            Assert.DoesNotContain(detailB.EnchantmentCards, item => item.CardId == "CARD_E");
+            Assert.Contains(detailC!.ParentCards, item => item.CardId == "CARD_A");
+            Assert.Contains(detailC.ParentCards, item => item.CardId == "CARD_B");
+            Assert.Contains(detailE!.ParentCards, item => item.CardId == "CARD_A");
+            Assert.DoesNotContain(detailE.ParentCards, item => item.CardId == "CARD_B");
+        }
+        finally
+        {
+            CardDataMaps.ResetOverrides();
+            Directory.Delete(resourceRoot, recursive: true);
+        }
+    }
+
     private static CardRepository LoadRepository()
     {
         var resourceRoot = ResourceLocator.LocateResourceRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
         return CardRepository.Load(resourceRoot);
+    }
+
+    private static string CreateTemporaryCardDataRoot()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"hearthstone-card-search-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(root);
+        File.WriteAllText(
+            Path.Combine(root, "CardDefs.xml"),
+            """
+            <CardDefs>
+              <Entity CardID="CARD_A" ID="1">
+                <Tag name="CARDNAME" type="LocString"><zhCN>卡牌A</zhCN><enUS>Card A</enUS></Tag>
+                <Tag name="CARDTEXT" type="LocString"><zhCN>A</zhCN><enUS>A</enUS></Tag>
+                <Tag name="CARD_SET" value="1637" />
+                <Tag name="CARDTYPE" value="4" />
+              </Entity>
+              <Entity CardID="CARD_B" ID="2">
+                <Tag name="CARDNAME" type="LocString"><zhCN>卡牌B</zhCN><enUS>Card B</enUS></Tag>
+                <Tag name="CARDTEXT" type="LocString"><zhCN>B</zhCN><enUS>B</enUS></Tag>
+                <Tag name="CARD_SET" value="1637" />
+                <Tag name="CARDTYPE" value="4" />
+              </Entity>
+              <Entity CardID="CARD_C" ID="3">
+                <Tag name="CARDNAME" type="LocString"><zhCN>卡牌C</zhCN><enUS>Card C</enUS></Tag>
+                <Tag name="CARDTEXT" type="LocString"><zhCN>C</zhCN><enUS>C</enUS></Tag>
+                <Tag name="CARD_SET" value="1637" />
+                <Tag name="CARDTYPE" value="4" />
+              </Entity>
+              <Entity CardID="CARD_D" ID="4">
+                <Tag name="CARDNAME" type="LocString"><zhCN>卡牌D</zhCN><enUS>Card D</enUS></Tag>
+                <Tag name="CARDTEXT" type="LocString"><zhCN>D</zhCN><enUS>D</enUS></Tag>
+                <Tag name="CARD_SET" value="1637" />
+                <Tag name="CARDTYPE" value="4" />
+              </Entity>
+              <Entity CardID="CARD_E" ID="5">
+                <Tag name="CARDNAME" type="LocString"><zhCN>卡牌E</zhCN><enUS>Card E</enUS></Tag>
+                <Tag name="CARDTEXT" type="LocString"><zhCN>E</zhCN><enUS>E</enUS></Tag>
+                <Tag name="CARD_SET" value="1637" />
+                <Tag name="CARDTYPE" value="6" />
+              </Entity>
+            </CardDefs>
+            """);
+
+        return root;
     }
 }

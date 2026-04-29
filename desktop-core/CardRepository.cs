@@ -16,6 +16,17 @@ public sealed class CardRepository
         "TARGETING_ARROW_TEXT",
     ];
 
+    private enum CustomRelatedRuleKind
+    {
+        Add,
+        Inherit,
+    }
+
+    private sealed record CustomRelatedRule(
+        CustomRelatedRuleKind Kind,
+        IReadOnlyList<string> Sources,
+        IReadOnlyList<string> Targets);
+
     private readonly IReadOnlyList<CardRecord> cards;
     private readonly Dictionary<string, CardRecord> byCardId;
     private readonly Dictionary<int, CardRecord> byDbfId;
@@ -559,15 +570,7 @@ public sealed class CardRepository
                     continue;
                 }
 
-                if (!target.ReverseRelated.Contains(card.DbfId))
-                {
-                    target.ReverseRelated.Add(card.DbfId);
-                }
-
-                if (card.ForwardRelated.All(link => link.DbfId != targetDbfId))
-                {
-                    card.ForwardRelated.Add(new ForwardRelatedRecord(targetDbfId, CardDataMaps.MapTagLabel(pair.Key)));
-                }
+                AddForwardRelated(card, target, CardDataMaps.MapTagLabel(pair.Key));
             }
 
             var match = SuffixRegex.Match(card.CardId);
@@ -582,16 +585,261 @@ public sealed class CardRepository
                 continue;
             }
 
-            if (!card.ReverseRelated.Contains(parent.DbfId))
-            {
-                card.ReverseRelated.Add(parent.DbfId);
-            }
+            AddForwardRelated(parent, card, "同名后缀衍生");
+        }
 
-            if (parent.ForwardRelated.All(link => link.DbfId != card.DbfId))
+        ApplyCustomRelatedCardMappings(cards, byDbfId);
+    }
+
+    private static void ApplyCustomRelatedCardMappings(
+        IReadOnlyList<CardRecord> cards,
+        IReadOnlyDictionary<int, CardRecord> byDbfId)
+    {
+        var rules = ParseCustomRelatedRules();
+        if (rules.Count == 0)
+        {
+            return;
+        }
+
+        var byCardId = new Dictionary<string, CardRecord>(StringComparer.OrdinalIgnoreCase);
+        foreach (var card in cards)
+        {
+            byCardId.TryAdd(card.CardId, card);
+        }
+
+        var byNameZh = BuildNameIndex(cards, static card => card.NameZh, StringComparer.Ordinal);
+        var byNameEn = BuildNameIndex(cards, static card => card.NameEn, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var rule in rules.Where(static rule => rule.Kind == CustomRelatedRuleKind.Add))
+        {
+            var sources = ResolveCards(rule.Sources, byCardId, byDbfId, byNameZh, byNameEn);
+            var targets = ResolveCards(rule.Targets, byCardId, byDbfId, byNameZh, byNameEn);
+
+            foreach (var source in sources)
             {
-                parent.ForwardRelated.Add(new ForwardRelatedRecord(card.DbfId, "同名后缀衍生"));
+                foreach (var target in targets)
+                {
+                    AddForwardRelated(source, target, "自定义相关牌");
+                }
             }
         }
+
+        var inheritRules = rules.Where(static rule => rule.Kind == CustomRelatedRuleKind.Inherit).ToList();
+        for (var iteration = 0; iteration <= inheritRules.Count; iteration++)
+        {
+            var addedAny = false;
+
+            foreach (var rule in inheritRules)
+            {
+                var donors = ResolveCards(rule.Sources, byCardId, byDbfId, byNameZh, byNameEn);
+                var receivers = ResolveCards(rule.Targets, byCardId, byDbfId, byNameZh, byNameEn);
+
+                foreach (var receiver in receivers)
+                {
+                    foreach (var donor in donors)
+                    {
+                        if (receiver.DbfId == donor.DbfId)
+                        {
+                            continue;
+                        }
+
+                        foreach (var forward in donor.ForwardRelated.ToList())
+                        {
+                            if (!byDbfId.TryGetValue(forward.DbfId, out var target))
+                            {
+                                continue;
+                            }
+
+                            if (target.IsEnchantment)
+                            {
+                                continue;
+                            }
+
+                            var reason = $"继承自 {GetDisplayName(donor)}: {forward.Reason}";
+                            addedAny |= AddForwardRelated(receiver, target, reason);
+                        }
+                    }
+                }
+            }
+
+            if (!addedAny)
+            {
+                break;
+            }
+        }
+    }
+
+    private static List<CustomRelatedRule> ParseCustomRelatedRules()
+    {
+        var rules = new List<CustomRelatedRule>();
+
+        foreach (var pair in CardDataMaps.RelatedCardMap)
+        {
+            if (!TryReadCustomRelatedRuleKey(pair.Key, out var kind, out var sourceText))
+            {
+                continue;
+            }
+
+            var sources = SplitCardIdentifiers(sourceText);
+            var targets = SplitCardIdentifiers(pair.Value);
+            if (sources.Count == 0 || targets.Count == 0)
+            {
+                continue;
+            }
+
+            rules.Add(new CustomRelatedRule(kind, sources, targets));
+        }
+
+        return rules;
+    }
+
+    private static bool TryReadCustomRelatedRuleKey(
+        string key,
+        out CustomRelatedRuleKind kind,
+        out string sourceText)
+    {
+        var trimmed = key.Trim();
+        if (trimmed.EndsWith("=>", StringComparison.Ordinal))
+        {
+            kind = CustomRelatedRuleKind.Add;
+            sourceText = trimmed[..^2].Trim();
+            return !string.IsNullOrWhiteSpace(sourceText);
+        }
+
+        if (trimmed.EndsWith("<=", StringComparison.Ordinal))
+        {
+            kind = CustomRelatedRuleKind.Inherit;
+            sourceText = trimmed[..^2].Trim();
+            return !string.IsNullOrWhiteSpace(sourceText);
+        }
+
+        kind = CustomRelatedRuleKind.Add;
+        sourceText = string.Empty;
+        return false;
+    }
+
+    private static IReadOnlyList<string> SplitCardIdentifiers(string text)
+    {
+        return text
+            .Split([',', '，'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
+            .ToList();
+    }
+
+    private static Dictionary<string, List<CardRecord>> BuildNameIndex(
+        IEnumerable<CardRecord> cards,
+        Func<CardRecord, string> selector,
+        StringComparer comparer)
+    {
+        var index = new Dictionary<string, List<CardRecord>>(comparer);
+
+        foreach (var card in cards)
+        {
+            var name = selector(card).Trim();
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            if (!index.TryGetValue(name, out var matches))
+            {
+                matches = [];
+                index[name] = matches;
+            }
+
+            matches.Add(card);
+        }
+
+        return index;
+    }
+
+    private static IReadOnlyList<CardRecord> ResolveCards(
+        IReadOnlyList<string> identifiers,
+        IReadOnlyDictionary<string, CardRecord> byCardId,
+        IReadOnlyDictionary<int, CardRecord> byDbfId,
+        IReadOnlyDictionary<string, List<CardRecord>> byNameZh,
+        IReadOnlyDictionary<string, List<CardRecord>> byNameEn)
+    {
+        var resolved = new List<CardRecord>();
+        var seen = new HashSet<int>();
+
+        foreach (var identifier in identifiers)
+        {
+            foreach (var card in ResolveCard(identifier, byCardId, byDbfId, byNameZh, byNameEn))
+            {
+                if (seen.Add(card.DbfId))
+                {
+                    resolved.Add(card);
+                }
+            }
+        }
+
+        return resolved;
+    }
+
+    private static IReadOnlyList<CardRecord> ResolveCard(
+        string identifier,
+        IReadOnlyDictionary<string, CardRecord> byCardId,
+        IReadOnlyDictionary<int, CardRecord> byDbfId,
+        IReadOnlyDictionary<string, List<CardRecord>> byNameZh,
+        IReadOnlyDictionary<string, List<CardRecord>> byNameEn)
+    {
+        var key = identifier.Trim();
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return [];
+        }
+
+        if (byCardId.TryGetValue(key, out var cardById))
+        {
+            return [cardById];
+        }
+
+        if (int.TryParse(key, out var dbfId) && byDbfId.TryGetValue(dbfId, out var cardByDbfId))
+        {
+            return [cardByDbfId];
+        }
+
+        if (byNameZh.TryGetValue(key, out var cardsByZhName))
+        {
+            return cardsByZhName;
+        }
+
+        if (byNameEn.TryGetValue(key, out var cardsByEnName))
+        {
+            return cardsByEnName;
+        }
+
+        return [];
+    }
+
+    private static bool AddForwardRelated(CardRecord source, CardRecord target, string reason)
+    {
+        if (source.DbfId == target.DbfId)
+        {
+            return false;
+        }
+
+        var added = false;
+        if (source.ForwardRelated.All(link => link.DbfId != target.DbfId))
+        {
+            source.ForwardRelated.Add(new ForwardRelatedRecord(target.DbfId, reason));
+            added = true;
+        }
+
+        if (!target.ReverseRelated.Contains(source.DbfId))
+        {
+            target.ReverseRelated.Add(source.DbfId);
+        }
+
+        return added;
+    }
+
+    private static string GetDisplayName(CardRecord card)
+    {
+        return string.IsNullOrWhiteSpace(card.NameZh)
+            ? card.CardId
+            : card.NameZh;
     }
 
     public static bool IsRelatedKey(string tagKey)

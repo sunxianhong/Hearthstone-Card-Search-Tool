@@ -1308,6 +1308,9 @@ public static class CardDataMaps
             ["1980"] = "大地的裂变",
         };
 
+    private static readonly IReadOnlyDictionary<string, string> FallbackRelatedCardMap =
+        new Dictionary<string, string>(StringComparer.Ordinal);
+
     private static IReadOnlyDictionary<string, string> unknownEnumMap = FallbackUnknownEnumMap;
     private static IReadOnlyDictionary<string, string> tagLabels = FallbackTagLabels;
     private static IReadOnlyDictionary<string, string> classMap = FallbackClassMap;
@@ -1317,6 +1320,7 @@ public static class CardDataMaps
     private static IReadOnlyDictionary<string, string> schoolMap = FallbackSchoolMap;
     private static IReadOnlyDictionary<string, string> keywordMap = FallbackKeywordMap;
     private static IReadOnlyDictionary<string, string> setMap = FallbackSetMap;
+    private static IReadOnlyDictionary<string, string> relatedCardMap = FallbackRelatedCardMap;
 
     public static IReadOnlyDictionary<string, string> DefaultUnknownEnumMap => FallbackUnknownEnumMap;
     public static IReadOnlyDictionary<string, string> DefaultTagLabels => FallbackTagLabels;
@@ -1326,6 +1330,7 @@ public static class CardDataMaps
     public static IReadOnlyDictionary<string, string> DefaultSchoolMap => FallbackSchoolMap;
     public static IReadOnlyDictionary<string, string> DefaultKeywordMap => FallbackKeywordMap;
     public static IReadOnlyDictionary<string, string> DefaultSetMap => FallbackSetMap;
+    public static IReadOnlyDictionary<string, string> DefaultRelatedCardMap => FallbackRelatedCardMap;
 
     public static IReadOnlyDictionary<string, string> UnknownEnumMap => unknownEnumMap;
     public static IReadOnlyDictionary<string, string> TagLabels => tagLabels;
@@ -1336,6 +1341,7 @@ public static class CardDataMaps
     public static IReadOnlyDictionary<string, string> SchoolMap => schoolMap;
     public static IReadOnlyDictionary<string, string> KeywordMap => keywordMap;
     public static IReadOnlyDictionary<string, string> SetMap => setMap;
+    public static IReadOnlyDictionary<string, string> RelatedCardMap => relatedCardMap;
 
     public static void Initialize(string resourceRoot)
     {
@@ -1369,6 +1375,7 @@ public static class CardDataMaps
             schoolMap = MergeMap(FallbackSchoolMap, overrides?.SchoolMap);
             keywordMap = MergeMap(FallbackKeywordMap, overrides?.KeywordMap);
             setMap = MergeMap(FallbackSetMap, overrides?.SetMap);
+            relatedCardMap = MergeMap(FallbackRelatedCardMap, overrides?.RelatedCardMap);
         }
     }
 
