@@ -74,8 +74,9 @@ app.MapGet("/api/bootstrap", (RepositoryState state) =>
             BuildKeywordOptions()));
 });
 
-app.MapGet("/api/card-data-maps", async (CardDataMapConfigStore store, CancellationToken cancellationToken) =>
+app.MapGet("/api/card-data-maps", async (CardDataMapConfigStore store, RepositoryState state, CancellationToken cancellationToken) =>
 {
+    _ = state.Repository;
     var config = await store.LoadAsync(cancellationToken);
     CardDataMaps.ApplyOverrides(config);
     return Results.Ok(BuildCardDataMapConfigResponse(config));
@@ -510,54 +511,63 @@ static CardDataMapConfigResponse BuildCardDataMapConfigResponse(CardDataMapOverr
             "未知 EnumID 显示名",
             "用于补充卡牌详情里未知 enumID 的中文显示名。只需要填写新增或覆盖的条目。",
             CardDataMaps.DefaultUnknownEnumMap,
+            CardDataMaps.SourceDefaultUnknownEnumMap,
             overrides.UnknownEnumMap),
         BuildCardDataMapLibrary(
             "tagLabels",
             "标签中文名",
             "用于给卡牌标签 key 补中文名。适合在游戏更新后补充新的 Tag 名称。",
             CardDataMaps.DefaultTagLabels,
+            CardDataMaps.SourceDefaultTagLabels,
             overrides.TagLabels),
         BuildCardDataMapLibrary(
             "classMap",
             "职业映射",
             "用于职业筛选、详情标签和搜索摘要显示。保存后页面会立即刷新对应中文名。",
             CardDataMaps.DefaultClassMap,
+            CardDataMaps.SourceDefaultClassMap,
             overrides.ClassMap),
         BuildCardDataMapLibrary(
             "rarityMap",
             "稀有度映射",
             "用于稀有度筛选和详情标签显示。",
             CardDataMaps.DefaultRarityMap,
+            CardDataMaps.SourceDefaultRarityMap,
             overrides.RarityMap),
         BuildCardDataMapLibrary(
             "raceMap",
             "种族映射",
             "用于随从种族筛选和详情标签显示。",
             CardDataMaps.DefaultRaceMap,
+            CardDataMaps.SourceDefaultRaceMap,
             overrides.RaceMap),
         BuildCardDataMapLibrary(
             "schoolMap",
             "法术派系映射",
             "用于法术派系筛选和详情标签显示。",
             CardDataMaps.DefaultSchoolMap,
+            CardDataMaps.SourceDefaultSchoolMap,
             overrides.SchoolMap),
         BuildCardDataMapLibrary(
             "keywordMap",
             "关键词映射",
             "用于关键词筛选显示名。新增关键字标签时可以在这里维护中文名，保存后网页筛选会立即刷新。",
             CardDataMaps.DefaultKeywordMap,
+            CardDataMaps.SourceDefaultKeywordMap,
             overrides.KeywordMap),
         BuildCardDataMapLibrary(
             "setMap",
             "扩展包映射",
             "用于扩展包中文名、扩展包筛选显示名和详情标签显示。新版本补包时优先在这里维护。",
             CardDataMaps.DefaultSetMap,
+            CardDataMaps.SourceDefaultSetMap,
             overrides.SetMap),
         BuildCardDataMapLibrary(
             "relatedCardMap",
             "衍生 / 相关牌跳转",
             "每行一条：A<=B 表示 B 继承 A 的【衍生 / 相关牌】；A,B=>C,D 表示 A/B 增加到 C/D 的跳转。A/B/C/D 可以写中文名、CardID 或 DbfId。",
             CardDataMaps.DefaultRelatedCardMap,
+            CardDataMaps.SourceDefaultRelatedCardMap,
             overrides.RelatedCardMap),
     ]);
 }
@@ -567,9 +577,11 @@ static CardDataMapLibraryDto BuildCardDataMapLibrary(
     string label,
     string description,
     IReadOnlyDictionary<string, string> defaults,
+    IReadOnlyDictionary<string, string> sourceDefaults,
     IReadOnlyDictionary<string, string>? overrides)
 {
     var normalizedOverrides = NormalizeMap(overrides);
+    var normalizedSourceDefaults = NormalizeMap(sourceDefaults);
     var effective = MergeMaps(defaults, normalizedOverrides);
 
     return new CardDataMapLibraryDto(
@@ -578,8 +590,10 @@ static CardDataMapLibraryDto BuildCardDataMapLibrary(
         description,
         defaults.Count,
         normalizedOverrides.Count,
+        normalizedSourceDefaults.Count,
         effective.Count,
         normalizedOverrides,
+        normalizedSourceDefaults,
         defaults,
         effective);
 }

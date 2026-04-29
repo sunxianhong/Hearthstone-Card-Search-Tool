@@ -641,16 +641,19 @@ function cloneCardDataMapConfig(config) {
 
 function normalizeCardDataMapLibrary(library) {
     const overrides = { ...(library.overrides ?? {}) };
+    const sourceDefaultEntries = { ...(library.sourceDefaultEntries ?? {}) };
     const defaultEntries = { ...(library.defaultEntries ?? {}) };
     const effectiveEntries = mergeMapEntries(defaultEntries, overrides);
 
     return {
         ...library,
         overrides,
+        sourceDefaultEntries,
         defaultEntries,
         effectiveEntries,
         defaultCount: Object.keys(defaultEntries).length,
         overrideCount: Object.keys(overrides).length,
+        sourceDefaultCount: Object.keys(sourceDefaultEntries).length,
         effectiveCount: Object.keys(effectiveEntries).length,
         rawText: typeof library.rawText === "string" ? library.rawText : formatMapOverrides(overrides, library.key),
         parseErrors: Array.isArray(library.parseErrors) ? [...library.parseErrors] : [],
@@ -1231,6 +1234,45 @@ function renderCardDataMapLibraries() {
 
     elements.cardDataMapLibraryList.classList.remove("settings-placeholder");
 
+    const packageToolbar = document.createElement("div");
+    packageToolbar.className = "settings-option-toolbar";
+
+    const packageTitleWrap = document.createElement("div");
+
+    const packageTitle = document.createElement("div");
+    packageTitle.className = "settings-option-title";
+    packageTitle.textContent = "映射包";
+
+    const packageDescription = document.createElement("div");
+    packageDescription.className = "settings-section-count";
+    packageDescription.textContent = "一次导入或导出所有映射库，可分享给别人，也可放回源码默认库。";
+
+    packageTitleWrap.append(packageTitle, packageDescription);
+
+    const packageActions = document.createElement("div");
+    packageActions.className = "settings-option-actions";
+
+    const importPackageButton = document.createElement("button");
+    importPackageButton.type = "button";
+    importPackageButton.className = "secondary-button settings-mini-button";
+    importPackageButton.textContent = "导入映射包";
+    importPackageButton.addEventListener("click", () => {
+        void importCardDataMapPackage();
+    });
+
+    const exportPackageButton = document.createElement("button");
+    exportPackageButton.type = "button";
+    exportPackageButton.className = "secondary-button settings-mini-button";
+    exportPackageButton.textContent = "导出映射包";
+    exportPackageButton.addEventListener("click", () => {
+        exportCardDataMapPackage();
+    });
+
+    packageActions.append(importPackageButton, exportPackageButton);
+    packageToolbar.append(packageTitleWrap, packageActions);
+
+    const list = document.createElement("div");
+
     const fragment = document.createDocumentFragment();
     for (const library of libraries) {
         const card = document.createElement("button");
@@ -1256,12 +1298,14 @@ function renderCardDataMapLibraries() {
         card.append(textWrap);
         fragment.append(card);
     }
+    list.append(fragment);
 
-    elements.cardDataMapLibraryList.replaceChildren(fragment);
+    elements.cardDataMapLibraryList.replaceChildren(packageToolbar, list);
 }
 
 function buildCardDataMapLibrarySummary(library) {
-    const summary = `默认 ${library.defaultCount} / 覆盖 ${library.overrideCount} / 生效 ${library.effectiveCount}`;
+    const sourcePart = library.sourceDefaultCount > 0 ? ` / 源码默认 ${library.sourceDefaultCount}` : "";
+    const summary = `默认 ${library.defaultCount}${sourcePart} / 覆盖 ${library.overrideCount} / 生效 ${library.effectiveCount}`;
     if (library.parseErrors.length > 0) {
         return `${summary} · 有 ${library.parseErrors.length} 处格式问题`;
     }
@@ -1370,7 +1414,9 @@ function renderCardDataMapEditor() {
     function refreshEditorState() {
         defaultChip.textContent = `默认 ${formatNumber(library.defaultCount)} 条`;
         overrideChip.textContent = `${getCardDataMapEntryLabel(library)} ${formatNumber(library.overrideCount)} 条`;
-        effectiveChip.textContent = `生效 ${formatNumber(library.effectiveCount)} 条`;
+        effectiveChip.textContent = library.sourceDefaultCount > 0
+            ? `源码默认 ${formatNumber(library.sourceDefaultCount)} / 生效 ${formatNumber(library.effectiveCount)} 条`
+            : `生效 ${formatNumber(library.effectiveCount)} 条`;
 
         const statusInfo = describeCardDataMapDraftState(library);
         status.className = `settings-map-status${statusInfo.tone ? ` is-${statusInfo.tone}` : ""}`;
@@ -1636,6 +1682,157 @@ function mergeMapEntries(defaultEntries, overrides) {
         ...(defaultEntries ?? {}),
         ...(overrides ?? {}),
     };
+}
+
+function buildCardDataMapCustomPayload(config) {
+    const payload = Object.fromEntries(CARD_DATA_MAP_KEYS.map((key) => [key, {}]));
+
+    for (const library of config?.libraries ?? []) {
+        if (!CARD_DATA_MAP_KEYS.includes(library.key)) {
+            continue;
+        }
+
+        payload[library.key] = mergeMapEntries(library.sourceDefaultEntries, library.overrides);
+    }
+
+    return payload;
+}
+
+function exportCardDataMapPackage() {
+    try {
+        validateCardDataMapDraft(state.draftCardDataMaps);
+    } catch (error) {
+        showCopyToast(normalizeErrorMessage(error), elements.saveFilterConfigButton);
+        return;
+    }
+
+    const maps = buildCardDataMapCustomPayload(state.draftCardDataMaps);
+    const payload = {
+        format: "hearthstone-card-search.card-data-map-package",
+        version: 1,
+        kind: "maps",
+        exportedAt: new Date().toISOString(),
+        maps,
+    };
+
+    downloadJsonFile("card-data-map-defaults.json", payload);
+    showCopyToast(
+        "已导出映射包，可导入分享，也可放回 config/card-data-map-defaults.json",
+        elements.saveFilterConfigButton);
+}
+
+function downloadJsonFile(fileName, payload) {
+    const blob = new Blob([`${JSON.stringify(payload, null, 2)}\n`], { type: "application/json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
+async function importCardDataMapPackage() {
+    try {
+        const file = await pickJsonFile();
+        if (!file) {
+            return;
+        }
+
+        const text = await file.text();
+        const payload = JSON.parse(text);
+        const maps = normalizeImportedCardDataMapPayload(payload);
+        applyImportedCardDataMaps(maps);
+        renderSettingsModal();
+        showCopyToast(`已导入映射包：${file.name}`, elements.saveFilterConfigButton);
+    } catch (error) {
+        showCopyToast(`导入失败：${normalizeErrorMessage(error)}`, elements.saveFilterConfigButton);
+    }
+}
+
+function pickJsonFile() {
+    return new Promise((resolve) => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json,.json";
+        input.addEventListener("change", () => {
+            resolve(input.files?.[0] ?? null);
+        }, { once: true });
+        input.click();
+    });
+}
+
+function normalizeImportedCardDataMapPayload(payload) {
+    const maps = Object.fromEntries(CARD_DATA_MAP_KEYS.map((key) => [key, {}]));
+    const source = extractImportedCardDataMapSource(payload);
+
+    for (const key of CARD_DATA_MAP_KEYS) {
+        maps[key] = normalizeImportedMap(source?.[key]);
+    }
+
+    return maps;
+}
+
+function extractImportedCardDataMapSource(payload) {
+    if (!payload || typeof payload !== "object") {
+        throw new Error("文件不是有效的映射 JSON");
+    }
+
+    if (payload.maps && typeof payload.maps === "object") {
+        return payload.maps;
+    }
+
+    if (Array.isArray(payload.libraries)) {
+        const maps = {};
+        for (const library of payload.libraries) {
+            if (!library?.key || !CARD_DATA_MAP_KEYS.includes(library.key)) {
+                continue;
+            }
+
+            maps[library.key] = mergeMapEntries(library.sourceDefaultEntries, library.overrides);
+        }
+
+        return maps;
+    }
+
+    return payload;
+}
+
+function normalizeImportedMap(source) {
+    const normalized = {};
+    if (!source || typeof source !== "object" || Array.isArray(source)) {
+        return normalized;
+    }
+
+    for (const [rawKey, rawValue] of Object.entries(source)) {
+        const key = String(rawKey ?? "").trim();
+        const value = String(rawValue ?? "").trim();
+        if (key && value) {
+            normalized[key] = value;
+        }
+    }
+
+    return normalized;
+}
+
+function applyImportedCardDataMaps(maps) {
+    for (const library of state.draftCardDataMaps?.libraries ?? []) {
+        if (!CARD_DATA_MAP_KEYS.includes(library.key)) {
+            continue;
+        }
+
+        const nextOverrides = { ...(library.overrides ?? {}) };
+        for (const [key, value] of Object.entries(maps[library.key] ?? {})) {
+            if (library.defaultEntries?.[key] === value) {
+                delete nextOverrides[key];
+            } else {
+                nextOverrides[key] = value;
+            }
+        }
+
+        updateCardDataMapLibraryDraft(library, formatMapOverrides(nextOverrides, library.key));
+    }
 }
 
 async function resetSettingsDraft() {

@@ -1,0 +1,23 @@
+{
+  "format": "hearthstone-card-search.card-data-map-package",
+  "version": 1,
+  "kind": "maps",
+  "exportedAt": "2026-04-29T04:17:23.619Z",
+  "maps": {
+    "unknownEnumMap": {},
+    "tagLabels": {},
+    "classMap": {},
+    "rarityMap": {},
+    "raceMap": {},
+    "schoolMap": {},
+    "keywordMap": {
+      "COLOSSAL": "巨型"
+    },
+    "setMap": {},
+    "relatedCardMap": {
+      "GDB_728,BT_026,GDB_721,GDB_726,BT_020=>": "BT_025,GDB_137,GDB_138,BT_011,GDB_139,YOP_011,BT_024",
+      "TTN_751=>": "TTN_060t,TTN_060t1,TTN_060t2",
+      "WW_001<=": "WW_378,WW_352,WW_412,WW_009,WW_380,DEEP_018,DEEP_033,DEEP_009,WW_442,WW_322,WW_002,WW_426"
+    }
+  }
+}

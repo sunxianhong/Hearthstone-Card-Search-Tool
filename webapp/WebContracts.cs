@@ -30,8 +30,10 @@ public sealed record CardDataMapLibraryDto(
     string Description,
     int DefaultCount,
     int OverrideCount,
+    int SourceDefaultCount,
     int EffectiveCount,
     IReadOnlyDictionary<string, string> Overrides,
+    IReadOnlyDictionary<string, string> SourceDefaultEntries,
     IReadOnlyDictionary<string, string> DefaultEntries,
     IReadOnlyDictionary<string, string> EffectiveEntries);
 

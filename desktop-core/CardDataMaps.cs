@@ -1,10 +1,13 @@
 ﻿using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace HearthstoneCardSearchTool.Core;
 
 public static class CardDataMaps
 {
+    private const string SourceDefaultConfigFileName = "card-data-map-defaults.json";
+
     private static readonly object SyncRoot = new();
     private static bool initialized;
 
@@ -1311,6 +1314,26 @@ public static class CardDataMaps
     private static readonly IReadOnlyDictionary<string, string> FallbackRelatedCardMap =
         new Dictionary<string, string>(StringComparer.Ordinal);
 
+    private static IReadOnlyDictionary<string, string> sourceDefaultUnknownEnumMap = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, string> sourceDefaultTagLabels = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, string> sourceDefaultClassMap = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, string> sourceDefaultRarityMap = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, string> sourceDefaultRaceMap = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, string> sourceDefaultSchoolMap = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, string> sourceDefaultKeywordMap = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, string> sourceDefaultSetMap = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, string> sourceDefaultRelatedCardMap = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    private static IReadOnlyDictionary<string, string> defaultUnknownEnumMap = FallbackUnknownEnumMap;
+    private static IReadOnlyDictionary<string, string> defaultTagLabels = FallbackTagLabels;
+    private static IReadOnlyDictionary<string, string> defaultClassMap = FallbackClassMap;
+    private static IReadOnlyDictionary<string, string> defaultRarityMap = FallbackRarityMap;
+    private static IReadOnlyDictionary<string, string> defaultRaceMap = FallbackRaceMap;
+    private static IReadOnlyDictionary<string, string> defaultSchoolMap = FallbackSchoolMap;
+    private static IReadOnlyDictionary<string, string> defaultKeywordMap = FallbackKeywordMap;
+    private static IReadOnlyDictionary<string, string> defaultSetMap = FallbackSetMap;
+    private static IReadOnlyDictionary<string, string> defaultRelatedCardMap = FallbackRelatedCardMap;
+
     private static IReadOnlyDictionary<string, string> unknownEnumMap = FallbackUnknownEnumMap;
     private static IReadOnlyDictionary<string, string> tagLabels = FallbackTagLabels;
     private static IReadOnlyDictionary<string, string> classMap = FallbackClassMap;
@@ -1321,16 +1344,27 @@ public static class CardDataMaps
     private static IReadOnlyDictionary<string, string> keywordMap = FallbackKeywordMap;
     private static IReadOnlyDictionary<string, string> setMap = FallbackSetMap;
     private static IReadOnlyDictionary<string, string> relatedCardMap = FallbackRelatedCardMap;
+    private static CardDataMapOverrideConfig? currentOverrides;
 
-    public static IReadOnlyDictionary<string, string> DefaultUnknownEnumMap => FallbackUnknownEnumMap;
-    public static IReadOnlyDictionary<string, string> DefaultTagLabels => FallbackTagLabels;
-    public static IReadOnlyDictionary<string, string> DefaultClassMap => FallbackClassMap;
-    public static IReadOnlyDictionary<string, string> DefaultRarityMap => FallbackRarityMap;
-    public static IReadOnlyDictionary<string, string> DefaultRaceMap => FallbackRaceMap;
-    public static IReadOnlyDictionary<string, string> DefaultSchoolMap => FallbackSchoolMap;
-    public static IReadOnlyDictionary<string, string> DefaultKeywordMap => FallbackKeywordMap;
-    public static IReadOnlyDictionary<string, string> DefaultSetMap => FallbackSetMap;
-    public static IReadOnlyDictionary<string, string> DefaultRelatedCardMap => FallbackRelatedCardMap;
+    public static IReadOnlyDictionary<string, string> DefaultUnknownEnumMap => defaultUnknownEnumMap;
+    public static IReadOnlyDictionary<string, string> DefaultTagLabels => defaultTagLabels;
+    public static IReadOnlyDictionary<string, string> DefaultClassMap => defaultClassMap;
+    public static IReadOnlyDictionary<string, string> DefaultRarityMap => defaultRarityMap;
+    public static IReadOnlyDictionary<string, string> DefaultRaceMap => defaultRaceMap;
+    public static IReadOnlyDictionary<string, string> DefaultSchoolMap => defaultSchoolMap;
+    public static IReadOnlyDictionary<string, string> DefaultKeywordMap => defaultKeywordMap;
+    public static IReadOnlyDictionary<string, string> DefaultSetMap => defaultSetMap;
+    public static IReadOnlyDictionary<string, string> DefaultRelatedCardMap => defaultRelatedCardMap;
+
+    public static IReadOnlyDictionary<string, string> SourceDefaultUnknownEnumMap => sourceDefaultUnknownEnumMap;
+    public static IReadOnlyDictionary<string, string> SourceDefaultTagLabels => sourceDefaultTagLabels;
+    public static IReadOnlyDictionary<string, string> SourceDefaultClassMap => sourceDefaultClassMap;
+    public static IReadOnlyDictionary<string, string> SourceDefaultRarityMap => sourceDefaultRarityMap;
+    public static IReadOnlyDictionary<string, string> SourceDefaultRaceMap => sourceDefaultRaceMap;
+    public static IReadOnlyDictionary<string, string> SourceDefaultSchoolMap => sourceDefaultSchoolMap;
+    public static IReadOnlyDictionary<string, string> SourceDefaultKeywordMap => sourceDefaultKeywordMap;
+    public static IReadOnlyDictionary<string, string> SourceDefaultSetMap => sourceDefaultSetMap;
+    public static IReadOnlyDictionary<string, string> SourceDefaultRelatedCardMap => sourceDefaultRelatedCardMap;
 
     public static IReadOnlyDictionary<string, string> UnknownEnumMap => unknownEnumMap;
     public static IReadOnlyDictionary<string, string> TagLabels => tagLabels;
@@ -1353,6 +1387,18 @@ public static class CardDataMaps
             }
 
             initialized = true;
+            LoadSourceDefaultsCore(resourceRoot);
+            RebuildActiveMaps();
+        }
+    }
+
+    public static void ReloadSourceDefaults(string resourceRoot)
+    {
+        lock (SyncRoot)
+        {
+            initialized = true;
+            LoadSourceDefaultsCore(resourceRoot);
+            RebuildActiveMaps();
         }
     }
 
@@ -1367,15 +1413,8 @@ public static class CardDataMaps
     {
         lock (SyncRoot)
         {
-            unknownEnumMap = MergeMap(FallbackUnknownEnumMap, overrides?.UnknownEnumMap);
-            tagLabels = MergeMap(FallbackTagLabels, overrides?.TagLabels);
-            classMap = MergeMap(FallbackClassMap, overrides?.ClassMap);
-            rarityMap = MergeMap(FallbackRarityMap, overrides?.RarityMap);
-            raceMap = MergeMap(FallbackRaceMap, overrides?.RaceMap);
-            schoolMap = MergeMap(FallbackSchoolMap, overrides?.SchoolMap);
-            keywordMap = MergeMap(FallbackKeywordMap, overrides?.KeywordMap);
-            setMap = MergeMap(FallbackSetMap, overrides?.SetMap);
-            relatedCardMap = MergeMap(FallbackRelatedCardMap, overrides?.RelatedCardMap);
+            currentOverrides = NormalizeOverrideConfig(overrides);
+            RebuildActiveMaps();
         }
     }
 
@@ -1448,6 +1487,168 @@ public static class CardDataMaps
         return keywordMap
             .Select(static pair => new FilterOption(pair.Key, pair.Value))
             .ToList();
+    }
+
+    private static void LoadSourceDefaultsCore(string resourceRoot)
+    {
+        var merged = new CardDataMapOverrideConfig();
+        foreach (var path in EnumerateSourceDefaultConfigPaths(resourceRoot).Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            var loaded = ReadSourceDefaultConfig(path);
+            if (loaded is not null)
+            {
+                merged = MergeOverrideConfigs(merged, loaded);
+            }
+        }
+
+        sourceDefaultUnknownEnumMap = NormalizeMap(merged.UnknownEnumMap);
+        sourceDefaultTagLabels = NormalizeMap(merged.TagLabels);
+        sourceDefaultClassMap = NormalizeMap(merged.ClassMap);
+        sourceDefaultRarityMap = NormalizeMap(merged.RarityMap);
+        sourceDefaultRaceMap = NormalizeMap(merged.RaceMap);
+        sourceDefaultSchoolMap = NormalizeMap(merged.SchoolMap);
+        sourceDefaultKeywordMap = NormalizeMap(merged.KeywordMap);
+        sourceDefaultSetMap = NormalizeMap(merged.SetMap);
+        sourceDefaultRelatedCardMap = NormalizeMap(merged.RelatedCardMap);
+
+        defaultUnknownEnumMap = MergeMap(FallbackUnknownEnumMap, sourceDefaultUnknownEnumMap);
+        defaultTagLabels = MergeMap(FallbackTagLabels, sourceDefaultTagLabels);
+        defaultClassMap = MergeMap(FallbackClassMap, sourceDefaultClassMap);
+        defaultRarityMap = MergeMap(FallbackRarityMap, sourceDefaultRarityMap);
+        defaultRaceMap = MergeMap(FallbackRaceMap, sourceDefaultRaceMap);
+        defaultSchoolMap = MergeMap(FallbackSchoolMap, sourceDefaultSchoolMap);
+        defaultKeywordMap = MergeMap(FallbackKeywordMap, sourceDefaultKeywordMap);
+        defaultSetMap = MergeMap(FallbackSetMap, sourceDefaultSetMap);
+        defaultRelatedCardMap = MergeMap(FallbackRelatedCardMap, sourceDefaultRelatedCardMap);
+    }
+
+    private static IEnumerable<string> EnumerateSourceDefaultConfigPaths(string resourceRoot)
+    {
+        yield return Path.Combine(AppContext.BaseDirectory, "config", SourceDefaultConfigFileName);
+        yield return Path.Combine(Directory.GetCurrentDirectory(), "config", SourceDefaultConfigFileName);
+
+        if (!string.IsNullOrWhiteSpace(resourceRoot))
+        {
+            yield return Path.Combine(resourceRoot, "config", SourceDefaultConfigFileName);
+        }
+    }
+
+    private static CardDataMapOverrideConfig? ReadSourceDefaultConfig(string path)
+    {
+        try
+        {
+            var json = File.ReadAllText(path);
+            using var document = JsonDocument.Parse(json);
+            var root = document.RootElement;
+            if (root.ValueKind == JsonValueKind.Object && root.TryGetProperty("maps", out var maps))
+            {
+                return maps.Deserialize<CardDataMapOverrideConfig>(CreateJsonOptions());
+            }
+
+            return root.Deserialize<CardDataMapOverrideConfig>(CreateJsonOptions());
+        }
+        catch (IOException)
+        {
+            return null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static JsonSerializerOptions CreateJsonOptions()
+    {
+        return new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+    }
+
+    private static CardDataMapOverrideConfig MergeOverrideConfigs(
+        CardDataMapOverrideConfig left,
+        CardDataMapOverrideConfig right)
+    {
+        return new CardDataMapOverrideConfig
+        {
+            UnknownEnumMap = ToMutableMap(MergeMap(left.UnknownEnumMap, right.UnknownEnumMap)),
+            TagLabels = ToMutableMap(MergeMap(left.TagLabels, right.TagLabels)),
+            ClassMap = ToMutableMap(MergeMap(left.ClassMap, right.ClassMap)),
+            RarityMap = ToMutableMap(MergeMap(left.RarityMap, right.RarityMap)),
+            RaceMap = ToMutableMap(MergeMap(left.RaceMap, right.RaceMap)),
+            SchoolMap = ToMutableMap(MergeMap(left.SchoolMap, right.SchoolMap)),
+            KeywordMap = ToMutableMap(MergeMap(left.KeywordMap, right.KeywordMap)),
+            SetMap = ToMutableMap(MergeMap(left.SetMap, right.SetMap)),
+            RelatedCardMap = ToMutableMap(MergeMap(left.RelatedCardMap, right.RelatedCardMap)),
+        };
+    }
+
+    private static Dictionary<string, string> ToMutableMap(IReadOnlyDictionary<string, string> source)
+    {
+        return source.ToDictionary(static pair => pair.Key, static pair => pair.Value, StringComparer.Ordinal);
+    }
+
+    private static void RebuildActiveMaps()
+    {
+        unknownEnumMap = MergeMap(defaultUnknownEnumMap, currentOverrides?.UnknownEnumMap);
+        tagLabels = MergeMap(defaultTagLabels, currentOverrides?.TagLabels);
+        classMap = MergeMap(defaultClassMap, currentOverrides?.ClassMap);
+        rarityMap = MergeMap(defaultRarityMap, currentOverrides?.RarityMap);
+        raceMap = MergeMap(defaultRaceMap, currentOverrides?.RaceMap);
+        schoolMap = MergeMap(defaultSchoolMap, currentOverrides?.SchoolMap);
+        keywordMap = MergeMap(defaultKeywordMap, currentOverrides?.KeywordMap);
+        setMap = MergeMap(defaultSetMap, currentOverrides?.SetMap);
+        relatedCardMap = MergeMap(defaultRelatedCardMap, currentOverrides?.RelatedCardMap);
+    }
+
+    private static CardDataMapOverrideConfig? NormalizeOverrideConfig(CardDataMapOverrideConfig? source)
+    {
+        if (source is null)
+        {
+            return null;
+        }
+
+        return new CardDataMapOverrideConfig
+        {
+            UnknownEnumMap = NormalizeMap(source.UnknownEnumMap),
+            TagLabels = NormalizeMap(source.TagLabels),
+            ClassMap = NormalizeMap(source.ClassMap),
+            RarityMap = NormalizeMap(source.RarityMap),
+            RaceMap = NormalizeMap(source.RaceMap),
+            SchoolMap = NormalizeMap(source.SchoolMap),
+            KeywordMap = NormalizeMap(source.KeywordMap),
+            SetMap = NormalizeMap(source.SetMap),
+            RelatedCardMap = NormalizeMap(source.RelatedCardMap),
+        };
+    }
+
+    private static Dictionary<string, string> NormalizeMap(IReadOnlyDictionary<string, string>? source)
+    {
+        var normalized = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (source is null)
+        {
+            return normalized;
+        }
+
+        foreach (var pair in source)
+        {
+            var key = pair.Key.Trim();
+            var value = pair.Value.Trim();
+            if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value))
+            {
+                continue;
+            }
+
+            normalized[key] = value;
+        }
+
+        return normalized;
     }
 
     private static string MapWithFallback(IReadOnlyDictionary<string, string> map, string value)

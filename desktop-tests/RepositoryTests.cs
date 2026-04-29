@@ -196,6 +196,52 @@ public sealed class RepositoryTests
         }
     }
 
+    [Fact]
+    public void SourceDefaultMappingsBecomeDefaultRelatedCards()
+    {
+        var resourceRoot = CreateTemporaryCardDataRoot();
+        var configDirectory = Path.Combine(resourceRoot, "config");
+        Directory.CreateDirectory(configDirectory);
+        File.WriteAllText(
+            Path.Combine(configDirectory, "card-data-map-defaults.json"),
+            """
+            {
+              "format": "hearthstone-card-search.card-data-map-package",
+              "version": 1,
+              "kind": "source-defaults",
+              "maps": {
+                "relatedCardMap": {
+                  "CARD_A=>": "CARD_C"
+                }
+              }
+            }
+            """);
+
+        try
+        {
+            CardDataMaps.ResetOverrides();
+            CardDataMaps.ReloadSourceDefaults(resourceRoot);
+            CardDataMaps.ResetOverrides();
+
+            var repository = CardRepository.Load(resourceRoot);
+            var detailA = repository.GetDetail("CARD_A");
+            var detailC = repository.GetDetail("CARD_C");
+
+            Assert.NotNull(detailA);
+            Assert.NotNull(detailC);
+            Assert.Equal("CARD_C", CardDataMaps.DefaultRelatedCardMap["CARD_A=>"]);
+            Assert.Contains(detailA!.RelatedCards, item => item.CardId == "CARD_C");
+            Assert.Contains(detailC!.ParentCards, item => item.CardId == "CARD_A");
+        }
+        finally
+        {
+            var originalRoot = ResourceLocator.LocateResourceRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
+            CardDataMaps.ReloadSourceDefaults(originalRoot);
+            CardDataMaps.ResetOverrides();
+            Directory.Delete(resourceRoot, recursive: true);
+        }
+    }
+
     private static CardRepository LoadRepository()
     {
         var resourceRoot = ResourceLocator.LocateResourceRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
