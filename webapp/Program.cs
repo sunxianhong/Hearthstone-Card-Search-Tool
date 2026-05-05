@@ -186,7 +186,7 @@ app.MapGet("/api/cards/{cardId}/image", (string cardId, RepositoryState state) =
         return Results.NotFound();
     }
 
-    return Results.File(imagePath, "image/png", enableRangeProcessing: true);
+    return Results.File(imagePath, GetImageContentType(imagePath), enableRangeProcessing: true);
 });
 
 app.MapFallbackToFile("index.html");
@@ -474,6 +474,16 @@ static void TryAppendMappedTag(CardRecord card, ICollection<string> parts, strin
 static bool HasImage(string? imagePath)
 {
     return !string.IsNullOrWhiteSpace(imagePath);
+}
+
+static string GetImageContentType(string imagePath)
+{
+    return Path.GetExtension(imagePath).ToLowerInvariant() switch
+    {
+        ".webp" => "image/webp",
+        ".png" => "image/png",
+        _ => "application/octet-stream",
+    };
 }
 
 static string? BuildImageUrl(string cardId, string? imagePath)

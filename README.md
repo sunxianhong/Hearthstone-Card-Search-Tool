@@ -196,7 +196,7 @@ dotnet test .\desktop-tests\HearthstoneCardSearchTool.Tests.csproj
 
 注意：
 
-- 如果 `cardpng/` 目录下没有任何 `.png` 文件，和图片相关的测试会失败。
+- 如果 `cardpng/` 目录下没有任何 `.png` 或 `.webp` 文件，和图片相关的测试会失败。
 - 如果你只是调试搜索逻辑，没有卡图资源也能启动程序，但界面会显示文字占位卡片。
 
 ## 生成便携版
@@ -265,7 +265,7 @@ Hearthstone Card Search Tool/
 ### 数据加载
 
 - `CardRepository.Load(...)` 会读取 `CardDefs.xml`。
-- 程序会扫描 `cardpng/` 下的 `.png` 文件，建立 `CardID -> 图片路径` 索引。
+- 程序会扫描 `cardpng/` 下的 `.png` / `.webp` 文件，建立 `CardID -> 图片路径` 索引。
 - 载入时会清洗卡牌文本中的 HTML 标签与特殊符号。
 
 ### 搜索策略

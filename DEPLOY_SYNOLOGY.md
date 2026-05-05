@@ -137,7 +137,7 @@ ports:
 
 检查：
 
-- `cardpng/` 目录里是否真的有 `.png`
+- `cardpng/` 目录里是否真的有 `.png` 或 `.webp`
 - 卡图文件名是否与 `CardID` 对应
 
 ### 3. 浏览器打不开

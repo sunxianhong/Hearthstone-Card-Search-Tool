@@ -30,7 +30,7 @@ public sealed class RepositoryTests
         Assert.Contains(placeholderResults, item => string.IsNullOrWhiteSpace(item.ImagePath));
 
         var resourceRoot = ResourceLocator.LocateResourceRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
-        var firstImagePath = Directory.EnumerateFiles(Path.Combine(resourceRoot, "cardpng"), "*.png", SearchOption.AllDirectories).FirstOrDefault();
+        var firstImagePath = EnumerateSupportedImages(Path.Combine(resourceRoot, "cardpng")).FirstOrDefault();
         if (string.IsNullOrWhiteSpace(firstImagePath))
         {
             return;
@@ -197,6 +197,55 @@ public sealed class RepositoryTests
     }
 
     [Fact]
+    public void SupportsWebpCardImages()
+    {
+        var resourceRoot = CreateTemporaryCardDataRoot();
+        var imageDirectory = Path.Combine(resourceRoot, "cardpng");
+        var webpPath = Path.Combine(imageDirectory, "CARD_A.webp");
+        Directory.CreateDirectory(imageDirectory);
+        File.WriteAllText(webpPath, "not a real image");
+
+        try
+        {
+            var repository = CardRepository.Load(resourceRoot);
+            var detail = repository.GetDetail("CARD_A");
+
+            Assert.NotNull(detail);
+            Assert.Equal(webpPath, detail!.ImagePath);
+            Assert.True(repository.HasAnyImages);
+        }
+        finally
+        {
+            Directory.Delete(resourceRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void PrefersPngWhenPngAndWebpShareCardId()
+    {
+        var resourceRoot = CreateTemporaryCardDataRoot();
+        var imageDirectory = Path.Combine(resourceRoot, "cardpng");
+        var pngPath = Path.Combine(imageDirectory, "CARD_A.png");
+        var webpPath = Path.Combine(imageDirectory, "CARD_A.webp");
+        Directory.CreateDirectory(imageDirectory);
+        File.WriteAllText(webpPath, "not a real webp image");
+        File.WriteAllText(pngPath, "not a real png image");
+
+        try
+        {
+            var repository = CardRepository.Load(resourceRoot);
+            var detail = repository.GetDetail("CARD_A");
+
+            Assert.NotNull(detail);
+            Assert.Equal(pngPath, detail!.ImagePath);
+        }
+        finally
+        {
+            Directory.Delete(resourceRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public void SourceDefaultMappingsBecomeDefaultRelatedCards()
     {
         var resourceRoot = CreateTemporaryCardDataRoot();
@@ -246,6 +295,18 @@ public sealed class RepositoryTests
     {
         var resourceRoot = ResourceLocator.LocateResourceRoot(AppContext.BaseDirectory, Directory.GetCurrentDirectory());
         return CardRepository.Load(resourceRoot);
+    }
+
+    private static IEnumerable<string> EnumerateSupportedImages(string imageRoot)
+    {
+        return Directory
+            .EnumerateFiles(imageRoot, "*", SearchOption.AllDirectories)
+            .Where(static path =>
+            {
+                var extension = Path.GetExtension(path);
+                return string.Equals(extension, ".png", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(extension, ".webp", StringComparison.OrdinalIgnoreCase);
+            });
     }
 
     private static string CreateTemporaryCardDataRoot()

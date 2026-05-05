@@ -7,6 +7,11 @@ public sealed class CardRepository
 {
     private static readonly Regex HtmlTagRegex = new("<[^>]+>", RegexOptions.Compiled);
     private static readonly Regex SuffixRegex = new("^(.+\\d)([A-Za-z_].*)$", RegexOptions.Compiled);
+    private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png",
+        ".webp",
+    };
     private static readonly HashSet<string> HiddenTags =
     [
         "CARDNAME",
@@ -336,9 +341,11 @@ public sealed class CardRepository
         var imageIndex = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var path in Directory
-                     .EnumerateFiles(imageRoot, "*.png", SearchOption.AllDirectories)
+                     .EnumerateFiles(imageRoot, "*", SearchOption.AllDirectories)
+                     .Where(IsSupportedImagePath)
                      .Select(static path => Path.GetFullPath(path))
                      .OrderBy(static path => GetImagePathPriority(path))
+                     .ThenBy(static path => GetImageFormatPriority(path))
                      .ThenBy(static path => path, StringComparer.OrdinalIgnoreCase))
         {
             var key = Path.GetFileNameWithoutExtension(path);
@@ -346,6 +353,18 @@ public sealed class CardRepository
         }
 
         return imageIndex;
+    }
+
+    private static bool IsSupportedImagePath(string path)
+    {
+        return SupportedImageExtensions.Contains(Path.GetExtension(path));
+    }
+
+    private static int GetImageFormatPriority(string path)
+    {
+        return string.Equals(Path.GetExtension(path), ".png", StringComparison.OrdinalIgnoreCase)
+            ? 0
+            : 1;
     }
 
     private static int GetImagePathPriority(string path)
