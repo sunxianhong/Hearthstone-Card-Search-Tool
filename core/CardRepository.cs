@@ -441,7 +441,7 @@ public sealed class CardRepository
             return false;
         }
 
-        if (!MatchesExact(card, "CLASS", filters.Class))
+        if (!MatchesClass(card, filters.Class))
         {
             return false;
         }
@@ -513,6 +513,22 @@ public sealed class CardRepository
     {
         return string.IsNullOrWhiteSpace(expected)
             || card.TagMap.TryGetValue(key, out var actual) && actual == expected;
+    }
+
+    private static bool MatchesClass(CardRecord card, string? expected)
+    {
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            return true;
+        }
+
+        if (card.TagMap.TryGetValue("CLASS", out var actualClass) && actualClass == expected)
+        {
+            return true;
+        }
+
+        return card.TagMap.TryGetValue("MULTIPLE_CLASSES", out var multipleClasses)
+            && CardDataMaps.MatchesConfiguredMultiClass(expected, multipleClasses);
     }
 
     private static bool MatchesCollectible(CardRecord card, string? expected)

@@ -28,6 +28,7 @@ const CARD_DATA_MAP_KEYS = [
     "unknownEnumMap",
     "tagLabels",
     "classMap",
+    "multiClassMap",
     "rarityMap",
     "raceMap",
     "schoolMap",
@@ -1351,7 +1352,7 @@ function renderCardDataMapEditor() {
     const clearButton = document.createElement("button");
     clearButton.type = "button";
     clearButton.className = "secondary-button settings-mini-button";
-    clearButton.textContent = isRelatedCardMapLibrary(library) ? "清空当前库规则" : "清空当前库覆盖";
+    clearButton.textContent = isRuleBasedCardDataMapLibrary(library) ? "清空当前库规则" : "清空当前库覆盖";
     clearButton.addEventListener("click", () => {
         updateCardDataMapLibraryDraft(library, "");
         renderSettingsModal();
@@ -1383,8 +1384,8 @@ function renderCardDataMapEditor() {
     const copyActions = document.createElement("div");
     copyActions.className = "settings-option-actions";
 
-    const currentEntriesLabel = isRelatedCardMapLibrary(library) ? "当前规则" : "当前覆盖";
-    const emptyCurrentEntriesText = isRelatedCardMapLibrary(library) ? "当前没有跳转规则。" : "当前没有覆盖项。";
+    const currentEntriesLabel = isRuleBasedCardDataMapLibrary(library) ? "当前规则" : "当前覆盖";
+    const emptyCurrentEntriesText = isRuleBasedCardDataMapLibrary(library) ? "当前没有规则。" : "当前没有覆盖项。";
     const copyOverridesButton = createPreviewActionButton(`复制${currentEntriesLabel}`, () => {
         void copyText(
             library.rawText.trim() || emptyCurrentEntriesText,
@@ -1528,19 +1529,27 @@ function getCardDataMapEditorHint(library) {
         return "每行一条。A<=B 表示 B 继承 A 的【衍生 / 相关牌】，不会继承附魔；A,B=>C,D 表示 A/B 增加到 C/D 的跳转。A/B/C/D 可以写中文名、CardID 或 DbfId。空行和 # 开头的注释行会被忽略。";
     }
 
+    if (isMultiClassMapLibrary(library)) {
+        return "每行一条。职业=>34,48 表示该职业筛选会额外命中 MULTIPLE_CLASSES=34 或 48 的卡牌。左侧职业可以写职业名、职业值，或多个职业逗号分隔；右侧值也支持逗号分隔多个。空行和 # 开头的注释行会被忽略。";
+    }
+
     return "每行一条，格式为 key=value。这里只写新增或覆盖项即可，不需要把默认库整份复制过来。空行和 # 开头的注释行会被忽略。";
 }
 
 function getCardDataMapRequiredFormat(library) {
     return isRelatedCardMapLibrary(library)
         ? "已有牌<=继承牌 或 A,B=>C,D"
-        : "key=value";
+        : isMultiClassMapLibrary(library)
+            ? "职业=>34,48"
+            : "key=value";
 }
 
 function getCardDataMapEntryLabel(library) {
     return isRelatedCardMapLibrary(library)
         ? "跳转规则"
-        : "覆盖";
+        : isMultiClassMapLibrary(library)
+            ? "映射规则"
+            : "覆盖";
 }
 
 function isRelatedCardMapLibrary(libraryOrKey) {
@@ -1548,11 +1557,31 @@ function isRelatedCardMapLibrary(libraryOrKey) {
     return key === "relatedCardMap";
 }
 
+function isMultiClassMapLibrary(libraryOrKey) {
+    const key = typeof libraryOrKey === "string" ? libraryOrKey : libraryOrKey?.key;
+    return key === "multiClassMap";
+}
+
+function isRuleBasedCardDataMapLibrary(libraryOrKey) {
+    return isRelatedCardMapLibrary(libraryOrKey) || isMultiClassMapLibrary(libraryOrKey);
+}
+
 function formatMapOverrides(entries, libraryOrKey = null) {
     const isRelatedCardMap = isRelatedCardMapLibrary(libraryOrKey);
+    const isMultiClassMap = isMultiClassMapLibrary(libraryOrKey);
     return Object.entries(entries ?? {})
         .sort((left, right) => left[0].localeCompare(right[0], "zh-CN"))
-        .map(([key, value]) => isRelatedCardMap ? formatRelatedCardMapEntry(key, value) : `${key}=${value}`)
+        .map(([key, value]) => {
+            if (isRelatedCardMap) {
+                return formatRelatedCardMapEntry(key, value);
+            }
+
+            if (isMultiClassMap) {
+                return `${key}=>${value}`;
+            }
+
+            return `${key}=${value}`;
+        })
         .join("\n");
 }
 
@@ -1566,6 +1595,10 @@ function formatRelatedCardMapEntry(key, value) {
 function parseMapOverrideText(text, libraryOrKey = null) {
     if (isRelatedCardMapLibrary(libraryOrKey)) {
         return parseRelatedCardMapText(text);
+    }
+
+    if (isMultiClassMapLibrary(libraryOrKey)) {
+        return parseMultiClassMapText(text);
     }
 
     const overrides = {};
@@ -1606,6 +1639,54 @@ function parseMapOverrideText(text, libraryOrKey = null) {
 
         seenKeys.set(key, lineNumber);
         overrides[key] = value;
+    });
+
+    return { overrides, errors, warnings };
+}
+
+function parseMultiClassMapText(text) {
+    const overrides = {};
+    const errors = [];
+    const warnings = [];
+    const seenKeys = new Map();
+    const lines = (text ?? "").split(/\r?\n/);
+
+    lines.forEach((rawLine, index) => {
+        const lineNumber = index + 1;
+        const line = rawLine.trim();
+        if (!line || line.startsWith("#")) {
+            return;
+        }
+
+        const arrowIndex = rawLine.indexOf("=>");
+        const equalIndex = rawLine.indexOf("=");
+        const separatorIndex = arrowIndex >= 0 ? arrowIndex : equalIndex;
+        const operatorLength = arrowIndex >= 0 ? 2 : 1;
+
+        if (separatorIndex <= 0) {
+            errors.push(`第 ${lineNumber} 行必须使用 职业=>34,48`);
+            return;
+        }
+
+        const classes = splitMultiClassMapItems(rawLine.slice(0, separatorIndex));
+        const values = splitMultiClassMapItems(rawLine.slice(separatorIndex + operatorLength));
+        if (classes.length === 0) {
+            errors.push(`第 ${lineNumber} 行左侧职业为空`);
+            return;
+        }
+
+        if (values.length === 0) {
+            errors.push(`第 ${lineNumber} 行右侧 MULTIPLE_CLASSES 值为空`);
+            return;
+        }
+
+        const key = classes.join(",");
+        if (seenKeys.has(key)) {
+            warnings.push(`规则 ${key} 重复出现，已合并后面的值`);
+        }
+
+        seenKeys.set(key, lineNumber);
+        overrides[key] = mergeMultiClassMapValues(overrides[key], values).join(",");
     });
 
     return { overrides, errors, warnings };
@@ -1664,6 +1745,24 @@ function splitRelatedCardIdentifiers(text) {
         .split(/[,，]/)
         .map((item) => item.trim())
         .filter(Boolean);
+}
+
+function splitMultiClassMapItems(text) {
+    return String(text ?? "")
+        .split(/[,，]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+function mergeMultiClassMapValues(existingValue, nextItems) {
+    const merged = splitMultiClassMapItems(existingValue);
+    for (const item of nextItems) {
+        if (!merged.includes(item)) {
+            merged.push(item);
+        }
+    }
+
+    return merged;
 }
 
 function mergeRelatedCardIdentifierValues(existingValue, nextItems) {

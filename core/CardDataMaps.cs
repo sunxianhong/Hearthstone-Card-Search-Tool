@@ -1175,6 +1175,9 @@ public static class CardDataMaps
             ["14"] = "恶魔猎手",
         };
 
+    private static readonly IReadOnlyDictionary<string, string> FallbackMultiClassMap =
+        new Dictionary<string, string>(StringComparer.Ordinal);
+
     private static readonly IReadOnlyDictionary<string, string> FallbackRarityMap =
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
@@ -1317,6 +1320,7 @@ public static class CardDataMaps
     private static IReadOnlyDictionary<string, string> sourceDefaultUnknownEnumMap = new Dictionary<string, string>(StringComparer.Ordinal);
     private static IReadOnlyDictionary<string, string> sourceDefaultTagLabels = new Dictionary<string, string>(StringComparer.Ordinal);
     private static IReadOnlyDictionary<string, string> sourceDefaultClassMap = new Dictionary<string, string>(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, string> sourceDefaultMultiClassMap = new Dictionary<string, string>(StringComparer.Ordinal);
     private static IReadOnlyDictionary<string, string> sourceDefaultRarityMap = new Dictionary<string, string>(StringComparer.Ordinal);
     private static IReadOnlyDictionary<string, string> sourceDefaultRaceMap = new Dictionary<string, string>(StringComparer.Ordinal);
     private static IReadOnlyDictionary<string, string> sourceDefaultSchoolMap = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -1327,6 +1331,7 @@ public static class CardDataMaps
     private static IReadOnlyDictionary<string, string> defaultUnknownEnumMap = FallbackUnknownEnumMap;
     private static IReadOnlyDictionary<string, string> defaultTagLabels = FallbackTagLabels;
     private static IReadOnlyDictionary<string, string> defaultClassMap = FallbackClassMap;
+    private static IReadOnlyDictionary<string, string> defaultMultiClassMap = FallbackMultiClassMap;
     private static IReadOnlyDictionary<string, string> defaultRarityMap = FallbackRarityMap;
     private static IReadOnlyDictionary<string, string> defaultRaceMap = FallbackRaceMap;
     private static IReadOnlyDictionary<string, string> defaultSchoolMap = FallbackSchoolMap;
@@ -1337,6 +1342,7 @@ public static class CardDataMaps
     private static IReadOnlyDictionary<string, string> unknownEnumMap = FallbackUnknownEnumMap;
     private static IReadOnlyDictionary<string, string> tagLabels = FallbackTagLabels;
     private static IReadOnlyDictionary<string, string> classMap = FallbackClassMap;
+    private static IReadOnlyDictionary<string, string> multiClassMap = FallbackMultiClassMap;
     private static IReadOnlyDictionary<string, string> rarityMap = FallbackRarityMap;
     private static IReadOnlyDictionary<string, string> cardTypeMap = FallbackCardTypeMap;
     private static IReadOnlyDictionary<string, string> raceMap = FallbackRaceMap;
@@ -1344,11 +1350,16 @@ public static class CardDataMaps
     private static IReadOnlyDictionary<string, string> keywordMap = FallbackKeywordMap;
     private static IReadOnlyDictionary<string, string> setMap = FallbackSetMap;
     private static IReadOnlyDictionary<string, string> relatedCardMap = FallbackRelatedCardMap;
+    private static IReadOnlyDictionary<string, IReadOnlySet<string>> multiClassLookup =
+        new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal);
+    private static IReadOnlyDictionary<string, string> multiClassDisplayMap =
+        new Dictionary<string, string>(StringComparer.Ordinal);
     private static CardDataMapOverrideConfig? currentOverrides;
 
     public static IReadOnlyDictionary<string, string> DefaultUnknownEnumMap => defaultUnknownEnumMap;
     public static IReadOnlyDictionary<string, string> DefaultTagLabels => defaultTagLabels;
     public static IReadOnlyDictionary<string, string> DefaultClassMap => defaultClassMap;
+    public static IReadOnlyDictionary<string, string> DefaultMultiClassMap => defaultMultiClassMap;
     public static IReadOnlyDictionary<string, string> DefaultRarityMap => defaultRarityMap;
     public static IReadOnlyDictionary<string, string> DefaultRaceMap => defaultRaceMap;
     public static IReadOnlyDictionary<string, string> DefaultSchoolMap => defaultSchoolMap;
@@ -1359,6 +1370,7 @@ public static class CardDataMaps
     public static IReadOnlyDictionary<string, string> SourceDefaultUnknownEnumMap => sourceDefaultUnknownEnumMap;
     public static IReadOnlyDictionary<string, string> SourceDefaultTagLabels => sourceDefaultTagLabels;
     public static IReadOnlyDictionary<string, string> SourceDefaultClassMap => sourceDefaultClassMap;
+    public static IReadOnlyDictionary<string, string> SourceDefaultMultiClassMap => sourceDefaultMultiClassMap;
     public static IReadOnlyDictionary<string, string> SourceDefaultRarityMap => sourceDefaultRarityMap;
     public static IReadOnlyDictionary<string, string> SourceDefaultRaceMap => sourceDefaultRaceMap;
     public static IReadOnlyDictionary<string, string> SourceDefaultSchoolMap => sourceDefaultSchoolMap;
@@ -1369,6 +1381,7 @@ public static class CardDataMaps
     public static IReadOnlyDictionary<string, string> UnknownEnumMap => unknownEnumMap;
     public static IReadOnlyDictionary<string, string> TagLabels => tagLabels;
     public static IReadOnlyDictionary<string, string> ClassMap => classMap;
+    public static IReadOnlyDictionary<string, string> MultiClassMap => multiClassMap;
     public static IReadOnlyDictionary<string, string> RarityMap => rarityMap;
     public static IReadOnlyDictionary<string, string> CardTypeMap => cardTypeMap;
     public static IReadOnlyDictionary<string, string> RaceMap => raceMap;
@@ -1448,6 +1461,7 @@ public static class CardDataMaps
         return tagKey switch
         {
             "CLASS" => MapWithFallback(classMap, value),
+            "MULTIPLE_CLASSES" => MapConfiguredMultiClassValue(value),
             "RARITY" => MapWithFallback(rarityMap, value),
             "CARDTYPE" => value == "6" ? "附魔 (6)" : MapWithFallback(cardTypeMap, value),
             "CARD_SET" => MapWithFallback(setMap, value),
@@ -1489,6 +1503,14 @@ public static class CardDataMaps
             .ToList();
     }
 
+    public static bool MatchesConfiguredMultiClass(string classValue, string? multipleClassesValue)
+    {
+        return !string.IsNullOrWhiteSpace(classValue)
+            && !string.IsNullOrWhiteSpace(multipleClassesValue)
+            && multiClassLookup.TryGetValue(classValue, out var mappedValues)
+            && mappedValues.Contains(multipleClassesValue.Trim());
+    }
+
     private static void LoadSourceDefaultsCore(string resourceRoot)
     {
         var merged = new CardDataMapOverrideConfig();
@@ -1509,6 +1531,7 @@ public static class CardDataMaps
         sourceDefaultUnknownEnumMap = NormalizeMap(merged.UnknownEnumMap);
         sourceDefaultTagLabels = NormalizeMap(merged.TagLabels);
         sourceDefaultClassMap = NormalizeMap(merged.ClassMap);
+        sourceDefaultMultiClassMap = NormalizeMap(merged.MultiClassMap);
         sourceDefaultRarityMap = NormalizeMap(merged.RarityMap);
         sourceDefaultRaceMap = NormalizeMap(merged.RaceMap);
         sourceDefaultSchoolMap = NormalizeMap(merged.SchoolMap);
@@ -1519,6 +1542,7 @@ public static class CardDataMaps
         defaultUnknownEnumMap = MergeMap(FallbackUnknownEnumMap, sourceDefaultUnknownEnumMap);
         defaultTagLabels = MergeMap(FallbackTagLabels, sourceDefaultTagLabels);
         defaultClassMap = MergeMap(FallbackClassMap, sourceDefaultClassMap);
+        defaultMultiClassMap = MergeMap(FallbackMultiClassMap, sourceDefaultMultiClassMap);
         defaultRarityMap = MergeMap(FallbackRarityMap, sourceDefaultRarityMap);
         defaultRaceMap = MergeMap(FallbackRaceMap, sourceDefaultRaceMap);
         defaultSchoolMap = MergeMap(FallbackSchoolMap, sourceDefaultSchoolMap);
@@ -1580,6 +1604,7 @@ public static class CardDataMaps
             UnknownEnumMap = ToMutableMap(MergeMap(left.UnknownEnumMap, right.UnknownEnumMap)),
             TagLabels = ToMutableMap(MergeMap(left.TagLabels, right.TagLabels)),
             ClassMap = ToMutableMap(MergeMap(left.ClassMap, right.ClassMap)),
+            MultiClassMap = ToMutableMap(MergeMap(left.MultiClassMap, right.MultiClassMap)),
             RarityMap = ToMutableMap(MergeMap(left.RarityMap, right.RarityMap)),
             RaceMap = ToMutableMap(MergeMap(left.RaceMap, right.RaceMap)),
             SchoolMap = ToMutableMap(MergeMap(left.SchoolMap, right.SchoolMap)),
@@ -1599,12 +1624,15 @@ public static class CardDataMaps
         unknownEnumMap = MergeMap(defaultUnknownEnumMap, currentOverrides?.UnknownEnumMap);
         tagLabels = MergeMap(defaultTagLabels, currentOverrides?.TagLabels);
         classMap = MergeMap(defaultClassMap, currentOverrides?.ClassMap);
+        multiClassMap = MergeMap(defaultMultiClassMap, currentOverrides?.MultiClassMap);
         rarityMap = MergeMap(defaultRarityMap, currentOverrides?.RarityMap);
         raceMap = MergeMap(defaultRaceMap, currentOverrides?.RaceMap);
         schoolMap = MergeMap(defaultSchoolMap, currentOverrides?.SchoolMap);
         keywordMap = MergeMap(defaultKeywordMap, currentOverrides?.KeywordMap);
         setMap = MergeMap(defaultSetMap, currentOverrides?.SetMap);
         relatedCardMap = MergeMap(defaultRelatedCardMap, currentOverrides?.RelatedCardMap);
+        multiClassLookup = BuildMultiClassLookup(multiClassMap, classMap);
+        multiClassDisplayMap = BuildMultiClassDisplayMap(multiClassLookup, classMap);
     }
 
     private static CardDataMapOverrideConfig? NormalizeOverrideConfig(CardDataMapOverrideConfig? source)
@@ -1619,6 +1647,7 @@ public static class CardDataMaps
             UnknownEnumMap = NormalizeMap(source.UnknownEnumMap),
             TagLabels = NormalizeMap(source.TagLabels),
             ClassMap = NormalizeMap(source.ClassMap),
+            MultiClassMap = NormalizeMap(source.MultiClassMap),
             RarityMap = NormalizeMap(source.RarityMap),
             RaceMap = NormalizeMap(source.RaceMap),
             SchoolMap = NormalizeMap(source.SchoolMap),
@@ -1649,6 +1678,153 @@ public static class CardDataMaps
         }
 
         return normalized;
+    }
+
+    private static string MapConfiguredMultiClassValue(string value)
+    {
+        return multiClassDisplayMap.TryGetValue(value, out var display)
+            ? display
+            : value;
+    }
+
+    private static IReadOnlyDictionary<string, IReadOnlySet<string>> BuildMultiClassLookup(
+        IReadOnlyDictionary<string, string> configuredMap,
+        IReadOnlyDictionary<string, string> configuredClassMap)
+    {
+        var lookup = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+
+        foreach (var pair in configuredMap)
+        {
+            var classCodes = ResolveConfiguredClassCodes(pair.Key, configuredClassMap);
+            var multiValues = SplitConfiguredList(pair.Value);
+            if (classCodes.Count == 0 || multiValues.Count == 0)
+            {
+                continue;
+            }
+
+            foreach (var classCode in classCodes)
+            {
+                if (!lookup.TryGetValue(classCode, out var mappedValues))
+                {
+                    mappedValues = new HashSet<string>(StringComparer.Ordinal);
+                    lookup[classCode] = mappedValues;
+                }
+
+                foreach (var multiValue in multiValues)
+                {
+                    mappedValues.Add(multiValue);
+                }
+            }
+        }
+
+        return lookup.ToDictionary(
+            static pair => pair.Key,
+            static pair => (IReadOnlySet<string>)pair.Value,
+            StringComparer.Ordinal);
+    }
+
+    private static IReadOnlyDictionary<string, string> BuildMultiClassDisplayMap(
+        IReadOnlyDictionary<string, IReadOnlySet<string>> lookup,
+        IReadOnlyDictionary<string, string> configuredClassMap)
+    {
+        var reverseLookup = new Dictionary<string, Dictionary<string, string>>(StringComparer.Ordinal);
+
+        foreach (var pair in lookup)
+        {
+            var classCode = pair.Key;
+            var classLabel = configuredClassMap.TryGetValue(classCode, out var mappedLabel)
+                ? mappedLabel
+                : classCode;
+
+            foreach (var multiValue in pair.Value)
+            {
+                if (!reverseLookup.TryGetValue(multiValue, out var labelsByCode))
+                {
+                    labelsByCode = new Dictionary<string, string>(StringComparer.Ordinal);
+                    reverseLookup[multiValue] = labelsByCode;
+                }
+
+                labelsByCode[classCode] = classLabel;
+            }
+        }
+
+        return reverseLookup.ToDictionary(
+            static pair => pair.Key,
+            pair =>
+            {
+                var joinedLabels = pair.Value
+                    .OrderBy(static item => int.TryParse(item.Key, out var parsed) ? parsed : int.MaxValue)
+                    .ThenBy(static item => item.Value, StringComparer.Ordinal)
+                    .Select(static item => item.Value)
+                    .ToArray();
+
+                return $"{string.Join(" / ", joinedLabels)} ({pair.Key})";
+            },
+            StringComparer.Ordinal);
+    }
+
+    private static IReadOnlyList<string> ResolveConfiguredClassCodes(
+        string rawKey,
+        IReadOnlyDictionary<string, string> configuredClassMap)
+    {
+        var resolved = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var token in SplitConfiguredList(rawKey))
+        {
+            if (configuredClassMap.ContainsKey(token))
+            {
+                resolved.Add(token);
+            }
+
+            foreach (var pair in configuredClassMap)
+            {
+                if (string.Equals(pair.Value, token, StringComparison.OrdinalIgnoreCase))
+                {
+                    resolved.Add(pair.Key);
+                }
+            }
+
+            var wrappedValue = TryExtractWrappedValue(token);
+            if (!string.IsNullOrWhiteSpace(wrappedValue) && configuredClassMap.ContainsKey(wrappedValue))
+            {
+                resolved.Add(wrappedValue);
+            }
+        }
+
+        return resolved.ToList();
+    }
+
+    private static IReadOnlyList<string> SplitConfiguredList(string text)
+    {
+        return text
+            .Split([',', '，'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(static item => !string.IsNullOrWhiteSpace(item))
+            .ToList();
+    }
+
+    private static string? TryExtractWrappedValue(string token)
+    {
+        var trimmed = token.Trim();
+        if (trimmed.Length < 3)
+        {
+            return null;
+        }
+
+        var asciiOpen = trimmed.LastIndexOf('(');
+        var asciiClose = trimmed[^1] == ')' ? trimmed.Length - 1 : -1;
+        if (asciiOpen >= 0 && asciiClose > asciiOpen)
+        {
+            return trimmed[(asciiOpen + 1)..asciiClose].Trim();
+        }
+
+        var zhOpen = trimmed.LastIndexOf('（');
+        var zhClose = trimmed[^1] == '）' ? trimmed.Length - 1 : -1;
+        if (zhOpen >= 0 && zhClose > zhOpen)
+        {
+            return trimmed[(zhOpen + 1)..zhClose].Trim();
+        }
+
+        return null;
     }
 
     private static string MapWithFallback(IReadOnlyDictionary<string, string> map, string value)

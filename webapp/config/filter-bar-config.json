@@ -1,0 +1,1306 @@
+{
+  "sections": [
+    {
+      "key": "mode",
+      "label": "模式",
+      "enabled": true,
+      "options": [
+        {
+          "value": "wild",
+          "label": "狂野",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "standard",
+          "label": "标准",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        }
+      ]
+    },
+    {
+      "key": "set",
+      "label": "扩展包",
+      "enabled": true,
+      "options": [
+        {
+          "value": "0",
+          "label": "失效 (0)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1",
+          "label": "临时测试 (1)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "3",
+          "label": "经典 (3)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "4",
+          "label": "荣誉室 (4)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "6",
+          "label": "调试 (6)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "7",
+          "label": "未知 (7)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "8",
+          "label": "愚弄 (8)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "9",
+          "label": "空白 (9)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "10",
+          "label": "测试 (10)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "11",
+          "label": "纪念 (11)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "12",
+          "label": "纳克萨玛斯 (12)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "13",
+          "label": "地精大战侏儒 (13)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "14",
+          "label": "黑石山的火焰 (14)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "15",
+          "label": "冠军的试炼 (15)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "17",
+          "label": "英雄皮肤和技能 (17)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "19",
+          "label": "混乱 (19)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "20",
+          "label": "探险者协会 (20)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "21",
+          "label": "上古之神的低语 (21)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "22",
+          "label": "上古之神保留 (22)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "23",
+          "label": "卡拉赞之夜 (23)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "24",
+          "label": "卡拉赞保留 (24)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "25",
+          "label": "龙争虎斗加基森 (25)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "26",
+          "label": "加基森保留 (26)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "27",
+          "label": "勇闯安戈洛 (27)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1001",
+          "label": "冰封王座的骑士 (1001)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1003",
+          "label": "天梯实验 (1003)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1004",
+          "label": "狗头人与地下世界 (1004)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1125",
+          "label": "女巫森林 (1125)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1127",
+          "label": "砰砰计划 (1127)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1129",
+          "label": "拉斯塔哈的大乱斗 (1129)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1130",
+          "label": "暗影崛起 (1130)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1158",
+          "label": "奥丹姆奇兵 (1158)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1347",
+          "label": "巨龙降临 (1347)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1403",
+          "label": "迦拉克隆的觉醒 (1403)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1414",
+          "label": "外域的灰烬 (1414)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1439",
+          "label": "狂野模式活动 (1439)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1443",
+          "label": "通灵学园 (1443)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1463",
+          "label": "恶魔猎手新兵 (1463)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1466",
+          "label": "疯狂的暗月马戏团 (1466)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1525",
+          "label": "贫瘠之地的锤炼 (1525)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1578",
+          "label": "暴风城下的集结 (1578)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1586",
+          "label": "佣兵战纪 (1586)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1626",
+          "label": "奥特兰克的决裂 (1626)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1635",
+          "label": "怀旧 (1635)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1637",
+          "label": "核心 (1637)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1658",
+          "label": "探索沉没之城 (1658)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1691",
+          "label": "纳斯利亚堡的悬案 (1691)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1705",
+          "label": "佣兵实验 (1705)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1776",
+          "label": "巫妖王的进军 (1776)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1809",
+          "label": "传奇音乐节 (1809)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1810",
+          "label": "核心(失效) (1810)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1858",
+          "label": "泰坦诸神 (1858)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1869",
+          "label": "阿尔萨斯之路 (1869)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1892",
+          "label": "决战荒芜之地 (1892)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1897",
+          "label": "威兹班的工坊 (1897)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1898",
+          "label": "时光之穴 (1898)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1905",
+          "label": "胜地历险记 (1905)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1935",
+          "label": "深暗领域 (1935)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1941",
+          "label": "活动礼物 (1941)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1946",
+          "label": "翡翠梦境 (1946)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1952",
+          "label": "安戈洛龟途 (1952)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1957",
+          "label": "穿越时间流 (1957)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        },
+        {
+          "value": "1980",
+          "label": "大地的裂变 (1980)",
+          "visible": true,
+          "visibleInWild": true,
+          "visibleInStandard": true
+        }
+      ]
+    },
+    {
+      "key": "cost",
+      "label": "法力值",
+      "enabled": true,
+      "options": [
+        {
+          "value": "0",
+          "label": "0",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "1",
+          "label": "1",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "2",
+          "label": "2",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "3",
+          "label": "3",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "4",
+          "label": "4",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "5",
+          "label": "5",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "6",
+          "label": "6",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "7",
+          "label": "7",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "8",
+          "label": "8",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "9",
+          "label": "9",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "10",
+          "label": "10+",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        }
+      ]
+    },
+    {
+      "key": "class",
+      "label": "职业",
+      "enabled": true,
+      "options": [
+        {
+          "value": "1",
+          "label": "死亡骑士 (1)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "2",
+          "label": "德鲁伊 (2)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "3",
+          "label": "猎人 (3)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "4",
+          "label": "法师 (4)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "5",
+          "label": "圣骑士 (5)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "6",
+          "label": "牧师 (6)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "7",
+          "label": "潜行者 (7)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "8",
+          "label": "萨满祭司 (8)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "9",
+          "label": "术士 (9)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "10",
+          "label": "战士 (10)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "11",
+          "label": "11 (11)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "12",
+          "label": "中立 (12)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "13",
+          "label": "13 (13)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "14",
+          "label": "恶魔猎手 (14)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        }
+      ]
+    },
+    {
+      "key": "rarity",
+      "label": "稀有度",
+      "enabled": true,
+      "options": [
+        {
+          "value": "1",
+          "label": "普通 (1)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "2",
+          "label": "免费 (2)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "3",
+          "label": "稀有 (3)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "4",
+          "label": "史诗 (4)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "5",
+          "label": "传说 (5)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        }
+      ]
+    },
+    {
+      "key": "cardType",
+      "label": "卡片类型",
+      "enabled": true,
+      "options": [
+        {
+          "value": "3",
+          "label": "英雄 (3)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "4",
+          "label": "随从 (4)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "5",
+          "label": "法术 (5)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "6",
+          "label": "6 (6)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "7",
+          "label": "武器 (7)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "10",
+          "label": "英雄技能 (10)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "12",
+          "label": "12 (12)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "22",
+          "label": "22 (22)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "23",
+          "label": "23 (23)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "24",
+          "label": "24 (24)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "39",
+          "label": "地标 (39)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "40",
+          "label": "40 (40)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "42",
+          "label": "42 (42)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "43",
+          "label": "43 (43)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "44",
+          "label": "44 (44)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "45",
+          "label": "45 (45)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        }
+      ]
+    },
+    {
+      "key": "race",
+      "label": "随从种族",
+      "enabled": true,
+      "options": [
+        {
+          "value": "1",
+          "label": "1 (1)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "2",
+          "label": "德莱尼 (2)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "3",
+          "label": "3 (3)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "4",
+          "label": "4 (4)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "5",
+          "label": "5 (5)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "6",
+          "label": "6 (6)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "7",
+          "label": "7 (7)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "8",
+          "label": "8 (8)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "9",
+          "label": "9 (9)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "10",
+          "label": "10 (10)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "11",
+          "label": "亡灵 (11)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "12",
+          "label": "12 (12)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "14",
+          "label": "鱼人 (14)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "15",
+          "label": "恶魔 (15)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "17",
+          "label": "机械 (17)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "18",
+          "label": "元素 (18)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "19",
+          "label": "19 (19)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "20",
+          "label": "野兽 (20)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "21",
+          "label": "图腾 (21)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "23",
+          "label": "海盗 (23)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "24",
+          "label": "龙 (24)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "26",
+          "label": "全部 (26)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "38",
+          "label": "38 (38)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "43",
+          "label": "野猪人 (43)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "80",
+          "label": "80 (80)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "81",
+          "label": "81 (81)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "83",
+          "label": "83 (83)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "84",
+          "label": "84 (84)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "89",
+          "label": "89 (89)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "92",
+          "label": "娜迦 (92)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "93",
+          "label": "93 (93)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "94",
+          "label": "94 (94)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "95",
+          "label": "95 (95)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "96",
+          "label": "96 (96)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "97",
+          "label": "97 (97)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "98",
+          "label": "98 (98)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "100",
+          "label": "100 (100)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        }
+      ]
+    },
+    {
+      "key": "school",
+      "label": "法术派系",
+      "enabled": true,
+      "options": [
+        {
+          "value": "1",
+          "label": "奥术 (1)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "2",
+          "label": "火焰 (2)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "3",
+          "label": "冰霜 (3)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "4",
+          "label": "自然 (4)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "5",
+          "label": "神圣 (5)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "6",
+          "label": "暗影 (6)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "7",
+          "label": "邪能 (7)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "8",
+          "label": "8 (8)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "9",
+          "label": "9 (9)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "10",
+          "label": "10 (10)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "11",
+          "label": "11 (11)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "12",
+          "label": "12 (12)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "13",
+          "label": "13 (13)",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        }
+      ]
+    },
+    {
+      "key": "keyword",
+      "label": "关键词",
+      "enabled": true,
+      "options": [
+        {
+          "value": "BATTLECRY",
+          "label": "战吼",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "TAUNT",
+          "label": "嘲讽",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "DIVINE_SHIELD",
+          "label": "圣盾",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "DEATHRATTLE",
+          "label": "亡语",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "DISCOVER",
+          "label": "发现",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "RUSH",
+          "label": "突袭",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "LIFESTEAL",
+          "label": "吸血",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "WINDFURY",
+          "label": "风怒",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "STEALTH",
+          "label": "潜行",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "POISONOUS",
+          "label": "剧毒",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "AURA",
+          "label": "光环",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "TRIGGER_VISUAL",
+          "label": "特效",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "COLOSSAL",
+          "label": "巨型",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        }
+      ]
+    },
+    {
+      "key": "collectible",
+      "label": "是否可收藏",
+      "enabled": true,
+      "options": [
+        {
+          "value": "1",
+          "label": "可收集",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "0",
+          "label": "不可收集",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        }
+      ]
+    }
+  ]
+}

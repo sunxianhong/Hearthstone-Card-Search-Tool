@@ -1,9 +1,15 @@
 ﻿using HearthstoneCardSearchTool.Core;
 using HearthstoneCardSearchTool.Web;
+using System.Text.Encodings.Web;
 
 const int DefaultMaxDisplay = 300;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
+});
 
 builder.Services.AddSingleton<CardDataMapConfigStore>();
 builder.Services.AddSingleton(sp =>
@@ -537,6 +543,13 @@ static CardDataMapConfigResponse BuildCardDataMapConfigResponse(CardDataMapOverr
             CardDataMaps.DefaultClassMap,
             CardDataMaps.SourceDefaultClassMap,
             overrides.ClassMap),
+        BuildCardDataMapLibrary(
+            "multiClassMap",
+            "多职业卡牌映射",
+            "用于把职业筛选映射到 MULTIPLE_CLASSES 标签值，也会用于详情里多职业标签的显示。每行格式建议写成 职业=>34,48。",
+            CardDataMaps.DefaultMultiClassMap,
+            CardDataMaps.SourceDefaultMultiClassMap,
+            overrides.MultiClassMap),
         BuildCardDataMapLibrary(
             "rarityMap",
             "稀有度映射",

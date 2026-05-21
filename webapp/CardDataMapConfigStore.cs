@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using HearthstoneCardSearchTool.Core;
 
@@ -13,6 +14,7 @@ public sealed class CardDataMapConfigStore
     private readonly SemaphoreSlim _sync = new(1, 1);
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
     };
@@ -107,6 +109,7 @@ public sealed class CardDataMapConfigStore
             UnknownEnumMap = NormalizeMap(current?.UnknownEnumMap),
             TagLabels = NormalizeMap(current?.TagLabels),
             ClassMap = NormalizeMap(current?.ClassMap),
+            MultiClassMap = NormalizeMap(current?.MultiClassMap),
             RarityMap = NormalizeMap(current?.RarityMap),
             RaceMap = NormalizeMap(current?.RaceMap),
             SchoolMap = NormalizeMap(current?.SchoolMap),

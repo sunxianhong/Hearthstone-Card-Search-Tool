@@ -123,8 +123,8 @@ public sealed class RepositoryTests
     {
         var keywords = CardDataMaps.GetAllKeywords();
 
-        Assert.Contains(keywords, item => item.Value == "BATTLECRY" && item.Label == "\u6218\u543c");
-        Assert.Contains(keywords, item => item.Value == "TRIGGER_VISUAL" && item.Label == "\u7279\u6548");
+        Assert.Contains(keywords, item => item.Value == "BATTLECRY" && item.Label == "战吼");
+        Assert.Contains(keywords, item => item.Value == "TRIGGER_VISUAL" && item.Label == "特效");
     }
 
     [Fact]
@@ -188,6 +188,82 @@ public sealed class RepositoryTests
             Assert.Contains(detailC.ParentCards, item => item.CardId == "CARD_B");
             Assert.Contains(detailE!.ParentCards, item => item.CardId == "CARD_A");
             Assert.DoesNotContain(detailE.ParentCards, item => item.CardId == "CARD_B");
+        }
+        finally
+        {
+            CardDataMaps.ResetOverrides();
+            Directory.Delete(resourceRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void MultiClassMappingsMakeClassFiltersMatchMultipleClassesCards()
+    {
+        var resourceRoot = CreateTemporaryCardDataRoot();
+        CardDataMaps.ApplyOverrides(
+            new CardDataMapOverrideConfig
+            {
+                MultiClassMap = new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["6"] = "34",
+                    ["2"] = "34",
+                },
+            });
+
+        try
+        {
+            var repository = CardRepository.Load(resourceRoot);
+
+            var priestResults = repository.Search(
+                string.Empty,
+                new SearchFilters
+                {
+                    Class = "6",
+                },
+                20);
+
+            var druidResults = repository.Search(
+                string.Empty,
+                new SearchFilters
+                {
+                    Class = "2",
+                },
+                20);
+
+            Assert.Contains(priestResults, item => item.CardId == "CARD_A");
+            Assert.Contains(priestResults, item => item.CardId == "CARD_B");
+            Assert.Contains(druidResults, item => item.CardId == "CARD_A");
+            Assert.Contains(druidResults, item => item.CardId == "CARD_B");
+        }
+        finally
+        {
+            CardDataMaps.ResetOverrides();
+            Directory.Delete(resourceRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void MultiClassMappingsUpdateMultipleClassesTagDisplay()
+    {
+        var resourceRoot = CreateTemporaryCardDataRoot();
+        CardDataMaps.ApplyOverrides(
+            new CardDataMapOverrideConfig
+            {
+                MultiClassMap = new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["6"] = "34",
+                    ["2"] = "34",
+                },
+            });
+
+        try
+        {
+            var repository = CardRepository.Load(resourceRoot);
+            var detail = repository.GetDetail("CARD_A");
+            var expected = $"{CardDataMaps.ClassMap["2"]} / {CardDataMaps.ClassMap["6"]} (34)";
+
+            Assert.NotNull(detail);
+            Assert.Contains(detail!.Tags, tag => tag.Key == "MULTIPLE_CLASSES" && tag.Value == expected);
         }
         finally
         {
@@ -321,12 +397,16 @@ public sealed class RepositoryTests
                 <Tag name="CARDNAME" type="LocString"><zhCN>卡牌A</zhCN><enUS>Card A</enUS></Tag>
                 <Tag name="CARDTEXT" type="LocString"><zhCN>A</zhCN><enUS>A</enUS></Tag>
                 <Tag name="CARD_SET" value="1637" />
+                <Tag name="CLASS" value="6" />
+                <Tag name="MULTIPLE_CLASSES" value="34" />
                 <Tag name="CARDTYPE" value="4" />
               </Entity>
               <Entity CardID="CARD_B" ID="2">
                 <Tag name="CARDNAME" type="LocString"><zhCN>卡牌B</zhCN><enUS>Card B</enUS></Tag>
                 <Tag name="CARDTEXT" type="LocString"><zhCN>B</zhCN><enUS>B</enUS></Tag>
                 <Tag name="CARD_SET" value="1637" />
+                <Tag name="CLASS" value="2" />
+                <Tag name="MULTIPLE_CLASSES" value="34" />
                 <Tag name="CARDTYPE" value="4" />
               </Entity>
               <Entity CardID="CARD_C" ID="3">

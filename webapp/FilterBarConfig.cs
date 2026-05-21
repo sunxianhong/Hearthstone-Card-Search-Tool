@@ -1,3 +1,4 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace HearthstoneCardSearchTool.Web;
@@ -27,6 +28,7 @@ public sealed class FilterBarConfigStore
     private readonly SemaphoreSlim _sync = new(1, 1);
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         WriteIndented = true,
     };
