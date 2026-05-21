@@ -1,8 +1,7 @@
 .git
 .gitignore
 dist/
-desktop/
-desktop-tests/
+tests/
 cardpng/
 CardDefs.xml
 **/bin/

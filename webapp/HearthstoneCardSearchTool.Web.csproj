@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\desktop-core\HearthstoneCardSearchTool.Core.csproj" />
+    <ProjectReference Include="..\core\HearthstoneCardSearchTool.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
