@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net481</TargetFramework>
+    <RootNamespace>HsCardImageExporter</RootNamespace>
+    <AssemblyName>HsCardImageExporter</AssemblyName>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\src\EmberMod\Libs\BepInExCore\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>..\..\src\EmberMod\Libs\BepInExCore\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.ImageConversionModule">
+      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\UnityEngine.ImageConversionModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Blizzard.T5.AssetLoader">
+      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\Blizzard.T5.AssetLoader.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Blizzard.T5.AssetManager">
+      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\Blizzard.T5.AssetManager.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Blizzard.T5.ServiceLocator">
+      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\Blizzard.T5.ServiceLocator.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+</Project>
