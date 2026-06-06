@@ -61,6 +61,66 @@ public sealed class RepositoryTests
     }
 
     [Fact]
+    public void ReferencedTagsAppearAfterNormalTagsInDetail()
+    {
+        var resourceRoot = CreateTemporaryCardDataRoot();
+
+        try
+        {
+            var repository = CardRepository.Load(resourceRoot);
+            var detail = repository.GetDetail("CARD_A");
+
+            Assert.NotNull(detail);
+
+            var tags = detail!.Tags.ToList();
+            var referencedIndex = tags.FindIndex(static tag => tag.IsReferenced);
+            var lastNormalIndex = tags.FindLastIndex(static tag => !tag.IsReferenced);
+            var referenced = Assert.Single(tags, static tag => tag.IsReferenced);
+
+            Assert.True(referencedIndex > lastNormalIndex);
+            Assert.Equal("BACON_BLOOD_GEM_TOOLTIP", referenced.Key);
+            Assert.Equal("1", referenced.Value);
+            Assert.StartsWith("\u5F15\u7528 ReferencedTag", referenced.DisplayName, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(resourceRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void KeywordFilterMatchesReferencedTags()
+    {
+        var resourceRoot = CreateTemporaryCardDataRoot();
+
+        try
+        {
+            var repository = CardRepository.Load(resourceRoot);
+            var referencedKeyword = $"{CardRepository.ReferencedKeywordPrefix}BACON_BLOOD_GEM_TOOLTIP";
+
+            Assert.Contains(
+                repository.Bootstrap.ReferencedKeywords,
+                item => item.Value == referencedKeyword
+                    && item.Label.StartsWith("\u5F15\u7528 ReferencedTag", StringComparison.Ordinal));
+
+            var results = repository.Search(
+                string.Empty,
+                new SearchFilters
+                {
+                    Keyword = referencedKeyword,
+                },
+                20);
+
+            Assert.Contains(results, static item => item.CardId == "CARD_A");
+            Assert.DoesNotContain(results, static item => item.CardId == "CARD_B");
+        }
+        finally
+        {
+            Directory.Delete(resourceRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public void EnumSearchWorks()
     {
         var results = Repository.Value.Search(
@@ -400,6 +460,7 @@ public sealed class RepositoryTests
                 <Tag name="CLASS" value="6" />
                 <Tag name="MULTIPLE_CLASSES" value="34" />
                 <Tag name="CARDTYPE" value="4" />
+                <ReferencedTag enumID="1966" name="BACON_BLOOD_GEM_TOOLTIP" type="Int" value="1" />
               </Entity>
               <Entity CardID="CARD_B" ID="2">
                 <Tag name="CARDNAME" type="LocString"><zhCN>卡牌B</zhCN><enUS>Card B</enUS></Tag>

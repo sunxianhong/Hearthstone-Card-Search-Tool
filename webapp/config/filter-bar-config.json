@@ -1278,6 +1278,979 @@
           "visible": true,
           "visibleInWild": false,
           "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:1",
+          "label": "引用 ReferencedTag - 1-（4689）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:AI_MUST_PLAY",
+          "label": "引用 ReferencedTag - AI必须打出这张牌-AI_MUST_PLAY-（367）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BOSS",
+          "label": "引用 ReferencedTag - Boss级实体-BOSS-（556）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:DEATHRATTLE",
+          "label": "引用 ReferencedTag - 亡语-DEATHRATTLE-（217）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:QUEST",
+          "label": "引用 ReferencedTag - 任务卡牌-QUEST-（462）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:DORMANT",
+          "label": "引用 ReferencedTag - 休眠状态-DORMANT-（1518）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_RESISTANCE_ARCANE",
+          "label": "引用 ReferencedTag - 佣兵战纪：奥术抗性-SPELL_RESISTANCE_ARCANE-（2138）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:MERCS_EXPLORER",
+          "label": "引用 ReferencedTag - 佣兵探险家-MERCS_EXPLORER-（2510）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:MERCS_BENCH",
+          "label": "引用 ReferencedTag - 佣兵替补席-MERCS_BENCH-（2570）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:MERCENARIES_SPELL_WEAKNESS",
+          "label": "引用 ReferencedTag - 佣兵法术弱点-MERCENARIES_SPELL_WEAKNESS-（2464）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:MERCENARIES_SPELL_RESISTANCE",
+          "label": "引用 ReferencedTag - 佣兵法术抗性-MERCENARIES_SPELL_RESISTANCE-（2465）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LETTUCE_CHARGE",
+          "label": "引用 ReferencedTag - 佣兵：冲锋-LETTUCE_CHARGE-（2779）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LETTUCE_REFRESH",
+          "label": "引用 ReferencedTag - 佣兵：技能刷新-LETTUCE_REFRESH-（2312）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LETTUCE_KEYWORD_ATTACK",
+          "label": "引用 ReferencedTag - 佣兵：攻击关键词-LETTUCE_KEYWORD_ATTACK-（2159）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LETTUCE_KEYWORD_CRITICAL_DAMAGE",
+          "label": "引用 ReferencedTag - 佣兵：暴击伤害-LETTUCE_KEYWORD_CRITICAL_DAMAGE-（2219）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LETTUCE_KEYWORD_SILENCE",
+          "label": "引用 ReferencedTag - 佣兵：沉默-LETTUCE_KEYWORD_SILENCE-（2631）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LETTUCE_KEYWORD_HEALING_POWER",
+          "label": "引用 ReferencedTag - 佣兵：治疗强度-LETTUCE_KEYWORD_HEALING_POWER-（2434）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LETTUCE_KEYWORD_SPELL_COMBO",
+          "label": "引用 ReferencedTag - 佣兵：法术连击-LETTUCE_KEYWORD_SPELL_COMBO-（2160）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LETTUCE_BLEED",
+          "label": "引用 ReferencedTag - 佣兵：流血效果-LETTUCE_BLEED-（2214）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LETTUCE_ELVES",
+          "label": "引用 ReferencedTag - 佣兵：精灵属性-LETTUCE_ELVES-（2322）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LETTUCE_KEYWORD_ROOT",
+          "label": "引用 ReferencedTag - 佣兵：缠绕/定身-LETTUCE_KEYWORD_ROOT-（2220）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:USE_DISCOVER_VISUALS",
+          "label": "引用 ReferencedTag - 使用发现机制UI样式-USE_DISCOVER_VISUALS-（1342）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:HERALD",
+          "label": "引用 ReferencedTag - 兆示-HERALD-（4309）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:IMMUNE",
+          "label": "引用 ReferencedTag - 免疫-IMMUNE-（240）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_WEAKNESS_FROST",
+          "label": "引用 ReferencedTag - 冰霜弱点-SPELL_WEAKNESS_FROST-（2147）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_RESISTANCE_FROST",
+          "label": "引用 ReferencedTag - 冰霜抗性-SPELL_RESISTANCE_FROST-（2140）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELLPOWER_FROST",
+          "label": "引用 ReferencedTag - 冰霜法术伤害加成-SPELLPOWER_FROST-（1947）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CHARGE",
+          "label": "引用 ReferencedTag - 冲锋-CHARGE-（197）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:FREEZE",
+          "label": "引用 ReferencedTag - 冻结机制触发-FREEZE-（208）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:FROZEN",
+          "label": "引用 ReferencedTag - 冻结状态-FROZEN-（260）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:POISONOUS",
+          "label": "引用 ReferencedTag - 剧毒-POISONOUS-（363）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:COUNTER",
+          "label": "引用 ReferencedTag - 反制法术-COUNTER-（340）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:EXCAVATE",
+          "label": "引用 ReferencedTag - 发掘-EXCAVATE-（3114）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:DISCOVER",
+          "label": "引用 ReferencedTag - 发现-DISCOVER-（415）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:AFFECTED_BY_SPELL_POWER",
+          "label": "引用 ReferencedTag - 受到法术伤害加成-AFFECTED_BY_SPELL_POWER-（370）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:TRADEABLE",
+          "label": "引用 ReferencedTag - 可交易-TRADEABLE-（1720）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:LIFESTEAL",
+          "label": "引用 ReferencedTag - 吸血-LIFESTEAL-（685）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:TAUNT",
+          "label": "引用 ReferencedTag - 嘲讽-TAUNT-（190）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:ECHO",
+          "label": "引用 ReferencedTag - 回响-ECHO-（846）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:REWIND",
+          "label": "引用 ReferencedTag - 回溯-REWIND-（3934）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:DIVINE_SHIELD",
+          "label": "引用 ReferencedTag - 圣盾-DIVINE_SHIELD-（194）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELLCRAFT_HINT",
+          "label": "引用 ReferencedTag - 塑造法术提示文字-SPELLCRAFT_HINT-（2557）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:REVIVE",
+          "label": "引用 ReferencedTag - 复活-REVIVE-（2369）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:REBORN",
+          "label": "引用 ReferencedTag - 复生-REBORN-（1085）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_WEAKNESS_ARCANE",
+          "label": "引用 ReferencedTag - 奥术弱点-SPELL_WEAKNESS_ARCANE-（2145）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELLPOWER_ARCANE",
+          "label": "引用 ReferencedTag - 奥术法术伤害加成-SPELLPOWER_ARCANE-（1945）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SECRET",
+          "label": "引用 ReferencedTag - 奥秘-SECRET-（219）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:FABLED",
+          "label": "引用 ReferencedTag - 寓言/神话状态-FABLED-（4085）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:START_OF_GAME_KEYWORD",
+          "label": "引用 ReferencedTag - 对局开始时触发-START_OF_GAME_KEYWORD-（968）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CORPSE",
+          "label": "引用 ReferencedTag - 尸体-CORPSE-（2559）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:COLOSSAL",
+          "label": "引用 ReferencedTag - 巨型-COLOSSAL-（2247）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:KINDRED",
+          "label": "引用 ReferencedTag - 延系-KINDRED-（4028）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CURRENT_SPELLPOWER_FROST",
+          "label": "引用 ReferencedTag - 当前冰霜法术伤害-CURRENT_SPELLPOWER_FROST-（1938）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CURRENT_SPELLPOWER_FIRE",
+          "label": "引用 ReferencedTag - 当前火焰法术伤害-CURRENT_SPELLPOWER_FIRE-（1937）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CURRENT_SPELLPOWER_NATURE",
+          "label": "引用 ReferencedTag - 当前自然法术伤害-CURRENT_SPELLPOWER_NATURE-（1939）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:MINI",
+          "label": "引用 ReferencedTag - 微型-MINI-（3319）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:QUICKDRAW",
+          "label": "引用 ReferencedTag - 快枪-QUICKDRAW-（2905）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BATTLECRY",
+          "label": "引用 ReferencedTag - 战吼-BATTLECRY-（218）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:START_OF_COMBAT",
+          "label": "引用 ReferencedTag - 战斗开始时-START_OF_COMBAT-（1531）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_PASS_TOOLTIP",
+          "label": "引用 ReferencedTag - 战棋双打：传递按钮的提示文本-BACON_PASS_TOOLTIP-（3321）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_RALLY",
+          "label": "引用 ReferencedTag - 战棋集结机制-BACON_RALLY-（4204）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_TRINKET",
+          "label": "引用 ReferencedTag - 战棋饰品实体标识-BACON_TRINKET-（3407）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_FREEZE_TOOLTIP",
+          "label": "引用 ReferencedTag - 战棋：冻结按钮提示-BACON_FREEZE_TOOLTIP-（2455）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_REFRESH_TOOLTIP",
+          "label": "引用 ReferencedTag - 战棋：刷新按钮悬停提示-BACON_REFRESH_TOOLTIP-（2104）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_CONSUME_TOOLTIP",
+          "label": "引用 ReferencedTag - 战棋：吞噬效果悬停提示-BACON_CONSUME_TOOLTIP-（3254）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_SPELLCRAFT_ID",
+          "label": "引用 ReferencedTag - 战棋：塑造法术ID-BACON_SPELLCRAFT_ID-（2359）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_REBORN_TOOLTIP",
+          "label": "引用 ReferencedTag - 战棋：复生效果提示-BACON_REBORN_TOOLTIP-（2870）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_TIMEWARP_TOOLTIP",
+          "label": "引用 ReferencedTag - 战棋：时空扭曲UI提示-BACON_TIMEWARP_TOOLTIP-（4517）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_STEALTH_TOOLTIP",
+          "label": "引用 ReferencedTag - 战棋：潜行提示-BACON_STEALTH_TOOLTIP-（2704）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:VENOMOUS",
+          "label": "引用 ReferencedTag - 战棋：烈毒-VENOMOUS-（2853）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_BUDDY",
+          "label": "引用 ReferencedTag - 战棋：这属于一张伙伴牌-BACON_BUDDY-（2154）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_BLOOD_GEM_TOOLTIP",
+          "label": "引用 ReferencedTag - 战棋：鲜血宝石悬停提示-BACON_BLOOD_GEM_TOOLTIP-（1966）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SILENCE",
+          "label": "引用 ReferencedTag - 执行沉默-SILENCE-（339）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:ELUSIVE",
+          "label": "引用 ReferencedTag - 扰魔-ELUSIVE-（1211）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CHOOSE_ONE",
+          "label": "引用 ReferencedTag - 抉择-CHOOSE_ONE-（443）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:ARMOR",
+          "label": "引用 ReferencedTag - 护甲值-ARMOR-（292）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CASTS_WHEN_DRAWN",
+          "label": "引用 ReferencedTag - 抽到时施放-CASTS_WHEN_DRAWN-（1077）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SUMMONED_WHEN_DRAWN",
+          "label": "引用 ReferencedTag - 抽到时自动召唤-SUMMONED_WHEN_DRAWN-（3128）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:RECRUIT",
+          "label": "引用 ReferencedTag - 招募-RECRUIT-（763）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:DREDGE",
+          "label": "引用 ReferencedTag - 探底-DREDGE-（2332）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SIDE_QUEST",
+          "label": "引用 ReferencedTag - 支线任务-SIDE_QUEST-（1192）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:IMMUNE_WHILE_ATTACKING",
+          "label": "引用 ReferencedTag - 攻击时具有免疫-IMMUNE_WHILE_ATTACKING-（373）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CANT_ATTACK",
+          "label": "引用 ReferencedTag - 无法攻击-CANT_ATTACK-（227）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CANT_BE_FROZEN",
+          "label": "引用 ReferencedTag - 无法被冻结-CANT_BE_FROZEN-（264）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:STARSHIP",
+          "label": "引用 ReferencedTag - 星舰本体-STARSHIP-（3555）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_WEAKNESS_SHADOW",
+          "label": "引用 ReferencedTag - 暗影弱点-SPELL_WEAKNESS_SHADOW-（2150）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_RESISTANCE_SHADOW",
+          "label": "引用 ReferencedTag - 暗影抗性-SPELL_RESISTANCE_SHADOW-（2143）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELLPOWER_SHADOW",
+          "label": "引用 ReferencedTag - 暗影法术伤害加成-SPELLPOWER_SHADOW-（1950）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:FRENZY",
+          "label": "引用 ReferencedTag - 暴怒-FRENZY-（1637）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BACON_BOUNTY",
+          "label": "引用 ReferencedTag - 未定义标签-BACON_BOUNTY-（4231）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELLPOWER",
+          "label": "引用 ReferencedTag - 法术伤害加成-SPELLPOWER-（192）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELLBURST",
+          "label": "引用 ReferencedTag - 法术迸发-SPELLBURST-（1427）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:INFUSE",
+          "label": "引用 ReferencedTag - 注能-INFUSE-（2456）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:TITAN",
+          "label": "引用 ReferencedTag - 泰坦关键词-TITAN-（2772）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:OUTCAST",
+          "label": "引用 ReferencedTag - 流放-OUTCAST-（1333）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:DEATHBLOW",
+          "label": "引用 ReferencedTag - 消灭-DEATHBLOW-（2185）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:STEALTH",
+          "label": "引用 ReferencedTag - 潜行-STEALTH-（191）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:ENRAGE_TOOLTIP",
+          "label": "引用 ReferencedTag - 激怒提示文本-ENRAGE_TOOLTIP-（1954）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:ENRAGED",
+          "label": "引用 ReferencedTag - 激怒状态-ENRAGED-（212）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:IMBUE",
+          "label": "引用 ReferencedTag - 灌注/附魔-IMBUE-（3626）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_WEAKNESS_FIRE",
+          "label": "引用 ReferencedTag - 火焰弱点-SPELL_WEAKNESS_FIRE-（2146）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_RESISTANCE_FIRE",
+          "label": "引用 ReferencedTag - 火焰抗性-SPELL_RESISTANCE_FIRE-（2139）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELLPOWER_FIRE",
+          "label": "引用 ReferencedTag - 火焰法术伤害加成-SPELLPOWER_FIRE-（1946）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:HEALTH",
+          "label": "引用 ReferencedTag - 生命值-HEALTH-（45）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:FATIGUE_REFERENCE",
+          "label": "引用 ReferencedTag - 疲劳伤害参考值-FATIGUE_REFERENCE-（1290）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:ALLIED",
+          "label": "引用 ReferencedTag - 盟友相关-ALLIED-（2388）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:MAGNETIC",
+          "label": "引用 ReferencedTag - 磁力-MAGNETIC-（849）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:EMPOWER",
+          "label": "引用 ReferencedTag - 祈求/强化-EMPOWER-（1263）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_WEAKNESS_HOLY",
+          "label": "引用 ReferencedTag - 神圣弱点-SPELL_WEAKNESS_HOLY-（2149）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_RESISTANCE_HOLY",
+          "label": "引用 ReferencedTag - 神圣抗性-SPELL_RESISTANCE_HOLY-（2142）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELLPOWER_HOLY",
+          "label": "引用 ReferencedTag - 神圣法术伤害加成-SPELLPOWER_HOLY-（1949）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SHRINE",
+          "label": "引用 ReferencedTag - 神龛-SHRINE-（1057）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:RUSH",
+          "label": "引用 ReferencedTag - 突袭-RUSH-（791）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CORRUPT",
+          "label": "引用 ReferencedTag - 腐蚀-CORRUPT-（1524）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:AUTO_ATTACK",
+          "label": "引用 ReferencedTag - 自动攻击-AUTO_ATTACK-（457）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_WEAKNESS_NATURE",
+          "label": "引用 ReferencedTag - 自然弱点-SPELL_WEAKNESS_NATURE-（2148）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_RESISTANCE_NATURE",
+          "label": "引用 ReferencedTag - 自然抗性-SPELL_RESISTANCE_NATURE-（2141）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELLPOWER_NATURE",
+          "label": "引用 ReferencedTag - 自然法术伤害加成-SPELLPOWER_NATURE-（1948）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:HONORABLE_KILL",
+          "label": "引用 ReferencedTag - 荣誉消灭-HONORABLE_KILL-（1920）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SILENCED",
+          "label": "引用 ReferencedTag - 被沉默了-SILENCED-（188）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SHATTER",
+          "label": "引用 ReferencedTag - 裂变-SHATTER-（4239）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:OVERKILL",
+          "label": "引用 ReferencedTag - 超杀-OVERKILL-（923）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:MEGA_WINDFURY",
+          "label": "引用 ReferencedTag - 超级风怒-MEGA_WINDFURY-（1207）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:MARK_OF_EVIL",
+          "label": "引用 ReferencedTag - 跟班-MARK_OF_EVIL-（994）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:OVERLOAD",
+          "label": "引用 ReferencedTag - 过载点数-OVERLOAD-（215）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:OVERHEAL",
+          "label": "引用 ReferencedTag - 过量治疗-OVERHEAL-（2821）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:CORRUPTED_CARD",
+          "label": "引用 ReferencedTag - 这是一张已经被腐蚀升级过的牌-CORRUPTED_CARD-（1551）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:ADAPT",
+          "label": "引用 ReferencedTag - 进化-ADAPT-（546）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:COMBO",
+          "label": "引用 ReferencedTag - 连击-COMBO-（220）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_WEAKNESS_FEL",
+          "label": "引用 ReferencedTag - 邪能弱点-SPELL_WEAKNESS_FEL-（2151）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELL_RESISTANCE_FEL",
+          "label": "引用 ReferencedTag - 邪能抗性-SPELL_RESISTANCE_FEL-（2144）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPELLPOWER_FEL",
+          "label": "引用 ReferencedTag - 邪能法术伤害加成-SPELLPOWER_FEL-（1951）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:FORGE",
+          "label": "引用 ReferencedTag - 锻造-FORGE-（2785）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BONUS_KEYWORDS",
+          "label": "引用 ReferencedTag - 附加关键词池-BONUS_KEYWORDS-（3423）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:SPARE_PART",
+          "label": "引用 ReferencedTag - 零件牌-SPARE_PART-（388）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:JADE_GOLEM",
+          "label": "引用 ReferencedTag - 青玉魔像-JADE_GOLEM-（441）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:BONUS_EFFECTS",
+          "label": "引用 ReferencedTag - 额外加成效果-BONUS_EFFECTS-（2934）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:WINDFURY",
+          "label": "引用 ReferencedTag - 风怒-WINDFURY-（189）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
+        },
+        {
+          "value": "ReferencedTag:DARK_GIFT",
+          "label": "引用 ReferencedTag - 黑暗礼物-DARK_GIFT-（3627）",
+          "visible": true,
+          "visibleInWild": false,
+          "visibleInStandard": false
         }
       ]
     },

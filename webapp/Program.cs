@@ -77,7 +77,7 @@ app.MapGet("/api/bootstrap", (RepositoryState state) =>
                 state.Repository.Bootstrap.Schools.Select(static item => item.Value),
                 state.Repository.Bootstrap.Schools),
             BuildCollectibleOptions(),
-            BuildKeywordOptions()));
+            BuildKeywordOptions(state.Repository.Bootstrap.ReferencedKeywords)));
 });
 
 app.MapGet("/api/card-data-maps", async (CardDataMapConfigStore store, RepositoryState state, CancellationToken cancellationToken) =>
@@ -171,7 +171,7 @@ app.MapGet("/api/cards/{cardId}", (string cardId, RepositoryState state) =>
             detail.ParentCards.Select(MapRelatedCard).ToList(),
             detail.RelatedCards.Select(MapRelatedCard).ToList(),
             detail.EnchantmentCards.Select(MapRelatedCard).ToList(),
-            detail.Tags.Select(tag => new CardTagDto(tag.Key, tag.DisplayName, tag.Value, tag.EnumId, tag.TargetCardId, tag.TargetDbfId)).ToList()));
+            detail.Tags.Select(tag => new CardTagDto(tag.Key, tag.DisplayName, tag.Value, tag.EnumId, tag.TargetCardId, tag.TargetDbfId, tag.IsReferenced)).ToList()));
 });
 
 app.MapGet("/api/cards/{cardId}/image", (string cardId, RepositoryState state) =>
@@ -301,14 +301,30 @@ static IReadOnlyList<OptionDto> BuildCollectibleOptions()
     ];
 }
 
-static IReadOnlyList<OptionDto> BuildKeywordOptions()
+static IReadOnlyList<OptionDto> BuildKeywordOptions(IEnumerable<FilterOption> referencedKeywords)
 {
     var items = new List<OptionDto>
     {
         new(string.Empty, "关键字"),
     };
+    var seen = new HashSet<string>(StringComparer.Ordinal);
 
-    items.AddRange(CardDataMaps.GetAllKeywords().Select(static item => new OptionDto(item.Value, item.Label)));
+    foreach (var item in CardDataMaps.GetAllKeywords())
+    {
+        if (seen.Add(item.Value))
+        {
+            items.Add(new OptionDto(item.Value, item.Label));
+        }
+    }
+
+    foreach (var item in referencedKeywords)
+    {
+        if (seen.Add(item.Value))
+        {
+            items.Add(new OptionDto(item.Value, item.Label));
+        }
+    }
+
     return items;
 }
 
@@ -394,7 +410,7 @@ static FilterBarConfig BuildDefaultFilterBarConfig(RepositoryState state)
                 CardDataMaps.SchoolMap,
                 state.Repository.Bootstrap.Schools.Select(static item => item.Value),
                 state.Repository.Bootstrap.Schools)),
-        BuildFilterBarSection("keyword", "关键词", BuildKeywordOptions()),
+        BuildFilterBarSection("keyword", "关键词", BuildKeywordOptions(state.Repository.Bootstrap.ReferencedKeywords)),
         BuildFilterBarSection("collectible", "是否可收藏", BuildCollectibleOptions()),
     ]);
 }

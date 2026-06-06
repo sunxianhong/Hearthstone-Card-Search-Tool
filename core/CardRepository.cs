@@ -5,6 +5,8 @@ namespace HearthstoneCardSearchTool.Core;
 
 public sealed class CardRepository
 {
+    public const string ReferencedKeywordPrefix = "ReferencedTag:";
+
     private static readonly Regex HtmlTagRegex = new("<[^>]+>", RegexOptions.Compiled);
     private static readonly Regex SuffixRegex = new("^(.+\\d)([A-Za-z_].*)$", RegexOptions.Compiled);
     private static readonly HashSet<string> SupportedImageExtensions = new(StringComparer.OrdinalIgnoreCase)
@@ -74,6 +76,7 @@ public sealed class CardRepository
         var cardTypeLabels = new Dictionary<string, string>(StringComparer.Ordinal);
         var raceLabels = new Dictionary<string, string>(StringComparer.Ordinal);
         var schoolLabels = new Dictionary<string, string>(StringComparer.Ordinal);
+        var referencedKeywordLabels = new Dictionary<string, string>(StringComparer.Ordinal);
 
         foreach (var entity in document.Descendants("Entity"))
         {
@@ -93,25 +96,12 @@ public sealed class CardRepository
 
             foreach (var tag in entity.Elements("Tag"))
             {
-                var key = tag.Attribute("name")?.Value;
-                if (string.IsNullOrWhiteSpace(key))
-                {
-                    continue;
-                }
+                ReadEntityTag(tag, false, true, tags, tagMap, enumValues, ref nameZh, ref nameEn, ref textZh);
+            }
 
-                var enumId = tag.Attribute("enumID")?.Value;
-                var value = ReadTagValue(tag, key, ref nameZh, ref nameEn, ref textZh);
-
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    tagMap[key] = value;
-                    if (!string.IsNullOrWhiteSpace(enumId))
-                    {
-                        enumValues[enumId] = value;
-                    }
-                }
-
-                tags.Add(new CardTagRecord(key, value, enumId));
+            foreach (var referencedTag in entity.Elements("ReferencedTag"))
+            {
+                ReadEntityTag(referencedTag, true, false, tags, tagMap, enumValues, ref nameZh, ref nameEn, ref textZh);
             }
 
             if (string.IsNullOrWhiteSpace(nameZh))
@@ -131,7 +121,13 @@ public sealed class CardRepository
             RememberLabel(schoolLabels, tagMap, "SPELL_SCHOOL", CardDataMaps.SchoolMap);
 
             imageIndex.TryGetValue(cardId.ToLowerInvariant(), out var imagePath);
-            if (IsEnchantmentCard(tagMap) && enchantmentImagePath is not null)
+            var isEnchantment = IsEnchantmentCard(tagMap);
+            if (!isEnchantment)
+            {
+                RememberReferencedKeywordLabels(referencedKeywordLabels, tags);
+            }
+
+            if (isEnchantment && enchantmentImagePath is not null)
             {
                 imagePath = enchantmentImagePath;
             }
@@ -168,6 +164,7 @@ public sealed class CardRepository
                 Sets = CardDataMaps.GetAllSets(),
                 Races = MapToOptions(raceLabels),
                 Schools = MapToOptions(schoolLabels),
+                ReferencedKeywords = MapToOptions(referencedKeywordLabels),
             },
             imageIndex.Count > 0 || enchantmentImagePath is not null);
     }
@@ -233,8 +230,9 @@ public sealed class CardRepository
         }
 
         var tagRows = card.Tags
-            .Where(static tag => !HiddenTags.Contains(tag.Key))
-            .OrderBy(static tag => int.TryParse(tag.Key, out _) ? 1 : 0)
+            .Where(static tag => tag.IsReferenced || !HiddenTags.Contains(tag.Key))
+            .OrderBy(static tag => tag.IsReferenced ? 1 : 0)
+            .ThenBy(static tag => int.TryParse(tag.Key, out _) ? 1 : 0)
             .Select(tag =>
             {
                 var targetDbfId = IsRelatedKey(tag.Key) && int.TryParse(tag.Value, out var parsedId) && byDbfId.ContainsKey(parsedId)
@@ -247,11 +245,12 @@ public sealed class CardRepository
 
                 return new CardTagView(
                     tag.Key,
-                    CardDataMaps.BuildDisplayTagName(tag.Key, tag.EnumId),
+                    BuildDisplayTagName(tag),
                     CardDataMaps.MapTagValue(tag.Key, tag.Value),
                     tag.EnumId,
                     targetCardId,
-                    targetDbfId);
+                    targetDbfId,
+                    tag.IsReferenced);
             })
             .ToList();
 
@@ -270,20 +269,60 @@ public sealed class CardRepository
         };
     }
 
-    private static string ReadTagValue(XElement tag, string key, ref string nameZh, ref string nameEn, ref string textZh)
+    private static void ReadEntityTag(
+        XElement tag,
+        bool isReferenced,
+        bool includeInMaps,
+        ICollection<CardTagRecord> tags,
+        IDictionary<string, string> tagMap,
+        IDictionary<string, string> enumValues,
+        ref string nameZh,
+        ref string nameEn,
+        ref string textZh)
+    {
+        var key = tag.Attribute("name")?.Value;
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return;
+        }
+
+        var enumId = tag.Attribute("enumID")?.Value;
+        var value = ReadTagValue(tag, key, includeInMaps, ref nameZh, ref nameEn, ref textZh);
+
+        if (includeInMaps && !string.IsNullOrWhiteSpace(value))
+        {
+            tagMap[key] = value;
+            if (!string.IsNullOrWhiteSpace(enumId))
+            {
+                enumValues[enumId] = value;
+            }
+        }
+
+        tags.Add(new CardTagRecord(key, value, enumId, isReferenced));
+    }
+
+    private static string BuildDisplayTagName(CardTagRecord tag)
+    {
+        var displayName = CardDataMaps.BuildDisplayTagName(tag.Key, tag.EnumId);
+        return tag.IsReferenced
+            ? $"引用 ReferencedTag - {displayName}"
+            : displayName;
+    }
+
+    private static string ReadTagValue(XElement tag, string key, bool updateCardFields, ref string nameZh, ref string nameEn, ref string textZh)
     {
         if (string.Equals(tag.Attribute("type")?.Value, "LocString", StringComparison.Ordinal))
         {
             var zh = ChildText(tag, "zhCN");
             var en = ChildText(tag, "enUS");
 
-            if (key == "CARDNAME")
+            if (updateCardFields && key == "CARDNAME")
             {
                 nameZh = string.IsNullOrWhiteSpace(zh) ? en : zh;
                 nameEn = en;
             }
 
-            if (key == "CARDTEXT")
+            if (updateCardFields && key == "CARDTEXT")
             {
                 textZh = CleanCardText(string.IsNullOrWhiteSpace(zh) ? en : zh);
             }
@@ -305,6 +344,21 @@ public sealed class CardRepository
             labels[code] = dictionary.TryGetValue(code, out var label)
                 ? label
                 : code;
+        }
+    }
+
+    private static void RememberReferencedKeywordLabels(
+        IDictionary<string, string> labels,
+        IEnumerable<CardTagRecord> tags)
+    {
+        foreach (var tag in tags)
+        {
+            if (!tag.IsReferenced || string.IsNullOrWhiteSpace(tag.Value) || tag.Value == "0")
+            {
+                continue;
+            }
+
+            labels.TryAdd($"{ReferencedKeywordPrefix}{tag.Key}", BuildDisplayTagName(tag));
         }
     }
 
@@ -549,7 +603,22 @@ public sealed class CardRepository
             return true;
         }
 
+        if (keyword.StartsWith(ReferencedKeywordPrefix, StringComparison.Ordinal))
+        {
+            var referencedKey = keyword[ReferencedKeywordPrefix.Length..];
+            return !string.IsNullOrWhiteSpace(referencedKey) && MatchesReferencedKeyword(card, referencedKey);
+        }
+
         return card.TagMap.TryGetValue(keyword, out var value) && value != "0";
+    }
+
+    private static bool MatchesReferencedKeyword(CardRecord card, string keyword)
+    {
+        return card.Tags.Any(tag =>
+            tag.IsReferenced
+            && string.Equals(tag.Key, keyword, StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(tag.Value)
+            && tag.Value != "0");
     }
 
     private static bool MatchesQuery(CardRecord card, string query)

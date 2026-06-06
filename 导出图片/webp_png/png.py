@@ -55,8 +55,14 @@ def batch_convert_nested(input_dir, output_dir, max_workers=8):
     print("🎉 包含多层文件夹的所有图片处理完毕！")
 
 if __name__ == "__main__":
-    # 👇 同样，只需在这里填入你的主文件夹路径即可 👇
-    INPUT_FOLDER = r"E:\png\cardpng"   # 外层套着的源文件夹
-    OUTPUT_FOLDER = r"E:\png\webp_images" # 你想要保存的全新输出文件夹
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    INPUT_FOLDER = os.path.join(script_dir, "cardpng")
+    OUTPUT_FOLDER = os.path.join(script_dir, "webp_images")
+
+    if not os.path.isdir(INPUT_FOLDER):
+        raise SystemExit(f"Input folder not found: {INPUT_FOLDER}")
+
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     
     batch_convert_nested(INPUT_FOLDER, OUTPUT_FOLDER)

@@ -21,7 +21,7 @@ public sealed class SearchFilters
     public static SearchFilters Empty { get; } = new();
 }
 
-public sealed record CardTagRecord(string Key, string Value, string? EnumId);
+public sealed record CardTagRecord(string Key, string Value, string? EnumId, bool IsReferenced = false);
 
 public sealed record ForwardRelatedRecord(int DbfId, string Reason);
 
@@ -77,7 +77,8 @@ public sealed record CardTagView(
     string Value,
     string? EnumId,
     string? TargetCardId,
-    int? TargetDbfId);
+    int? TargetDbfId,
+    bool IsReferenced);
 
 public sealed class CardDetailData
 {
@@ -102,4 +103,5 @@ public sealed class BootstrapData
     public required IReadOnlyList<FilterOption> Sets { get; init; }
     public required IReadOnlyList<FilterOption> Races { get; init; }
     public required IReadOnlyList<FilterOption> Schools { get; init; }
+    public required IReadOnlyList<FilterOption> ReferencedKeywords { get; init; }
 }

@@ -95,7 +95,8 @@ public sealed record CardTagDto(
     string Value,
     string? EnumId,
     string? TargetCardId,
-    int? TargetDbfId);
+    int? TargetDbfId,
+    bool IsReferenced);
 
 public sealed class RepositoryState
 {
