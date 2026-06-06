@@ -24,6 +24,19 @@ public sealed record BootstrapResponse(
 public sealed record CardDataMapConfigResponse(
     IReadOnlyList<CardDataMapLibraryDto> Libraries);
 
+public sealed record AppearanceSettingsResponse(
+    string BackgroundImage,
+    string BackgroundName,
+    bool BackgroundBlur,
+    bool GlassUi);
+
+public sealed record AppearanceSettingsSaveRequest(
+    string? BackgroundImageDataUrl,
+    string? BackgroundName,
+    bool BackgroundBlur,
+    bool GlassUi,
+    bool ClearBackgroundImage);
+
 public sealed record CardDataMapLibraryDto(
     string Key,
     string Label,

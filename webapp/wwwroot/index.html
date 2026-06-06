@@ -4,10 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>炉石卡牌检索器</title>
-    <link rel="stylesheet" href="/app.css?v=20260428-preview-4">
-    <script type="module" src="/app.js?v=20260429-map-package-global" defer></script>
+    <link rel="stylesheet" href="/app.css?v=20260606-appearance">
+    <script type="module" src="/app.js?v=20260606-appearance" defer></script>
 </head>
 <body>
+    <div id="pageBackground" class="page-background" aria-hidden="true"></div>
+
     <div class="page-shell">
         <header class="hero-panel">
             <div class="hero-copy hero-header-row">
@@ -132,6 +134,7 @@
                 <div class="settings-tabs" role="tablist" aria-label="设置分类">
                     <button id="filterConfigTabButton" class="settings-tab-button is-active" type="button" role="tab" aria-selected="true">筛选栏</button>
                     <button id="cardDataMapTabButton" class="settings-tab-button" type="button" role="tab" aria-selected="false">映射库</button>
+                    <button id="appearanceSettingsTabButton" class="settings-tab-button" type="button" role="tab" aria-selected="false">外观</button>
                 </div>
 
                 <div id="filterConfigView" class="settings-view">
@@ -158,6 +161,20 @@
                         <section class="settings-section">
                             <div class="section-title">映射库编辑</div>
                             <div id="cardDataMapEditor" class="settings-placeholder">请选择左侧要编辑的映射库。</div>
+                        </section>
+                    </div>
+                </div>
+
+                <div id="appearanceSettingsView" class="settings-view is-hidden">
+                    <div class="settings-modal-body appearance-settings-body">
+                        <section class="settings-section">
+                            <div class="section-title">背景图片</div>
+                            <div id="appearanceBackgroundPanel" class="appearance-settings-panel"></div>
+                        </section>
+
+                        <section class="settings-section">
+                            <div class="section-title">视觉效果</div>
+                            <div id="appearanceEffectPanel" class="appearance-settings-panel"></div>
                         </section>
                     </div>
                 </div>

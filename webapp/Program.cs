@@ -12,6 +12,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 builder.Services.AddSingleton<CardDataMapConfigStore>();
+builder.Services.AddSingleton<AppearanceSettingsStore>();
 builder.Services.AddSingleton(sp =>
 {
     var resourceRoot = ResolveResourceRoot(builder.Configuration, builder.Environment);
@@ -98,6 +99,40 @@ app.MapPut("/api/card-data-maps", async (
     CardDataMaps.ApplyOverrides(saved);
     state.ReloadRepository();
     return Results.Ok(BuildCardDataMapConfigResponse(saved));
+});
+
+app.MapGet("/api/appearance-settings", async (AppearanceSettingsStore store, CancellationToken cancellationToken) =>
+{
+    var config = await store.LoadAsync(cancellationToken);
+    return Results.Ok(BuildAppearanceSettingsResponse(config, store));
+});
+
+app.MapPut("/api/appearance-settings", async (
+    AppearanceSettingsSaveRequest request,
+    AppearanceSettingsStore store,
+    CancellationToken cancellationToken) =>
+{
+    try
+    {
+        var saved = await store.SaveAsync(request, cancellationToken);
+        return Results.Ok(BuildAppearanceSettingsResponse(saved, store));
+    }
+    catch (InvalidOperationException error)
+    {
+        return Results.BadRequest(error.Message);
+    }
+});
+
+app.MapGet("/api/appearance-settings/background", async (AppearanceSettingsStore store, CancellationToken cancellationToken) =>
+{
+    var config = await store.LoadAsync(cancellationToken);
+    var path = store.GetBackgroundImagePath(config);
+    if (path is null)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.File(path, GetImageContentType(path), enableRangeProcessing: true);
 });
 
 app.MapGet("/api/filter-bar-config", async (RepositoryState state, FilterBarConfigStore store, CancellationToken cancellationToken) =>
@@ -403,7 +438,7 @@ static FilterBarConfig BuildDefaultFilterBarConfig(RepositoryState state)
                 state.Repository.Bootstrap.Schools.Select(static item => item.Value),
                 state.Repository.Bootstrap.Schools)),
         BuildFilterBarSection("keyword", "关键词", BuildKeywordOptions()),
-        BuildFilterBarSection("collectible", "是否可收藏", BuildCollectibleOptions()),
+        BuildFilterBarSection("collectible", "可否收藏", BuildCollectibleOptions()),
     ]);
 }
 
@@ -524,6 +559,22 @@ static string DescribeSearchMode(string? query)
     }
 
     return "普通搜索";
+}
+
+static AppearanceSettingsResponse BuildAppearanceSettingsResponse(
+    AppearanceSettingsConfig config,
+    AppearanceSettingsStore store)
+{
+    var backgroundPath = store.GetBackgroundImagePath(config);
+    var backgroundImage = backgroundPath is null
+        ? string.Empty
+        : $"/api/appearance-settings/background?v={File.GetLastWriteTimeUtc(backgroundPath).Ticks}";
+
+    return new AppearanceSettingsResponse(
+        backgroundImage,
+        config.BackgroundName ?? string.Empty,
+        config.BackgroundBlur,
+        config.GlassUi);
 }
 
 static CardDataMapConfigResponse BuildCardDataMapConfigResponse(CardDataMapOverrideConfig overrides)

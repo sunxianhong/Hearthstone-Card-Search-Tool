@@ -23,7 +23,7 @@ const FILTER_FIELD_LABELS = {
     race: "随从种族",
     school: "法术派系",
     keyword: "关键词",
-    collectible: "是否可收藏",
+    collectible: "可否收藏",
 };
 
 const CARD_DATA_MAP_KEYS = [
@@ -41,6 +41,17 @@ const CARD_DATA_MAP_KEYS = [
 
 const SETTINGS_VIEW_FILTER = "filter";
 const SETTINGS_VIEW_MAPS = "maps";
+const SETTINGS_VIEW_APPEARANCE = "appearance";
+const BACKGROUND_IMAGE_STORAGE_SOFT_LIMIT = 3_600_000;
+const BACKGROUND_IMAGE_STORAGE_HARD_LIMIT = 4_600_000;
+const BACKGROUND_IMAGE_MAX_SIDE = 2400;
+
+const DEFAULT_APPEARANCE_SETTINGS = {
+    backgroundImage: "",
+    backgroundName: "",
+    backgroundBlur: false,
+    glassUi: true,
+};
 
 const state = {
     bootstrap: null,
@@ -50,12 +61,15 @@ const state = {
     cardDataMaps: null,
     draftCardDataMaps: null,
     activeCardDataMapKey: null,
+    appearanceSettings: cloneAppearanceSettings(DEFAULT_APPEARANCE_SETTINGS),
+    draftAppearanceSettings: cloneAppearanceSettings(DEFAULT_APPEARANCE_SETTINGS),
     activeSettingsView: SETTINGS_VIEW_FILTER,
     activeDetail: null,
     customSelects: new Map(),
 };
 
 const elements = {
+    pageBackground: document.getElementById("pageBackground"),
     pageTitle: document.querySelector(".hero-copy h1"),
     queryInput: document.getElementById("queryInput"),
     modeSelect: document.getElementById("modeSelect"),
@@ -83,12 +97,16 @@ const elements = {
     settingsDescription: document.querySelector("#filterConfigModalPanel .settings-modal-description"),
     filterConfigTabButton: document.getElementById("filterConfigTabButton"),
     cardDataMapTabButton: document.getElementById("cardDataMapTabButton"),
+    appearanceSettingsTabButton: document.getElementById("appearanceSettingsTabButton"),
     filterConfigView: document.getElementById("filterConfigView"),
     cardDataMapView: document.getElementById("cardDataMapView"),
+    appearanceSettingsView: document.getElementById("appearanceSettingsView"),
     filterConfigSectionList: document.getElementById("filterConfigSectionList"),
     filterConfigOptionList: document.getElementById("filterConfigOptionList"),
     cardDataMapLibraryList: document.getElementById("cardDataMapLibraryList"),
     cardDataMapEditor: document.getElementById("cardDataMapEditor"),
+    appearanceBackgroundPanel: document.getElementById("appearanceBackgroundPanel"),
+    appearanceEffectPanel: document.getElementById("appearanceEffectPanel"),
     resetFilterConfigButton: document.getElementById("resetFilterConfigButton"),
     saveFilterConfigButton: document.getElementById("saveFilterConfigButton"),
     backToTopButton: document.getElementById("backToTopButton"),
@@ -125,6 +143,9 @@ async function initialize() {
     bindEvents();
 
     try {
+        state.appearanceSettings = await loadAppearanceSettings();
+        state.draftAppearanceSettings = cloneAppearanceSettings(state.appearanceSettings);
+        applyAppearanceSettings(state.appearanceSettings);
         state.bootstrap = await fetchJson("/api/bootstrap");
         state.filterConfig = await fetchJson("/api/filter-bar-config");
         state.draftFilterConfig = cloneFilterConfig(state.filterConfig);
@@ -208,6 +229,13 @@ function bindEvents() {
     if (elements.cardDataMapTabButton) {
         elements.cardDataMapTabButton.addEventListener("click", () => {
             state.activeSettingsView = SETTINGS_VIEW_MAPS;
+            renderSettingsModal();
+        });
+    }
+
+    if (elements.appearanceSettingsTabButton) {
+        elements.appearanceSettingsTabButton.addEventListener("click", () => {
+            state.activeSettingsView = SETTINGS_VIEW_APPEARANCE;
             renderSettingsModal();
         });
     }
@@ -339,6 +367,10 @@ function synchronizeStaticText() {
 
     if (elements.cardDataMapTabButton) {
         elements.cardDataMapTabButton.textContent = "映射库";
+    }
+
+    if (elements.appearanceSettingsTabButton) {
+        elements.appearanceSettingsTabButton.textContent = "外观";
     }
 
     elements.backToTopButton.textContent = "置顶";
@@ -828,6 +860,75 @@ function cloneCardDataMapConfig(config) {
         : { libraries: [] };
 }
 
+function cloneAppearanceSettings(settings) {
+    return normalizeAppearanceSettings(settings);
+}
+
+async function loadAppearanceSettings() {
+    return normalizeAppearanceSettings(await fetchJson("/api/appearance-settings"));
+}
+
+async function saveAppearanceSettings(settings) {
+    const normalized = normalizeAppearanceSettings(settings);
+    return normalizeAppearanceSettings(await fetchJson("/api/appearance-settings", {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(buildAppearanceSettingsPayload(normalized)),
+    }));
+}
+
+function buildAppearanceSettingsPayload(settings) {
+    const normalized = normalizeAppearanceSettings(settings);
+    return {
+        backgroundImageDataUrl: normalized.backgroundImageDataUrl || null,
+        backgroundName: normalized.backgroundName || null,
+        backgroundBlur: normalized.backgroundBlur,
+        glassUi: normalized.glassUi,
+        clearBackgroundImage: !normalized.backgroundImage && !normalized.backgroundImageDataUrl,
+    };
+}
+
+function normalizeAppearanceSettings(settings) {
+    const source = settings && typeof settings === "object"
+        ? settings
+        : {};
+
+    return {
+        backgroundImage: typeof source.backgroundImage === "string" ? source.backgroundImage : "",
+        backgroundImageDataUrl: typeof source.backgroundImageDataUrl === "string" ? source.backgroundImageDataUrl : "",
+        backgroundName: typeof source.backgroundName === "string" ? source.backgroundName : "",
+        backgroundBlur: Boolean(source.backgroundBlur),
+        glassUi: source.glassUi !== false,
+    };
+}
+
+function applyAppearanceSettings(settings) {
+    const normalized = normalizeAppearanceSettings(settings);
+    setElementBackgroundImage(elements.pageBackground, normalized.backgroundImage);
+
+    document.body.classList.toggle("has-custom-background", Boolean(normalized.backgroundImage));
+    document.body.classList.toggle("has-background-blur", Boolean(normalized.backgroundImage && normalized.backgroundBlur));
+    document.body.classList.toggle("has-flat-ui", !normalized.glassUi);
+}
+
+function setElementBackgroundImage(element, image) {
+    if (!element) {
+        return;
+    }
+
+    if (image) {
+        element.style.backgroundImage = formatCssImageUrl(image);
+    } else {
+        element.style.removeProperty("background-image");
+    }
+}
+
+function formatCssImageUrl(value) {
+    return `url("${String(value).replace(/\\/g, "\\\\").replace(/"/g, "\\\"")}")`;
+}
+
 function normalizeCardDataMapLibrary(library) {
     const overrides = { ...(library.overrides ?? {}) };
     const sourceDefaultEntries = { ...(library.sourceDefaultEntries ?? {}) };
@@ -1011,6 +1112,7 @@ function closeSetPicker() {
 function openFilterConfigModal() {
     state.draftFilterConfig = cloneFilterConfig(state.filterConfig);
     state.draftCardDataMaps = cloneCardDataMapConfig(state.cardDataMaps);
+    state.draftAppearanceSettings = cloneAppearanceSettings(state.appearanceSettings);
     ensureActiveConfigSection();
     ensureActiveCardDataMapLibrary();
     renderSettingsModal();
@@ -1020,6 +1122,8 @@ function openFilterConfigModal() {
 }
 
 function closeFilterConfigModal() {
+    applyAppearanceSettings(state.appearanceSettings);
+    state.draftAppearanceSettings = cloneAppearanceSettings(state.appearanceSettings);
     elements.filterConfigModal.classList.add("is-hidden");
 }
 
@@ -1050,7 +1154,9 @@ function ensureActiveCardDataMapLibrary() {
 }
 
 function renderSettingsModal() {
-    const showFilter = state.activeSettingsView !== SETTINGS_VIEW_MAPS;
+    const showFilter = state.activeSettingsView === SETTINGS_VIEW_FILTER;
+    const showMaps = state.activeSettingsView === SETTINGS_VIEW_MAPS;
+    const showAppearance = state.activeSettingsView === SETTINGS_VIEW_APPEARANCE;
 
     if (elements.filterConfigTabButton) {
         elements.filterConfigTabButton.classList.toggle("is-active", showFilter);
@@ -1058,8 +1164,13 @@ function renderSettingsModal() {
     }
 
     if (elements.cardDataMapTabButton) {
-        elements.cardDataMapTabButton.classList.toggle("is-active", !showFilter);
-        elements.cardDataMapTabButton.setAttribute("aria-selected", String(!showFilter));
+        elements.cardDataMapTabButton.classList.toggle("is-active", showMaps);
+        elements.cardDataMapTabButton.setAttribute("aria-selected", String(showMaps));
+    }
+
+    if (elements.appearanceSettingsTabButton) {
+        elements.appearanceSettingsTabButton.classList.toggle("is-active", showAppearance);
+        elements.appearanceSettingsTabButton.setAttribute("aria-selected", String(showAppearance));
     }
 
     if (elements.filterConfigView) {
@@ -1067,13 +1178,18 @@ function renderSettingsModal() {
     }
 
     if (elements.cardDataMapView) {
-        elements.cardDataMapView.classList.toggle("is-hidden", showFilter);
+        elements.cardDataMapView.classList.toggle("is-hidden", !showMaps);
+    }
+
+    if (elements.appearanceSettingsView) {
+        elements.appearanceSettingsView.classList.toggle("is-hidden", !showAppearance);
     }
 
     syncSettingsHeader();
     renderFilterConfigEditor();
     renderCardDataMapLibraries();
     renderCardDataMapEditor();
+    renderAppearanceSettings();
 }
 
 function syncSettingsHeader() {
@@ -1086,6 +1202,11 @@ function syncSettingsHeader() {
         elements.settingsTitle.textContent = "在线维护显示映射与相关牌跳转";
         elements.settingsDescription.textContent = "这里保存的是覆盖项，不用再改源码。普通映射写 key=value；相关牌跳转库支持 已有牌<=继承牌 和 A,B=>C,D。";
         elements.resetFilterConfigButton.textContent = "清空全部覆盖";
+    } else if (state.activeSettingsView === SETTINGS_VIEW_APPEARANCE) {
+        elements.settingsHeaderBadge.textContent = "外观";
+        elements.settingsTitle.textContent = "背景与界面效果";
+        elements.settingsDescription.textContent = "自定义页面最底层背景图片，并控制背景高级模糊和整体界面的磨玻璃效果；保存后所有访问这个服务的设备都会看到。";
+        elements.resetFilterConfigButton.textContent = "恢复默认外观";
     } else {
         elements.settingsHeaderBadge.textContent = "设置中心";
         elements.settingsTitle.textContent = "筛选栏与映射库配置";
@@ -1645,6 +1766,225 @@ function renderCardDataMapEditor() {
     elements.cardDataMapEditor.replaceChildren(wrapper);
 }
 
+function renderAppearanceSettings() {
+    if (!elements.appearanceBackgroundPanel || !elements.appearanceEffectPanel) {
+        return;
+    }
+
+    const settings = state.draftAppearanceSettings ?? cloneAppearanceSettings(DEFAULT_APPEARANCE_SETTINGS);
+    state.draftAppearanceSettings = settings;
+
+    elements.appearanceBackgroundPanel.replaceChildren(
+        createAppearanceBackgroundPreview(settings),
+        createAppearanceBackgroundActionRow(settings),
+        createAppearanceToggleCard(
+            "背景高级模糊",
+            "有自定义背景图片时生效，让底层画面更柔和。",
+            settings.backgroundBlur,
+            (checked) => {
+                settings.backgroundBlur = checked;
+                applyAppearanceSettings(settings);
+                renderAppearanceSettings();
+            }));
+
+    elements.appearanceEffectPanel.replaceChildren(
+        createAppearanceToggleCard(
+            "界面磨玻璃效果",
+            "控制顶部栏、筛选区、弹窗等界面面板的半透明模糊。",
+            settings.glassUi,
+            (checked) => {
+                settings.glassUi = checked;
+                applyAppearanceSettings(settings);
+                renderAppearanceSettings();
+            }));
+}
+
+function createAppearanceBackgroundPreview(settings) {
+    const preview = document.createElement("div");
+    preview.className = `appearance-background-preview${settings.backgroundImage ? " has-image" : ""}`;
+    preview.textContent = settings.backgroundImage ? "" : "默认渐变背景";
+    preview.title = settings.backgroundName || "默认渐变背景";
+    setElementBackgroundImage(preview, settings.backgroundImage);
+    return preview;
+}
+
+function createAppearanceBackgroundActionRow(settings) {
+    const row = document.createElement("div");
+    row.className = "appearance-setting-row";
+
+    const meta = document.createElement("div");
+    meta.className = "appearance-setting-meta";
+
+    const title = document.createElement("div");
+    title.className = "appearance-setting-title";
+    title.textContent = "当前背景";
+
+    const detail = document.createElement("div");
+    detail.className = "appearance-setting-detail";
+    detail.textContent = settings.backgroundName
+        ? `已选择：${settings.backgroundName}`
+        : "默认渐变背景";
+
+    meta.append(title, detail);
+
+    const actions = document.createElement("div");
+    actions.className = "settings-option-actions";
+
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.className = "appearance-file-input";
+
+    const chooseButton = document.createElement("button");
+    chooseButton.type = "button";
+    chooseButton.className = "secondary-button settings-mini-button";
+    chooseButton.textContent = "选择图片";
+    chooseButton.addEventListener("click", () => {
+        fileInput.click();
+    });
+
+    fileInput.addEventListener("change", () => {
+        const file = fileInput.files?.[0] ?? null;
+        fileInput.value = "";
+        if (file) {
+            void updateAppearanceBackgroundFromFile(file, chooseButton);
+        }
+    });
+
+    const clearButton = document.createElement("button");
+    clearButton.type = "button";
+    clearButton.className = "secondary-button settings-mini-button";
+    clearButton.textContent = "清除背景";
+    clearButton.disabled = !settings.backgroundImage;
+    clearButton.addEventListener("click", () => {
+        settings.backgroundImage = "";
+        settings.backgroundImageDataUrl = "";
+        settings.backgroundName = "";
+        applyAppearanceSettings(settings);
+        renderAppearanceSettings();
+    });
+
+    actions.append(fileInput, chooseButton, clearButton);
+    row.append(meta, actions);
+    return row;
+}
+
+function createAppearanceToggleCard(titleText, detailText, checked, onChange) {
+    const label = document.createElement("label");
+    label.className = "appearance-toggle-card";
+
+    const meta = document.createElement("div");
+    meta.className = "appearance-toggle-meta";
+
+    const title = document.createElement("div");
+    title.className = "appearance-toggle-title";
+    title.textContent = titleText;
+
+    const detail = document.createElement("div");
+    detail.className = "appearance-toggle-detail";
+    detail.textContent = detailText;
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = checked;
+    checkbox.addEventListener("change", () => {
+        onChange(checkbox.checked);
+    });
+
+    meta.append(title, detail);
+    label.append(meta, checkbox);
+    return label;
+}
+
+async function updateAppearanceBackgroundFromFile(file, anchorElement) {
+    if (!file.type.startsWith("image/")) {
+        showCopyToast("请选择图片文件", anchorElement);
+        return;
+    }
+
+    anchorElement.disabled = true;
+    anchorElement.textContent = "读取中";
+
+    try {
+        const backgroundImage = await prepareBackgroundImage(file);
+        state.draftAppearanceSettings.backgroundImage = backgroundImage;
+        state.draftAppearanceSettings.backgroundImageDataUrl = backgroundImage;
+        state.draftAppearanceSettings.backgroundName = file.name;
+        applyAppearanceSettings(state.draftAppearanceSettings);
+        renderAppearanceSettings();
+        showCopyToast("背景图片已载入，保存后所有设备可见", elements.saveFilterConfigButton);
+    } catch (error) {
+        showCopyToast(normalizeErrorMessage(error), anchorElement);
+        anchorElement.disabled = false;
+        anchorElement.textContent = "选择图片";
+    }
+}
+
+async function prepareBackgroundImage(file) {
+    const originalDataUrl = await readFileAsDataUrl(file);
+    const image = await loadImageFromDataUrl(originalDataUrl);
+    const longestSide = Math.max(image.naturalWidth, image.naturalHeight);
+
+    if (!longestSide) {
+        throw new Error("图片读取失败，请换一张图片试试。");
+    }
+
+    if (originalDataUrl.length <= BACKGROUND_IMAGE_STORAGE_SOFT_LIMIT && longestSide <= BACKGROUND_IMAGE_MAX_SIDE) {
+        return originalDataUrl;
+    }
+
+    const compressedDataUrl = resizeBackgroundImage(image);
+    if (compressedDataUrl.length > BACKGROUND_IMAGE_STORAGE_HARD_LIMIT) {
+        throw new Error("图片太大，压缩后仍然无法保存。请换一张更小的背景图。");
+    }
+
+    return compressedDataUrl;
+}
+
+function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+            resolve(String(reader.result ?? ""));
+        });
+        reader.addEventListener("error", () => {
+            reject(new Error("图片读取失败，请换一张图片试试。"));
+        });
+        reader.readAsDataURL(file);
+    });
+}
+
+function loadImageFromDataUrl(dataUrl) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.addEventListener("load", () => resolve(image), { once: true });
+        image.addEventListener("error", () => {
+            reject(new Error("图片解码失败，请换一张图片试试。"));
+        }, { once: true });
+        image.src = dataUrl;
+    });
+}
+
+function resizeBackgroundImage(image) {
+    const longestSide = Math.max(image.naturalWidth, image.naturalHeight);
+    const scale = Math.min(1, BACKGROUND_IMAGE_MAX_SIDE / longestSide);
+    const width = Math.max(1, Math.round(image.naturalWidth * scale));
+    const height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+        throw new Error("当前浏览器无法处理这张背景图片。");
+    }
+
+    context.fillStyle = "#f8fafc";
+    context.fillRect(0, 0, width, height);
+    context.drawImage(image, 0, 0, width, height);
+    return canvas.toDataURL("image/jpeg", 0.86);
+}
+
 function createMapStatChip() {
     const chip = document.createElement("div");
     chip.className = "settings-stat-chip";
@@ -2139,6 +2479,13 @@ async function resetSettingsDraft() {
         return;
     }
 
+    if (state.activeSettingsView === SETTINGS_VIEW_APPEARANCE) {
+        state.draftAppearanceSettings = cloneAppearanceSettings(DEFAULT_APPEARANCE_SETTINGS);
+        applyAppearanceSettings(state.draftAppearanceSettings);
+        renderSettingsModal();
+        return;
+    }
+
     state.draftFilterConfig = await fetchJson("/api/filter-bar-config/default");
     ensureActiveConfigSection();
     renderSettingsModal();
@@ -2149,6 +2496,7 @@ async function saveSettings() {
 
     const mapChanged = hasCardDataMapChanges();
     const filterChanged = hasFilterConfigChanges();
+    const appearanceChanged = hasAppearanceSettingsChanges();
 
     let savedMaps = state.cardDataMaps;
     let savedFilterConfig = state.filterConfig;
@@ -2179,10 +2527,16 @@ async function saveSettings() {
         state.bootstrap = await fetchJson("/api/bootstrap");
     }
 
+    if (appearanceChanged) {
+        state.appearanceSettings = await saveAppearanceSettings(state.draftAppearanceSettings);
+        applyAppearanceSettings(state.appearanceSettings);
+    }
+
     state.cardDataMaps = savedMaps;
     state.draftCardDataMaps = cloneCardDataMapConfig(savedMaps);
     state.filterConfig = savedFilterConfig;
     state.draftFilterConfig = cloneFilterConfig(savedFilterConfig);
+    state.draftAppearanceSettings = cloneAppearanceSettings(state.appearanceSettings);
 
     initializeStaticControls();
     renderConfiguredFilters();
@@ -2197,12 +2551,19 @@ async function saveSettings() {
 
     closeFilterConfigModal();
 
-    if (mapChanged && filterChanged) {
-        showCopyToast("筛选栏设置和映射库已保存", elements.saveFilterConfigButton);
-    } else if (mapChanged) {
-        showCopyToast("映射库已保存", elements.saveFilterConfigButton);
-    } else if (filterChanged) {
-        showCopyToast("筛选栏设置已保存", elements.saveFilterConfigButton);
+    const changedLabels = [];
+    if (filterChanged) {
+        changedLabels.push("筛选栏设置");
+    }
+    if (mapChanged) {
+        changedLabels.push("映射库");
+    }
+    if (appearanceChanged) {
+        changedLabels.push("外观设置");
+    }
+
+    if (changedLabels.length > 0) {
+        showCopyToast(`${formatChangedLabels(changedLabels)}已保存`, elements.saveFilterConfigButton);
     } else {
         showCopyToast("没有检测到需要保存的变更", elements.saveFilterConfigButton);
     }
@@ -2219,6 +2580,17 @@ function validateCardDataMapDraft(config) {
 function hasFilterConfigChanges() {
     return JSON.stringify(state.draftFilterConfig ?? { sections: [] })
         !== JSON.stringify(state.filterConfig ?? { sections: [] });
+}
+
+function hasAppearanceSettingsChanges() {
+    return JSON.stringify(normalizeAppearanceSettings(state.draftAppearanceSettings))
+        !== JSON.stringify(normalizeAppearanceSettings(state.appearanceSettings));
+}
+
+function formatChangedLabels(labels) {
+    return labels.length <= 2
+        ? labels.join("和")
+        : `${labels.slice(0, -1).join("、")}和${labels[labels.length - 1]}`;
 }
 
 function hasCardDataMapChanges() {
