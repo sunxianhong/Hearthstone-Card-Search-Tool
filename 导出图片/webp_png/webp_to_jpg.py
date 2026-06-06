@@ -61,10 +61,38 @@ def batch_convert_nested(input_dir, output_dir, max_workers=8, quality=95):
     print("All images processed.")
 
 
-if __name__ == "__main__":
+def find_image_base_dir():
+    """Find the folder that contains both cardpng and webp_images."""
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = []
 
-    INPUT_FOLDER = os.path.join(script_dir, "webp_images")
-    OUTPUT_FOLDER = os.path.join(script_dir, "jpg_images")
+    for start_dir in (script_dir, os.getcwd()):
+        current_dir = os.path.abspath(start_dir)
+        while current_dir not in candidates:
+            candidates.append(current_dir)
+            parent_dir = os.path.dirname(current_dir)
+            if parent_dir == current_dir:
+                break
+            current_dir = parent_dir
+
+    for candidate in candidates:
+        cardpng_dir = os.path.join(candidate, "cardpng")
+        webp_dir = os.path.join(candidate, "webp_images")
+        if os.path.isdir(cardpng_dir) and os.path.isdir(webp_dir):
+            return candidate
+
+    raise SystemExit("Could not find cardpng and webp_images folders.")
+
+
+if __name__ == "__main__":
+    base_dir = find_image_base_dir()
+
+    INPUT_FOLDER = os.path.join(base_dir, "webp_images")
+    OUTPUT_FOLDER = os.path.join(base_dir, "cardpng")
+
+    if not os.path.isdir(INPUT_FOLDER):
+        raise SystemExit(f"Input folder not found: {INPUT_FOLDER}")
+
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
     batch_convert_nested(INPUT_FOLDER, OUTPUT_FOLDER)
