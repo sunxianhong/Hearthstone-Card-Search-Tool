@@ -11,6 +11,8 @@ const FILTER_FIELD_ORDER = [
     "collectible",
 ];
 
+const REFERENCED_KEYWORD_PREFIX = "ReferencedTag:";
+
 const FILTER_FIELD_LABELS = {
     mode: "模式",
     set: "扩展包",
@@ -50,6 +52,7 @@ const state = {
     activeCardDataMapKey: null,
     activeSettingsView: SETTINGS_VIEW_FILTER,
     activeDetail: null,
+    customSelects: new Map(),
 };
 
 const elements = {
@@ -148,13 +151,14 @@ function bindEvents() {
         void searchCards();
     });
 
-    elements.modeSelect.addEventListener("change", () => {
+    elements.modeSelect.addEventListener("customselectchange", () => {
         refreshSetOptions();
     });
 
     elements.setPickerButton.addEventListener("click", () => {
         const shouldOpen = elements.setPickerPanel.classList.contains("is-hidden");
         if (shouldOpen) {
+            closeAllCustomSelects();
             renderSetPicker(getVisibleSectionOptions("set"), getSelectedSetValue());
         }
 
@@ -172,19 +176,12 @@ function bindEvents() {
         if (!elements.setPicker.contains(event.target)) {
             closeSetPicker();
         }
+
+        closeAllCustomSelects(event.target);
     });
 
     const submitOnEnterElements = [
         elements.queryInput,
-        elements.modeSelect,
-        elements.costSelect,
-        elements.classSelect,
-        elements.raritySelect,
-        elements.cardTypeSelect,
-        elements.raceSelect,
-        elements.schoolSelect,
-        elements.keywordSelect,
-        elements.collectibleSelect,
     ];
 
     for (const control of submitOnEnterElements) {
@@ -366,9 +363,9 @@ function injectRuntimeStyles() {
         .settings-tab-button {
             min-height: 40px;
             padding: 0 16px;
-            border: 1px solid rgba(127, 95, 55, 0.18);
-            border-radius: 999px;
-            background: rgba(255, 252, 246, 0.88);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #ffffff;
             color: var(--ink);
             cursor: pointer;
             font-weight: 700;
@@ -376,10 +373,10 @@ function injectRuntimeStyles() {
         }
 
         .settings-tab-button.is-active {
-            background: rgba(198, 118, 45, 0.16);
-            border-color: rgba(198, 118, 45, 0.36);
+            background: rgba(20, 184, 166, 0.1);
+            border-color: rgba(20, 184, 166, 0.36);
             color: var(--accent);
-            box-shadow: 0 10px 24px rgba(141, 79, 24, 0.08);
+            box-shadow: 0 10px 24px rgba(20, 184, 166, 0.1);
         }
 
         .settings-tab-button:hover {
@@ -400,8 +397,8 @@ function injectRuntimeStyles() {
 
         .settings-text-hint {
             padding: 12px 14px;
-            border-radius: 14px;
-            background: rgba(255, 252, 246, 0.88);
+            border-radius: 12px;
+            background: rgba(248, 250, 252, 0.88);
             color: var(--muted);
             line-height: 1.7;
         }
@@ -415,7 +412,7 @@ function injectRuntimeStyles() {
         .settings-stat-chip {
             padding: 8px 12px;
             border-radius: 999px;
-            background: rgba(255, 243, 222, 0.92);
+            background: rgba(20, 184, 166, 0.1);
             color: var(--accent);
             font-size: 13px;
             font-weight: 700;
@@ -423,29 +420,29 @@ function injectRuntimeStyles() {
 
         .settings-map-status {
             padding: 12px 14px;
-            border-radius: 14px;
-            background: rgba(251, 244, 232, 0.82);
+            border-radius: 12px;
+            background: rgba(248, 250, 252, 0.88);
             color: var(--muted);
             line-height: 1.7;
         }
 
         .settings-map-status.is-success {
-            background: rgba(224, 241, 220, 0.92);
-            color: #2d5a28;
+            background: rgba(209, 250, 229, 0.88);
+            color: #047857;
         }
 
         .settings-map-status.is-warning {
-            background: rgba(255, 239, 214, 0.94);
-            color: #8d4f18;
+            background: rgba(254, 243, 199, 0.94);
+            color: #b45309;
         }
 
         .settings-map-textarea {
             width: 100%;
             min-height: 320px;
             padding: 14px;
-            border: 1px solid rgba(127, 95, 55, 0.2);
-            border-radius: 16px;
-            background: rgba(255, 252, 246, 0.96);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #ffffff;
             color: var(--ink);
             font: 14px/1.65 Consolas, "SFMono-Regular", "Cascadia Mono", monospace;
             resize: vertical;
@@ -474,9 +471,9 @@ function injectRuntimeStyles() {
 
         .settings-set-mode-item {
             padding: 12px 14px;
-            border: 1px solid rgba(127, 95, 55, 0.14);
-            border-radius: 14px;
-            background: rgba(255, 252, 246, 0.9);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
         }
 
         .settings-set-mode-name {
@@ -492,7 +489,7 @@ function injectRuntimeStyles() {
             min-height: 40px;
             padding: 0 10px;
             border-radius: 12px;
-            background: rgba(255, 249, 239, 0.94);
+            background: rgba(248, 250, 252, 0.94);
             cursor: pointer;
             font-weight: 700;
         }
@@ -533,29 +530,220 @@ function initializeStaticControls() {
     populateSelect(elements.schoolSelect, bootstrap.schools, "法术派系");
 }
 
-function populateSelect(select, items, placeholder = null, preferredValue = "") {
-    const currentValue = preferredValue ?? select.value ?? "";
-    const fragment = document.createDocumentFragment();
+function populateSelect(select, items, placeholder = null, preferredValue = undefined) {
+    const options = [];
 
     if (placeholder !== null) {
-        fragment.append(createOption("", placeholder));
+        options.push({
+            value: "",
+            label: placeholder,
+        });
     }
 
-    for (const item of items) {
-        fragment.append(createOption(item.value, item.label));
+    for (const item of items ?? []) {
+        options.push({
+            value: String(item.value ?? ""),
+            label: String(item.label ?? item.value ?? ""),
+        });
     }
 
-    select.replaceChildren(fragment);
+    const currentValue = preferredValue ?? getFilterValue(select) ?? "";
+    const hasCurrentValue = options.some((option) => option.value === String(currentValue));
+    const fallbackValue = placeholder !== null
+        ? ""
+        : options[0]?.value ?? "";
+    const nextValue = hasCurrentValue ? String(currentValue) : fallbackValue;
 
-    const hasPreferredValue = Array.from(select.options).some((option) => option.value === currentValue);
-    select.value = hasPreferredValue ? currentValue : "";
+    renderCustomSelect(select, options, nextValue);
 }
 
-function createOption(value, label) {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = label;
-    return option;
+function renderCustomSelect(select, options, selectedValue) {
+    select.classList.add("custom-select-field");
+    select.dataset.value = selectedValue;
+
+    const selectId = select.id || `custom-select-${state.customSelects.size + 1}`;
+    const panelId = `${selectId}Panel`;
+    const trigger = document.createElement("button");
+    trigger.type = "button";
+    trigger.className = "custom-select-trigger";
+    trigger.setAttribute("aria-haspopup", "listbox");
+    trigger.setAttribute("aria-expanded", "false");
+    trigger.setAttribute("aria-controls", panelId);
+
+    const value = document.createElement("span");
+    value.className = "custom-select-value";
+
+    const icon = document.createElement("span");
+    icon.className = "custom-select-icon";
+    icon.setAttribute("aria-hidden", "true");
+    trigger.append(value, icon);
+
+    const panel = document.createElement("div");
+    panel.id = panelId;
+    panel.className = "custom-select-panel is-closed";
+    panel.setAttribute("role", "listbox");
+
+    for (const option of options) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "custom-select-option";
+        button.dataset.value = option.value;
+        button.textContent = option.label;
+        button.title = option.label;
+        button.setAttribute("role", "option");
+        button.addEventListener("click", () => {
+            setCustomSelectValue(select, option.value, true);
+            setCustomSelectOpen(select, false);
+            trigger.focus();
+        });
+        panel.append(button);
+    }
+
+    trigger.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setCustomSelectOpen(select, !select.classList.contains("is-open"));
+    });
+
+    trigger.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setCustomSelectOpen(select, !select.classList.contains("is-open"));
+            return;
+        }
+
+        if (event.key === "ArrowDown") {
+            event.preventDefault();
+            setCustomSelectOpen(select, true);
+            focusCustomSelectOption(select, 0);
+            return;
+        }
+
+        if (event.key === "Escape") {
+            setCustomSelectOpen(select, false);
+        }
+    });
+
+    panel.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            setCustomSelectOpen(select, false);
+            trigger.focus();
+            return;
+        }
+
+        if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+            return;
+        }
+
+        event.preventDefault();
+        const options = Array.from(panel.querySelectorAll(".custom-select-option"));
+        const currentIndex = options.findIndex((option) => option === document.activeElement);
+        const direction = event.key === "ArrowDown" ? 1 : -1;
+        const nextIndex = currentIndex < 0
+            ? 0
+            : (currentIndex + direction + options.length) % options.length;
+        options[nextIndex]?.focus();
+    });
+
+    select.replaceChildren(trigger, panel);
+    state.customSelects.set(select, {
+        options,
+        trigger,
+        value,
+        panel,
+    });
+    setCustomSelectValue(select, selectedValue, false);
+}
+
+function getFilterValue(select) {
+    return select?.dataset?.value ?? "";
+}
+
+function setFilterValue(select, value) {
+    setCustomSelectValue(select, value ?? "", false);
+}
+
+function setCustomSelectValue(select, value, shouldNotify) {
+    const entry = state.customSelects.get(select);
+    const nextValue = String(value ?? "");
+    const option = entry?.options.find((item) => item.value === nextValue) ?? entry?.options[0] ?? null;
+    const normalizedValue = option?.value ?? nextValue;
+    const label = option?.label ?? "";
+
+    select.dataset.value = normalizedValue;
+    select.dataset.label = label;
+
+    if (entry?.value) {
+        entry.value.textContent = label;
+    }
+
+    if (entry?.trigger) {
+        entry.trigger.title = label;
+    }
+
+    for (const optionButton of entry?.panel?.querySelectorAll(".custom-select-option") ?? []) {
+        const isSelected = optionButton.dataset.value === normalizedValue;
+        optionButton.classList.toggle("is-selected", isSelected);
+        optionButton.setAttribute("aria-selected", String(isSelected));
+    }
+
+    if (shouldNotify) {
+        select.dispatchEvent(new CustomEvent("customselectchange", {
+            bubbles: true,
+            detail: {
+                value: normalizedValue,
+                label,
+            },
+        }));
+    }
+}
+
+function setCustomSelectOpen(select, isOpen) {
+    const entry = state.customSelects.get(select);
+    if (!entry) {
+        return;
+    }
+
+    if (isOpen) {
+        closeSetPicker();
+        closeAllCustomSelects(select);
+    }
+
+    select.classList.toggle("is-open", isOpen);
+    entry.panel.classList.toggle("is-closed", !isOpen);
+    entry.trigger.setAttribute("aria-expanded", String(isOpen));
+
+    if (isOpen) {
+        requestAnimationFrame(() => {
+            const selected = entry.panel.querySelector(".custom-select-option.is-selected");
+            selected?.scrollIntoView({
+                block: "nearest",
+            });
+        });
+    }
+}
+
+function closeAllCustomSelects(exceptTarget = null) {
+    for (const [select, entry] of state.customSelects) {
+        if (exceptTarget instanceof Node && select.contains(exceptTarget)) {
+            continue;
+        }
+
+        select.classList.remove("is-open");
+        entry.panel.classList.add("is-closed");
+        entry.trigger.setAttribute("aria-expanded", "false");
+    }
+}
+
+function focusCustomSelectOption(select, fallbackIndex) {
+    const entry = state.customSelects.get(select);
+    const options = Array.from(entry?.panel?.querySelectorAll(".custom-select-option") ?? []);
+    if (options.length === 0) {
+        return;
+    }
+
+    const selectedIndex = options.findIndex((option) => option.classList.contains("is-selected"));
+    options[selectedIndex >= 0 ? selectedIndex : fallbackIndex]?.focus();
 }
 
 function appendIfPresent(params, key, value) {
@@ -683,12 +871,13 @@ function applyModeFilterOptions() {
 
     wrapper?.classList.toggle("is-hidden", !isVisible);
     if (!isVisible) {
-        elements.modeSelect.value = "";
+        setFilterValue(elements.modeSelect, "");
         return;
     }
 
-    const preferredValue = visibleOptions.some((item) => item.value === elements.modeSelect.value)
-        ? elements.modeSelect.value
+    const currentValue = getFilterValue(elements.modeSelect);
+    const preferredValue = visibleOptions.some((item) => item.value === currentValue)
+        ? currentValue
         : visibleOptions.find((item) => item.value === "wild")?.value ?? visibleOptions[0]?.value ?? "";
 
     populateSelect(elements.modeSelect, visibleOptions, null, preferredValue);
@@ -702,11 +891,11 @@ function applySelectFilterOptions(key, select) {
 
     wrapper?.classList.toggle("is-hidden", !isVisible);
     if (!isVisible) {
-        select.value = "";
+        setFilterValue(select, "");
         return;
     }
 
-    populateSelect(select, visibleOptions, FILTER_FIELD_LABELS[key], select.value);
+    populateSelect(select, visibleOptions, FILTER_FIELD_LABELS[key], getFilterValue(select));
 }
 
 function refreshSetOptions(preferredValue = null) {
@@ -1180,11 +1369,16 @@ function getVisibleSectionOptions(key) {
             }));
     }
 
-    return section.options.filter((item) => item.visible);
+    return section.options.filter((item) => item.visible && !isReferencedKeywordOption(key, item));
+}
+
+function isReferencedKeywordOption(key, option) {
+    return key === "keyword"
+        && String(option?.value ?? "").startsWith(REFERENCED_KEYWORD_PREFIX);
 }
 
 function getCurrentMode() {
-    return elements.modeSelect.value || "wild";
+    return getFilterValue(elements.modeSelect) || "wild";
 }
 
 function syncSetOptionVisibleFlag(option) {
@@ -1203,17 +1397,17 @@ function countSetOptionsForMode(section, mode) {
 
 function resetFilters() {
     elements.queryInput.value = "";
-    elements.costSelect.value = "";
-    elements.classSelect.value = "";
-    elements.raritySelect.value = "";
-    elements.cardTypeSelect.value = "";
-    elements.raceSelect.value = "";
-    elements.schoolSelect.value = "";
-    elements.keywordSelect.value = "";
-    elements.collectibleSelect.value = "";
+    setFilterValue(elements.costSelect, "");
+    setFilterValue(elements.classSelect, "");
+    setFilterValue(elements.raritySelect, "");
+    setFilterValue(elements.cardTypeSelect, "");
+    setFilterValue(elements.raceSelect, "");
+    setFilterValue(elements.schoolSelect, "");
+    setFilterValue(elements.keywordSelect, "");
+    setFilterValue(elements.collectibleSelect, "");
 
     const visibleModes = getVisibleSectionOptions("mode");
-    elements.modeSelect.value = visibleModes.find((item) => item.value === "wild")?.value ?? visibleModes[0]?.value ?? "";
+    setFilterValue(elements.modeSelect, visibleModes.find((item) => item.value === "wild")?.value ?? visibleModes[0]?.value ?? "");
     refreshSetOptions("");
 }
 
@@ -2054,16 +2248,16 @@ async function searchCards() {
     try {
         const params = new URLSearchParams();
         appendIfPresent(params, "query", elements.queryInput.value.trim());
-        appendIfPresent(params, "mode", elements.modeSelect.closest(".field")?.classList.contains("is-hidden") ? "" : elements.modeSelect.value);
-        appendIfPresent(params, "cost", elements.costSelect.value);
-        appendIfPresent(params, "class", elements.classSelect.value);
+        appendIfPresent(params, "mode", elements.modeSelect.closest(".field")?.classList.contains("is-hidden") ? "" : getFilterValue(elements.modeSelect));
+        appendIfPresent(params, "cost", getFilterValue(elements.costSelect));
+        appendIfPresent(params, "class", getFilterValue(elements.classSelect));
         appendIfPresent(params, "set", elements.setPicker.classList.contains("is-hidden") ? "" : elements.setPickerButton.dataset.value);
-        appendIfPresent(params, "rarity", elements.raritySelect.value);
-        appendIfPresent(params, "cardType", elements.cardTypeSelect.value);
-        appendIfPresent(params, "race", elements.raceSelect.value);
-        appendIfPresent(params, "school", elements.schoolSelect.value);
-        appendIfPresent(params, "keyword", elements.keywordSelect.value);
-        appendIfPresent(params, "collectible", elements.collectibleSelect.value);
+        appendIfPresent(params, "rarity", getFilterValue(elements.raritySelect));
+        appendIfPresent(params, "cardType", getFilterValue(elements.cardTypeSelect));
+        appendIfPresent(params, "race", getFilterValue(elements.raceSelect));
+        appendIfPresent(params, "school", getFilterValue(elements.schoolSelect));
+        appendIfPresent(params, "keyword", getFilterValue(elements.keywordSelect));
+        appendIfPresent(params, "collectible", getFilterValue(elements.collectibleSelect));
         params.set("limit", String(state.bootstrap.maxDisplay));
 
         const response = await fetchJson(`/api/cards?${params.toString()}`);
