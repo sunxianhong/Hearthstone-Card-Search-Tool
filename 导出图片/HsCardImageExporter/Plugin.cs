@@ -31,6 +31,9 @@ public sealed class Plugin : BaseUnityPlugin
     private const int MinCaptureWarmupFrames = 2;
     private const int MaxCaptureWarmupFrames = 8;
     private const float UnifiedCardSlotOrthographicSizeMultiplier = 1.08f;
+    private const float LocationCardVisualScaleMultiplier = 1.06f;
+    private const float LocationCardOrthographicSizeMultiplier =
+        UnifiedCardSlotOrthographicSizeMultiplier / LocationCardVisualScaleMultiplier;
     private const float UnifiedCardSlotDistanceMultiplier = 1.05f;
     private const string FormatTypePickerPrefabPath = "FormatTypePickerPopup.prefab:aa88133d144782b40b3fd8818084006c";
     private const string SetRotationIconPrefabPath = "SetRotationIcon.prefab:d9f391fb2af2ba1478cc806fe5c5f014";
@@ -1535,9 +1538,7 @@ public sealed class Plugin : BaseUnityPlugin
         var aspect = (float)_renderWidth.Value / _renderHeight.Value;
         var faceNormal = frameTransform.up.sqrMagnitude > 0.001f ? frameTransform.up.normalized : Vector3.up;
         var imageUp = frameTransform.forward.sqrMagnitude > 0.001f ? frameTransform.forward.normalized : Vector3.forward;
-        var orthographicSizeMultiplier = useUnifiedCardSlotFraming
-            ? UnifiedCardSlotOrthographicSizeMultiplier
-            : strategy.OrthographicSizeMultiplier;
+        var orthographicSizeMultiplier = strategy.OrthographicSizeMultiplier;
         var distanceMultiplier = useUnifiedCardSlotFraming
             ? UnifiedCardSlotDistanceMultiplier
             : strategy.DistanceMultiplier;
@@ -1981,7 +1982,8 @@ public sealed class Plugin : BaseUnityPlugin
                     ActorNames.GetHandActor(entityDef, TAG_PREMIUM.NORMAL),
                     ExportRenderStrategyKind.Location,
                     useDualBackgroundAlphaCapture: true,
-                    cameraOffset: Vector3.zero);
+                    cameraOffset: Vector3.zero,
+                    orthographicSizeMultiplier: LocationCardOrthographicSizeMultiplier);
                 break;
 
             case TAG_CARDTYPE.HERO_POWER:
@@ -2038,13 +2040,14 @@ public sealed class Plugin : BaseUnityPlugin
         string actorPath,
         ExportRenderStrategyKind kind,
         bool useDualBackgroundAlphaCapture = false,
-        Vector3? cameraOffset = null)
+        Vector3? cameraOffset = null,
+        float orthographicSizeMultiplier = UnifiedCardSlotOrthographicSizeMultiplier)
     {
         return new ExportRenderStrategy(
             actorPath,
             kind,
             useDualBackgroundAlphaCapture: useDualBackgroundAlphaCapture,
-            orthographicSizeMultiplier: UnifiedCardSlotOrthographicSizeMultiplier,
+            orthographicSizeMultiplier: orthographicSizeMultiplier,
             distanceMultiplier: UnifiedCardSlotDistanceMultiplier,
             cameraOffset: cameraOffset ?? Vector3.zero);
     }

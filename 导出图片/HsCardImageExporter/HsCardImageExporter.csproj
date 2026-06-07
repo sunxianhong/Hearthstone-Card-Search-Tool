@@ -4,47 +4,53 @@
     <RootNamespace>HsCardImageExporter</RootNamespace>
     <AssemblyName>HsCardImageExporter</AssemblyName>
     <LangVersion>latest</LangVersion>
+    <RepositoryLibRoot>..\..\src\EmberMod\Libs</RepositoryLibRoot>
+    <HearthstoneInstallDir Condition="'$(HearthstoneInstallDir)' == ''">C:\Program Files (x86)\Hearthstone</HearthstoneInstallDir>
+    <BepInExCoreDir Condition="Exists('$(RepositoryLibRoot)\BepInExCore\BepInEx.dll')">$(RepositoryLibRoot)\BepInExCore</BepInExCoreDir>
+    <BepInExCoreDir Condition="'$(BepInExCoreDir)' == ''">$(HearthstoneInstallDir)\BepInEx\core</BepInExCoreDir>
+    <HearthstoneManagedDir Condition="Exists('$(RepositoryLibRoot)\LibHearthstone\Assembly-CSharp.dll')">$(RepositoryLibRoot)\LibHearthstone</HearthstoneManagedDir>
+    <HearthstoneManagedDir Condition="'$(HearthstoneManagedDir)' == ''">$(HearthstoneInstallDir)\Hearthstone_Data\Managed</HearthstoneManagedDir>
   </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>..\..\src\EmberMod\Libs\BepInExCore\0Harmony.dll</HintPath>
+      <HintPath>$(BepInExCoreDir)\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>..\..\src\EmberMod\Libs\BepInExCore\BepInEx.dll</HintPath>
+      <HintPath>$(BepInExCoreDir)\BepInEx.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\UnityEngine.dll</HintPath>
+      <HintPath>$(HearthstoneManagedDir)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(HearthstoneManagedDir)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.ImageConversionModule">
-      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\UnityEngine.ImageConversionModule.dll</HintPath>
+      <HintPath>$(HearthstoneManagedDir)\UnityEngine.ImageConversionModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="UnityEngine.PhysicsModule">
-      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\UnityEngine.PhysicsModule.dll</HintPath>
+      <HintPath>$(HearthstoneManagedDir)\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(HearthstoneManagedDir)\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Blizzard.T5.AssetLoader">
-      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\Blizzard.T5.AssetLoader.dll</HintPath>
+      <HintPath>$(HearthstoneManagedDir)\Blizzard.T5.AssetLoader.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Blizzard.T5.AssetManager">
-      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\Blizzard.T5.AssetManager.dll</HintPath>
+      <HintPath>$(HearthstoneManagedDir)\Blizzard.T5.AssetManager.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Blizzard.T5.ServiceLocator">
-      <HintPath>..\..\src\EmberMod\Libs\LibHearthstone\Blizzard.T5.ServiceLocator.dll</HintPath>
+      <HintPath>$(HearthstoneManagedDir)\Blizzard.T5.ServiceLocator.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
