@@ -31,7 +31,7 @@ public sealed class Plugin : BaseUnityPlugin
     private const int MinCaptureWarmupFrames = 2;
     private const int MaxCaptureWarmupFrames = 8;
     private const float UnifiedCardSlotOrthographicSizeMultiplier = 1.08f;
-    private const float EnlargedUnifiedCardVisualScaleMultiplier = 1.05f;
+    private const float EnlargedUnifiedCardVisualScaleMultiplier = 1.055f;
     private const float EnlargedUnifiedCardOrthographicSizeMultiplier =
         UnifiedCardSlotOrthographicSizeMultiplier / EnlargedUnifiedCardVisualScaleMultiplier;
     private const float UnifiedCardSlotDistanceMultiplier = 1.05f;
