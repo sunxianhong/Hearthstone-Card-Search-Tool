@@ -31,10 +31,13 @@ public sealed class Plugin : BaseUnityPlugin
     private const int MinCaptureWarmupFrames = 2;
     private const int MaxCaptureWarmupFrames = 8;
     private const float UnifiedCardSlotOrthographicSizeMultiplier = 1.08f;
-    private const float LocationCardVisualScaleMultiplier = 1.06f;
-    private const float LocationCardOrthographicSizeMultiplier =
-        UnifiedCardSlotOrthographicSizeMultiplier / LocationCardVisualScaleMultiplier;
+    private const float EnlargedUnifiedCardVisualScaleMultiplier = 1.05f;
+    private const float EnlargedUnifiedCardOrthographicSizeMultiplier =
+        UnifiedCardSlotOrthographicSizeMultiplier / EnlargedUnifiedCardVisualScaleMultiplier;
     private const float UnifiedCardSlotDistanceMultiplier = 1.05f;
+    private const int SigilGameTagId = 1749;
+    private const int SideQuestGameTagId = 1192;
+    private const int ObjectiveGameTagId = 2311;
     private const string FormatTypePickerPrefabPath = "FormatTypePickerPopup.prefab:aa88133d144782b40b3fd8818084006c";
     private const string SetRotationIconPrefabPath = "SetRotationIcon.prefab:d9f391fb2af2ba1478cc806fe5c5f014";
     private const int ModeCaptureWarmupFrames = 45;
@@ -1982,8 +1985,7 @@ public sealed class Plugin : BaseUnityPlugin
                     ActorNames.GetHandActor(entityDef, TAG_PREMIUM.NORMAL),
                     ExportRenderStrategyKind.Location,
                     useDualBackgroundAlphaCapture: true,
-                    cameraOffset: Vector3.zero,
-                    orthographicSizeMultiplier: LocationCardOrthographicSizeMultiplier);
+                    cameraOffset: Vector3.zero);
                 break;
 
             case TAG_CARDTYPE.HERO_POWER:
@@ -2030,6 +2032,7 @@ public sealed class Plugin : BaseUnityPlugin
                 break;
         }
 
+        strategy = ApplyEnlargedUnifiedCardScale(entityDef, strategy);
         return ApplyAutomaticAlphaCapture(entityDef, strategy);
     }
 
@@ -2050,6 +2053,45 @@ public sealed class Plugin : BaseUnityPlugin
             orthographicSizeMultiplier: orthographicSizeMultiplier,
             distanceMultiplier: UnifiedCardSlotDistanceMultiplier,
             cameraOffset: cameraOffset ?? Vector3.zero);
+    }
+
+    /// <summary>
+    /// 对地标、咒符、支线任务和目标牌应用统一卡槽内的视觉放大补偿。
+    /// </summary>
+    private static ExportRenderStrategy ApplyEnlargedUnifiedCardScale(EntityDef entityDef, ExportRenderStrategy strategy)
+    {
+        if (entityDef == null ||
+            !ShouldUseUnifiedCardSlotFraming(strategy) ||
+            !ShouldUseEnlargedUnifiedCardScale(entityDef))
+        {
+            return strategy;
+        }
+
+        return new ExportRenderStrategy(
+            strategy.ActorPath,
+            strategy.Kind,
+            strategy.CreateBannedRibbon,
+            strategy.CustomInitialize,
+            useDualBackgroundAlphaCapture: strategy.UseDualBackgroundAlphaCapture,
+            activateRootObjectBeforeShow: strategy.ActivateRootObjectBeforeShow,
+            updateComponentsAfterShow: strategy.UpdateComponentsAfterShow,
+            updateAllComponentsIgnoreSpells: strategy.UpdateAllComponentsIgnoreSpells,
+            orthographicSizeMultiplier: EnlargedUnifiedCardOrthographicSizeMultiplier,
+            distanceMultiplier: strategy.DistanceMultiplier,
+            cameraOffset: strategy.CameraOffset);
+    }
+
+    private static bool ShouldUseEnlargedUnifiedCardScale(EntityDef entityDef)
+    {
+        return entityDef.GetCardType() == TAG_CARDTYPE.LOCATION ||
+               HasGameTag(entityDef, SigilGameTagId) ||
+               HasGameTag(entityDef, SideQuestGameTagId) ||
+               HasGameTag(entityDef, ObjectiveGameTagId);
+    }
+
+    private static bool HasGameTag(EntityDef entityDef, int gameTagId)
+    {
+        return entityDef.GetTag((GAME_TAG)gameTagId) == 1;
     }
 
     /// <summary>
