@@ -203,7 +203,9 @@ public sealed class Plugin : BaseUnityPlugin
 
         for (var i = 0; i < cardIds.Count; i++)
         {
-            yield return ExportSingleCard(cardIds[i], i + 1, cardIds.Count);
+            // Explicitly start the child coroutine so Unity/BepInEx resumes the
+            // per-card exporter instead of leaving the parent queue suspended.
+            yield return StartCoroutine(ExportSingleCard(cardIds[i], i + 1, cardIds.Count));
         }
 
         Logger.LogInfo("Card image export finished.");
@@ -1008,7 +1010,22 @@ public sealed class Plugin : BaseUnityPlugin
 
         try
         {
-            fullDef = DefLoader.Get().GetFullDef(cardId, CardPortraitQuality.GetDefault());
+            Exception fullDefError = null;
+            try
+            {
+                fullDef = DefLoader.Get().GetFullDef(cardId);
+            }
+            catch (Exception ex)
+            {
+                fullDefError = ex;
+            }
+
+            if (fullDefError != null)
+            {
+                Logger.LogError($"Failed to load full def for {cardId}: {fullDefError}");
+                yield break;
+            }
+
             if (fullDef?.EntityDef == null)
             {
                 Logger.LogWarning($"Skip {cardId}: full def unavailable.");
