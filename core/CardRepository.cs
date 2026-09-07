@@ -23,6 +23,23 @@ public sealed class CardRepository
         "TARGETING_ARROW_TEXT",
     ];
 
+    private static readonly IReadOnlyDictionary<string, IReadOnlySet<string>> SecondaryRaceEnumIdsByRaceValue =
+        new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
+        {
+            ["2"] = new HashSet<string>(StringComparer.Ordinal) { "2525" },
+            ["11"] = new HashSet<string>(StringComparer.Ordinal) { "2534" },
+            ["14"] = new HashSet<string>(StringComparer.Ordinal) { "2536" },
+            ["15"] = new HashSet<string>(StringComparer.Ordinal) { "2537" },
+            ["17"] = new HashSet<string>(StringComparer.Ordinal) { "2539" },
+            ["18"] = new HashSet<string>(StringComparer.Ordinal) { "2540" },
+            ["20"] = new HashSet<string>(StringComparer.Ordinal) { "2542" },
+            ["21"] = new HashSet<string>(StringComparer.Ordinal) { "2543" },
+            ["23"] = new HashSet<string>(StringComparer.Ordinal) { "2522" },
+            ["24"] = new HashSet<string>(StringComparer.Ordinal) { "2523" },
+            ["43"] = new HashSet<string>(StringComparer.Ordinal) { "2546" },
+            ["92"] = new HashSet<string>(StringComparer.Ordinal) { "2553" },
+        };
+
     private enum CustomRelatedRuleKind
     {
         Add,
@@ -515,7 +532,7 @@ public sealed class CardRepository
             return false;
         }
 
-        if (!MatchesExact(card, "CARDRACE", filters.Race))
+        if (!MatchesRace(card, filters.Race))
         {
             return false;
         }
@@ -567,6 +584,25 @@ public sealed class CardRepository
     {
         return string.IsNullOrWhiteSpace(expected)
             || card.TagMap.TryGetValue(key, out var actual) && actual == expected;
+    }
+
+    private static bool MatchesRace(CardRecord card, string? expected)
+    {
+        if (string.IsNullOrWhiteSpace(expected))
+        {
+            return true;
+        }
+
+        if (card.TagMap.TryGetValue("CARDRACE", out var actualRace) && actualRace == expected)
+        {
+            return true;
+        }
+
+        return SecondaryRaceEnumIdsByRaceValue.TryGetValue(expected, out var secondaryEnumIds)
+            && card.Tags.Any(tag =>
+                tag.Value == "1"
+                && tag.EnumId is not null
+                && secondaryEnumIds.Contains(tag.EnumId));
     }
 
     private static bool MatchesClass(CardRecord card, string? expected)

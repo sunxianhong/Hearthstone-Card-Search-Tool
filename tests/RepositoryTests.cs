@@ -61,6 +61,31 @@ public sealed class RepositoryTests
     }
 
     [Fact]
+    public void RaceFilterMatchesSecondaryRaceTags()
+    {
+        var resourceRoot = CreateTemporaryCardDataRoot();
+
+        try
+        {
+            var repository = CardRepository.Load(resourceRoot);
+            var results = repository.Search(
+                string.Empty,
+                new SearchFilters
+                {
+                    Race = "11",
+                },
+                20);
+
+            Assert.Contains(results, item => item.CardId == "CARD_A");
+            Assert.DoesNotContain(results, item => item.CardId == "CARD_B");
+        }
+        finally
+        {
+            Directory.Delete(resourceRoot, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ReferencedTagsAppearAfterNormalTagsInDetail()
     {
         var resourceRoot = CreateTemporaryCardDataRoot();
@@ -458,6 +483,8 @@ public sealed class RepositoryTests
                 <Tag name="CARDTEXT" type="LocString"><zhCN>A</zhCN><enUS>A</enUS></Tag>
                 <Tag name="CARD_SET" value="1637" />
                 <Tag name="CLASS" value="6" />
+                <Tag name="CARDRACE" value="20" />
+                <Tag enumID="2534" name="1" type="Int" value="1" />
                 <Tag name="MULTIPLE_CLASSES" value="34" />
                 <Tag name="CARDTYPE" value="4" />
                 <ReferencedTag enumID="1966" name="BACON_BLOOD_GEM_TOOLTIP" type="Int" value="1" />
@@ -467,6 +494,7 @@ public sealed class RepositoryTests
                 <Tag name="CARDTEXT" type="LocString"><zhCN>B</zhCN><enUS>B</enUS></Tag>
                 <Tag name="CARD_SET" value="1637" />
                 <Tag name="CLASS" value="2" />
+                <Tag name="CARDRACE" value="20" />
                 <Tag name="MULTIPLE_CLASSES" value="34" />
                 <Tag name="CARDTYPE" value="4" />
               </Entity>

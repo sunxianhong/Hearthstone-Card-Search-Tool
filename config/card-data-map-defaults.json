@@ -2,11 +2,13 @@
   "format": "hearthstone-card-search.card-data-map-package",
   "version": 1,
   "kind": "maps",
-  "exportedAt": "2026-06-06T07:30:56.622Z",
+  "exportedAt": "2026-09-07T04:28:51.553Z",
   "maps": {
     "unknownEnumMap": {
+      "858": "视为同一卡牌",
       "4285": "魔网",
       "4354": "预备",
+      "4690": "伪装",
       "4761": "巨龙之魂"
     },
     "tagLabels": {},
