@@ -8,6 +8,7 @@
 
 using BepInEx;
 using BepInEx.Configuration;
+using Blizzard.T5.Services;
 using Hearthstone.UI;
 using System;
 using System.Collections;
@@ -30,6 +31,8 @@ public sealed class Plugin : BaseUnityPlugin
     private const int ExportLayer = 31;
     private const int MinCaptureWarmupFrames = 2;
     private const int MaxCaptureWarmupFrames = 8;
+    private const int MaxDynamicPortraitWarmupFrames = 120;
+    private const int MinDynamicPortraitWarmupFrames = 6;
     private const float UnifiedCardSlotOrthographicSizeMultiplier = 1.08f;
     private const float EnlargedUnifiedCardVisualScaleMultiplier = 1.055f;
     private const float EnlargedUnifiedCardOrthographicSizeMultiplier =
@@ -53,6 +56,11 @@ public sealed class Plugin : BaseUnityPlugin
     private ConfigEntry<int> _renderHeight = null!;
     private ConfigEntry<int> _thumbWidth = null!;
     private ConfigEntry<int> _thumbHeight = null!;
+    private ConfigEntry<int> _manaGemTargetWidth = null!;
+    private ConfigEntry<int> _cardFrameBottomMargin = null!;
+    private ConfigEntry<int> _heroPowerManaGemTargetWidth = null!;
+    private ConfigEntry<int> _heroPowerManaGemCenterFromBottom = null!;
+    private ConfigEntry<float> _heroLegendaryPortraitZoom = null!;
     private ConfigEntry<int> _modeImageWidth = null!;
     private ConfigEntry<int> _modeImageHeight = null!;
     private ConfigEntry<bool> _exportDetail = null!;
@@ -82,7 +90,7 @@ public sealed class Plugin : BaseUnityPlugin
     {
         _enableExport = Config.Bind("General", "EnableExport", true, "是否在启动后执行图片导出。");
         _exportCards = Config.Bind("General", "ExportCards", true, "是否导出完整卡牌图片。");
-        _exportFormatModes = Config.Bind("General", "ExportFormatModes", true, "是否导出狂野、标准、休闲三个格式模式图片。");
+        _exportFormatModes = Config.Bind("General", "ExportFormatModes", false, "是否导出狂野、标准、休闲三个格式模式图片。");
         _outputDir = Config.Bind("General", "OutputDir", Path.Combine(BepInEx.Paths.BepInExRootPath, "HsCardExport", "cards"), "完整卡牌 PNG 输出目录。");
         _modeOutputDir = Config.Bind("General", "ModeOutputDir", Path.Combine(BepInEx.Paths.BepInExRootPath, "HsCardExport", "modes"), "格式模式 PNG 输出目录。");
         _maxCount = Config.Bind("General", "MaxCount", 0, "本次最多导出的卡牌数量。0 表示全部。");
@@ -90,6 +98,11 @@ public sealed class Plugin : BaseUnityPlugin
         _renderHeight = Config.Bind("General", "RenderHeight", 2304, "内部渲染高度。");
         _thumbWidth = Config.Bind("General", "ThumbWidth", 512, "列表图宽度。");
         _thumbHeight = Config.Bind("General", "ThumbHeight", 768, "列表图高度。");
+        _manaGemTargetWidth = Config.Bind("General", "ManaGemTargetWidth", 104, "列表图中法力水晶的目标宽度（像素），用于统一不同卡牌类型的视觉缩放。");
+        _cardFrameBottomMargin = Config.Bind("General", "CardFrameBottomMargin", 79, "列表图中主卡框中央底边到画布底部的目标距离（像素），不含攻击力和生命值宝石。");
+        _heroPowerManaGemTargetWidth = Config.Bind("General", "HeroPowerManaGemTargetWidth", 81, "英雄技能法力水晶在列表图中的目标宽度（像素）。");
+        _heroPowerManaGemCenterFromBottom = Config.Bind("General", "HeroPowerManaGemCenterFromBottom", 640, "英雄技能法力水晶中心到画布底部的目标距离（像素）。");
+        _heroLegendaryPortraitZoom = Config.Bind("General", "HeroLegendaryPortraitZoom", 1.85f, "传说动态英雄画像在普通英雄框洞口内的居中放大倍数。");
         _modeImageWidth = Config.Bind("General", "ModeImageWidth", 512, "格式模式图片宽度。");
         _modeImageHeight = Config.Bind("General", "ModeImageHeight", 512, "格式模式图片高度。");
         _exportDetail = Config.Bind("General", "ExportDetail", true, "是否导出 detail 详情图。");
@@ -1007,6 +1020,10 @@ public sealed class Plugin : BaseUnityPlugin
         GameObject actorObject = null;
         GameObject renderRootObject = null;
         DefLoader.DisposableFullDef fullDef = null;
+        LegendaryHeroRenderToTextureService legendaryPortraitService = null;
+        var previousLegendaryDynamicResolution = LegendarySkin.DynamicResolutionEnabled;
+        var previousLegendaryIgnorePriority = false;
+        var changedLegendaryPortraitSettings = false;
 
         try
         {
@@ -1035,6 +1052,35 @@ public sealed class Plugin : BaseUnityPlugin
             var preparedEntityDef = PrepareEntityDefForExport(fullDef.EntityDef);
             var exportEntityDef = preparedEntityDef.EntityDef;
             var strategy = CreateRenderStrategy(exportEntityDef);
+            var expectsDiamondPortrait = strategy.Kind == ExportRenderStrategyKind.HeroCard &&
+                                         strategy.Premium == TAG_PREMIUM.DIAMOND;
+            var expectsLegendaryPortrait = strategy.Kind == ExportRenderStrategyKind.HeroCard &&
+                                           fullDef.CardDef != null &&
+                                           !string.IsNullOrEmpty(fullDef.CardDef.m_LegendaryModel);
+
+            if (strategy.Kind == ExportRenderStrategyKind.HeroCard)
+            {
+                Logger.LogInfo(
+                    $"Hero portrait {cardId}: Premium={strategy.Premium}, " +
+                    $"DiamondModel={!string.IsNullOrEmpty(fullDef.CardDef?.m_DiamondModel)}, " +
+                    $"LegendaryModel={expectsLegendaryPortrait}");
+            }
+
+            if (expectsLegendaryPortrait)
+            {
+                yield return WaitForLegendaryPortraitService();
+                legendaryPortraitService = ServiceManager.Get<LegendaryHeroRenderToTextureService>();
+                previousLegendaryDynamicResolution = LegendarySkin.DynamicResolutionEnabled;
+                LegendarySkin.DynamicResolutionEnabled = false;
+                if (legendaryPortraitService != null)
+                {
+                    previousLegendaryIgnorePriority = legendaryPortraitService.IgnorePriority;
+                    legendaryPortraitService.IgnorePriority = true;
+                }
+
+                changedLegendaryPortraitSettings = true;
+            }
+
             var shouldUseUnifiedCardSlotFraming = ShouldUseUnifiedCardSlotFraming(strategy);
             actorObject = AssetLoader.Get().InstantiatePrefab(strategy.ActorPath, AssetLoadingOptions.IgnorePrefabPosition);
             if (actorObject == null)
@@ -1044,7 +1090,6 @@ public sealed class Plugin : BaseUnityPlugin
             }
 
             actorObject.transform.SetParent(_exportRoot, false);
-            SetLayerRecursively(actorObject.transform, ExportLayer);
             actorObject.transform.localPosition = Vector3.zero;
 
             var actor = actorObject.GetComponent<Actor>();
@@ -1054,16 +1099,24 @@ public sealed class Plugin : BaseUnityPlugin
                 yield break;
             }
 
+            SetCardLayerForExport(actorObject.transform);
+
             InitializeActorForExport(actorObject, actor, exportEntityDef, strategy, shouldUseUnifiedCardSlotFraming);
 
-            renderRootObject = WrapActorWithCollectionVisualIfAvailable(actor, exportEntityDef);
+            renderRootObject = WrapActorWithCollectionVisualIfAvailable(actor, exportEntityDef, strategy);
             if (renderRootObject == null && shouldUseUnifiedCardSlotFraming)
                 FinalizeActorPresentationForExport(actorObject, actor, strategy);
 
-            yield return WaitForActorReadyForCapture(actorObject, actor, preparedEntityDef.ForceMulticlassRibbon);
+            yield return WaitForActorReadyForCapture(
+                actorObject,
+                actor,
+                preparedEntityDef.ForceMulticlassRibbon,
+                expectsDiamondPortrait,
+                expectsLegendaryPortrait,
+                _heroLegendaryPortraitZoom.Value);
 
             var boundsTarget = renderRootObject ?? actorObject;
-            SetLayerRecursively(boundsTarget.transform, ExportLayer);
+            SetCardLayerForExport(boundsTarget.transform);
             var useUnifiedCardSlotFraming = renderRootObject != null && shouldUseUnifiedCardSlotFraming;
 
             Bounds bounds;
@@ -1094,7 +1147,7 @@ public sealed class Plugin : BaseUnityPlugin
             }
 
             var cameraFrameTransform = useUnifiedCardSlotFraming ? renderRootObject.transform : actorObject.transform;
-            ConfigureCamera(bounds, cameraFrameTransform, strategy, useUnifiedCardSlotFraming);
+            ConfigureCamera(bounds, cameraFrameTransform, strategy, useUnifiedCardSlotFraming, actor);
             SaveCardPng(cardId, fullDef.EntityDef.GetCardSet(), strategy);
 
             if (index % 50 == 0)
@@ -1102,6 +1155,13 @@ public sealed class Plugin : BaseUnityPlugin
         }
         finally
         {
+            if (changedLegendaryPortraitSettings)
+            {
+                LegendarySkin.DynamicResolutionEnabled = previousLegendaryDynamicResolution;
+                if (legendaryPortraitService != null)
+                    legendaryPortraitService.IgnorePriority = previousLegendaryIgnorePriority;
+            }
+
             if (renderRootObject != null)
             {
                 Destroy(renderRootObject);
@@ -1125,7 +1185,7 @@ public sealed class Plugin : BaseUnityPlugin
         ExportRenderStrategy strategy,
         bool deferActorShowUntilCardSlot)
     {
-        actor.SetPremium(TAG_PREMIUM.NORMAL);
+        actor.SetPremium(strategy.Premium);
         actor.SetEntityDef(entityDef);
 
         if (strategy.CreateBannedRibbon)
@@ -1147,7 +1207,7 @@ public sealed class Plugin : BaseUnityPlugin
             FinalizeActorPresentationForExport(actorObject, actor, strategy);
         }
 
-        SetLayerRecursively(actorObject.transform, ExportLayer);
+        SetCardLayerForExport(actorObject.transform);
     }
 
     /// <summary>
@@ -1166,7 +1226,21 @@ public sealed class Plugin : BaseUnityPlugin
             actor.Show();
         }
 
-        SetLayerRecursively(actorObject.transform, ExportLayer);
+        SetCardLayerForExport(actorObject.transform);
+    }
+
+    /// <summary>
+    /// 传说英雄画像由独立服务创建；等待服务完成初始化后再创建 Actor。
+    /// </summary>
+    private static IEnumerator WaitForLegendaryPortraitService()
+    {
+        for (var frame = 0; frame < MaxDynamicPortraitWarmupFrames; frame++)
+        {
+            if (ServiceManager.Get<LegendaryHeroRenderToTextureService>() != null)
+                yield break;
+
+            yield return new WaitForEndOfFrame();
+        }
     }
 
     /// <summary>
@@ -1181,26 +1255,52 @@ public sealed class Plugin : BaseUnityPlugin
     /// <summary>
     /// 等待卡牌 Actor 在导出前进入稳定状态。
     /// </summary>
-    private static IEnumerator WaitForActorReadyForCapture(GameObject actorObject, Actor actor, bool forceMulticlassRibbon)
+    private static IEnumerator WaitForActorReadyForCapture(
+        GameObject actorObject,
+        Actor actor,
+        bool forceMulticlassRibbon,
+        bool expectsDiamondPortrait,
+        bool expectsLegendaryPortrait,
+        float legendaryPortraitZoom)
     {
         var previousChildCount = -1;
         var previousRendererCount = -1;
         var consecutiveStableFrames = 0;
+        var dynamicPortraitStableFrames = 0;
+        var maxWarmupFrames = expectsDiamondPortrait || expectsLegendaryPortrait
+            ? MaxDynamicPortraitWarmupFrames
+            : MaxCaptureWarmupFrames;
 
-        for (var frame = 0; frame < MaxCaptureWarmupFrames; frame++)
+        for (var frame = 0; frame < maxWarmupFrames; frame++)
         {
             yield return new WaitForEndOfFrame();
 
             if (actorObject == null)
                 yield break;
 
-            SetLayerRecursively(actorObject.transform, ExportLayer);
+            SetCardLayerForExport(actorObject.transform);
             ApplyPostInitializeOverrides(actor, forceMulticlassRibbon);
+
+            if (expectsDiamondPortrait)
+                actor.UpdateDiamondCardArt();
+            if (expectsLegendaryPortrait)
+            {
+                actor.UpdateTextures();
+                ForceBindLegendaryHeroPortrait(actor, legendaryPortraitZoom);
+            }
 
             var childCount = actorObject.GetComponentsInChildren<Transform>(true).Length;
             var rendererCount = actorObject.GetComponentsInChildren<Renderer>(true).Length;
             var isWaitingOnAssets = IsActorWaitingOnAssets(actorObject);
             var hasPendingDecor = HasPendingExportDecor(actor);
+            var dynamicPortraitReady = IsDynamicHeroPortraitReady(
+                actor,
+                expectsDiamondPortrait,
+                expectsLegendaryPortrait);
+
+            dynamicPortraitStableFrames = dynamicPortraitReady
+                ? dynamicPortraitStableFrames + 1
+                : 0;
 
             // 全量批跑时，侧边挂件可能在前几帧才补进层级。
             // 这里等到层级和渲染器数量稳定，再进入双底色截图，避免两次渲染之间对象状态不一致。
@@ -1219,8 +1319,87 @@ public sealed class Plugin : BaseUnityPlugin
             previousChildCount = childCount;
             previousRendererCount = rendererCount;
 
-            if (frame + 1 >= MinCaptureWarmupFrames && consecutiveStableFrames >= 1)
+            var minimumWarmupFrames = expectsDiamondPortrait || expectsLegendaryPortrait
+                ? MinDynamicPortraitWarmupFrames
+                : MinCaptureWarmupFrames;
+            var requiredDynamicStableFrames = expectsDiamondPortrait || expectsLegendaryPortrait ? 3 : 0;
+            if (frame + 1 >= minimumWarmupFrames &&
+                consecutiveStableFrames >= 1 &&
+                dynamicPortraitStableFrames >= requiredDynamicStableFrames)
                 yield break;
+        }
+    }
+
+    private static bool IsDynamicHeroPortraitReady(
+        Actor actor,
+        bool expectsDiamondPortrait,
+        bool expectsLegendaryPortrait)
+    {
+        if (actor == null)
+            return false;
+
+        if (expectsDiamondPortrait)
+        {
+            var diamondRenderToTexture = actor.GetDiamondRenderToTexture();
+            if (diamondRenderToTexture == null ||
+                !diamondRenderToTexture.enabled ||
+                !diamondRenderToTexture.HasAtlasPosition ||
+                diamondRenderToTexture.RenderCommands == null)
+            {
+                return false;
+            }
+        }
+
+        if (expectsLegendaryPortrait)
+        {
+            var portrait = actor.LegendaryHeroPortrait;
+            var portraitTexture = portrait != null ? portrait.PortraitTexture : null;
+            if (portraitTexture == null)
+                return false;
+
+            if (portraitTexture is RenderTexture renderTexture && !renderTexture.IsCreated())
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 钻石品质的 SetPortraitTexture 会优先保留金色专用材质并提前返回，
+    /// 导致传说英雄的 RenderTexture 没有真正写入中央画像材质。
+    /// 临时按普通品质完成纹理绑定，再恢复钻石品质；牌框与钻石 RTT 不受影响。
+    /// </summary>
+    private static void ForceBindLegendaryHeroPortrait(Actor actor, float portraitZoom)
+    {
+        if (actor?.LegendaryHeroPortrait == null)
+            return;
+
+        var portraitTexture = actor.LegendaryHeroPortrait.PortraitTexture;
+        if (portraitTexture == null)
+            return;
+
+        var premium = actor.GetPremium();
+        try
+        {
+            if (premium >= TAG_PREMIUM.GOLDEN)
+                actor.SetPremium(TAG_PREMIUM.NORMAL);
+
+            actor.SetPortraitTexture(portraitTexture);
+
+            var portraitMaterial = actor.GetPortraitMaterial();
+            if (portraitMaterial != null)
+            {
+                var zoom = Mathf.Clamp(portraitZoom, 1f, 3f);
+                var textureScale = 1f / zoom;
+                var centeredOffset = (1f - textureScale) * 0.5f;
+                portraitMaterial.mainTextureScale = new Vector2(textureScale, textureScale);
+                portraitMaterial.mainTextureOffset = new Vector2(centeredOffset, centeredOffset);
+            }
+        }
+        finally
+        {
+            if (actor.GetPremium() != premium)
+                actor.SetPremium(premium);
         }
     }
 
@@ -1264,6 +1443,43 @@ public sealed class Plugin : BaseUnityPlugin
         return nestedPrefab != null &&
                nestedPrefab.gameObject.activeSelf &&
                !nestedPrefab.PrefabIsLoaded();
+    }
+
+    /// <summary>
+    /// 卡面使用导出层，但钻石画像的离屏源模型必须保留游戏原始层，
+    /// 否则 DiamondRenderToTextureService 的专用相机会渲染到空图集。
+    /// </summary>
+    private static void SetCardLayerForExport(Transform root)
+    {
+        if (root == null)
+            return;
+
+        var preservedRoots = new HashSet<Transform>();
+        foreach (var renderToTexture in root.GetComponentsInChildren<DiamondRenderToTexture>(true))
+        {
+            if (renderToTexture == null)
+                continue;
+
+            if (renderToTexture.m_ObjectToRender != null)
+                preservedRoots.Add(renderToTexture.m_ObjectToRender.transform);
+            if (renderToTexture.m_AlphaObjectToRender != null)
+                preservedRoots.Add(renderToTexture.m_AlphaObjectToRender.transform);
+        }
+
+        SetLayerRecursively(root, ExportLayer, preservedRoots);
+    }
+
+    private static void SetLayerRecursively(
+        Transform root,
+        int layer,
+        HashSet<Transform> preservedRoots)
+    {
+        if (root == null || preservedRoots.Contains(root))
+            return;
+
+        root.gameObject.layer = layer;
+        foreach (Transform child in root)
+            SetLayerRecursively(child, layer, preservedRoots);
     }
 
     /// <summary>
@@ -1501,7 +1717,10 @@ public sealed class Plugin : BaseUnityPlugin
     /// <summary>
     /// 尝试把 Actor 放进收藏页固定槽位，复用游戏自己的卡槽缩放和样式补偿。
     /// </summary>
-    private GameObject WrapActorWithCollectionVisualIfAvailable(Actor actor, EntityDef entityDef)
+    private GameObject WrapActorWithCollectionVisualIfAvailable(
+        Actor actor,
+        EntityDef entityDef,
+        ExportRenderStrategy strategy)
     {
         if (actor == null)
             return null;
@@ -1529,9 +1748,9 @@ public sealed class Plugin : BaseUnityPlugin
         }
 
         cardVisual.SetActors(new CollectionCardActors(actor), CollectionUtils.ViewMode.CARDS);
-        if (entityDef != null && entityDef.IsPet())
+        if (strategy.Kind == ExportRenderStrategyKind.Pet)
             cardVisual.SetPetBoxCollider();
-        else if (entityDef != null && entityDef.IsHeroSkin())
+        else if (strategy.Kind == ExportRenderStrategyKind.HeroSkin)
             cardVisual.SetHeroSkinBoxCollider();
         else
             cardVisual.SetDefaultBoxCollider();
@@ -1553,22 +1772,232 @@ public sealed class Plugin : BaseUnityPlugin
     /// <summary>
     /// 根据包围盒调整离屏相机。
     /// </summary>
-    private void ConfigureCamera(Bounds bounds, Transform frameTransform, ExportRenderStrategy strategy, bool useUnifiedCardSlotFraming)
+    private void ConfigureCamera(
+        Bounds bounds,
+        Transform frameTransform,
+        ExportRenderStrategy strategy,
+        bool useUnifiedCardSlotFraming,
+        Actor actor = null)
     {
         var aspect = (float)_renderWidth.Value / _renderHeight.Value;
         var faceNormal = frameTransform.up.sqrMagnitude > 0.001f ? frameTransform.up.normalized : Vector3.up;
         var imageUp = frameTransform.forward.sqrMagnitude > 0.001f ? frameTransform.forward.normalized : Vector3.forward;
+        var imageRight = Vector3.Cross(imageUp, -faceNormal).normalized;
         var orthographicSizeMultiplier = strategy.OrthographicSizeMultiplier;
         var distanceMultiplier = useUnifiedCardSlotFraming
             ? UnifiedCardSlotDistanceMultiplier
             : strategy.DistanceMultiplier;
         var distance = Mathf.Max(4f, bounds.extents.z + 5f) * distanceMultiplier;
 
-        _exportCamera.orthographicSize = Mathf.Max(bounds.extents.y, bounds.extents.x / aspect) * orthographicSizeMultiplier;
+        var hasManaGemBounds = TryGetManaGemBounds(actor, out var manaGemBounds);
+        if (strategy.Kind == ExportRenderStrategyKind.HeroPower && hasManaGemBounds)
+        {
+            // 技能卡的 m_cardMesh 只代表中间面片，并不是完整技能框。
+            // 使用与参考技能图相同的法力水晶宽度，避免把外框错误放大并裁切。
+            var heroPowerManaWidth = GetProjectedHalfExtent(manaGemBounds, imageRight) * 2f;
+            var targetViewportRatio = GetTargetViewportWidthRatio(_heroPowerManaGemTargetWidth.Value);
+            _exportCamera.orthographicSize = heroPowerManaWidth / (2f * aspect * targetViewportRatio);
+        }
+        else if (hasManaGemBounds)
+        {
+            // 正交相机中，物体占画面宽度的比例为
+            // worldWidth / (2 * orthographicSize * cameraAspect)。
+            // 以法力水晶作为跨卡牌类型的唯一缩放锚点，卡框自身高宽不再影响最终视觉比例。
+            var manaGemWidth = GetProjectedHalfExtent(manaGemBounds, imageRight) * 2f;
+            var targetViewportRatio = GetTargetViewportWidthRatio(_manaGemTargetWidth.Value);
+            _exportCamera.orthographicSize = manaGemWidth / (2f * aspect * targetViewportRatio);
+        }
+        else
+        {
+            _exportCamera.orthographicSize = Mathf.Max(bounds.extents.y, bounds.extents.x / aspect) * orthographicSizeMultiplier;
+        }
+
         _exportCamera.nearClipPlane = 0.01f;
         _exportCamera.farClipPlane = distance * 3f;
-        _exportCamera.transform.position = bounds.center + faceNormal * distance + strategy.CameraOffset;
+
+        var cameraPosition = bounds.center + faceNormal * distance + strategy.CameraOffset;
+        if (strategy.Kind == ExportRenderStrategyKind.HeroPower && hasManaGemBounds)
+        {
+            // 技能图同时锁定法力水晶的纵向中心；卡框高宽差异不会再造成上下漂移。
+            var projectedManaCenter = Vector3.Dot(manaGemBounds.center, imageUp);
+            var targetViewportY = GetTargetViewportYFromBottom(_heroPowerManaGemCenterFromBottom.Value);
+            var targetCameraCenterProjection = projectedManaCenter +
+                                               (1f - targetViewportY * 2f) * _exportCamera.orthographicSize;
+            var currentCameraCenterProjection = Vector3.Dot(cameraPosition, imageUp);
+            cameraPosition += imageUp * (targetCameraCenterProjection - currentCameraCenterProjection);
+        }
+        else if (TryGetProjectedCardFrameBottom(actor, imageUp, out var projectedCardBottom))
+        {
+            // 缩放已经由当前类型的宽度锚点决定；这里只沿画面竖直方向移动相机，
+            // 让主卡框的最下边缘落到对应基线上。
+            var targetViewportY = GetTargetViewportYFromBottom(_cardFrameBottomMargin.Value);
+            var targetCameraCenterProjection = projectedCardBottom +
+                                               (1f - targetViewportY * 2f) * _exportCamera.orthographicSize;
+            var currentCameraCenterProjection = Vector3.Dot(cameraPosition, imageUp);
+            cameraPosition += imageUp * (targetCameraCenterProjection - currentCameraCenterProjection);
+        }
+
+        _exportCamera.transform.position = cameraPosition;
         _exportCamera.transform.rotation = Quaternion.LookRotation(-faceNormal, imageUp);
+    }
+
+    /// <summary>
+    /// 将最终列表图中的底部像素边距换算成原始渲染画面的 viewport 坐标。
+    /// </summary>
+    private float GetTargetViewportYFromBottom(int targetPixelFromBottom)
+    {
+        var targetWidth = Mathf.Max(1, _thumbWidth.Value - _trimPadding.Value * 2);
+        var targetHeight = Mathf.Max(1, _thumbHeight.Value - _trimPadding.Value * 2);
+        var resizeScale = Mathf.Min(
+            (float)targetWidth / _renderWidth.Value,
+            (float)targetHeight / _renderHeight.Value);
+        var scaledCaptureHeight = Mathf.Max(1, Mathf.RoundToInt(_renderHeight.Value * resizeScale));
+        var outputOffsetY = Mathf.Max(0, (_thumbHeight.Value - scaledCaptureHeight) / 2);
+        var targetBottomPixel = Mathf.Clamp(targetPixelFromBottom, outputOffsetY, outputOffsetY + scaledCaptureHeight - 1);
+        return Mathf.Clamp01((float)(targetBottomPixel - outputOffsetY) / scaledCaptureHeight);
+    }
+
+    /// <summary>
+    /// 获取主卡框沿图片竖直方向的最下方世界坐标。
+    /// 这里只测量 m_cardMesh，明确排除左右两侧的攻击力、生命值和护甲宝石。
+    /// </summary>
+    private static bool TryGetProjectedCardFrameBottom(Actor actor, Vector3 imageUp, out float projectedBottom)
+    {
+        projectedBottom = 0f;
+        if (actor == null)
+            return false;
+
+        var frameRenderer = actor.m_cardMesh != null
+            ? actor.m_cardMesh.GetComponent<Renderer>()
+            : actor.GetMeshRenderer(false);
+        if (frameRenderer == null ||
+            !frameRenderer.enabled ||
+            !frameRenderer.gameObject.activeInHierarchy)
+        {
+            return false;
+        }
+
+        var cardBounds = frameRenderer.bounds;
+        var normalizedImageUp = imageUp.sqrMagnitude > 0.001f
+            ? imageUp.normalized
+            : Vector3.forward;
+        projectedBottom = Vector3.Dot(cardBounds.center, normalizedImageUp) -
+                          GetProjectedHalfExtent(cardBounds, normalizedImageUp);
+        return true;
+    }
+
+    /// <summary>
+    /// 将最终列表图中的目标像素宽度换算成原始渲染画面的 viewport 比例。
+    /// 计算方式与 ResizeTextureToCanvas 完全一致，因此修改渲染或缩略图尺寸后仍能保持目标像素宽度。
+    /// </summary>
+    private float GetTargetViewportWidthRatio(int targetPixelWidth)
+    {
+        var targetWidth = Mathf.Max(1, _thumbWidth.Value - _trimPadding.Value * 2);
+        var targetHeight = Mathf.Max(1, _thumbHeight.Value - _trimPadding.Value * 2);
+        var resizeScale = Mathf.Min(
+            (float)targetWidth / _renderWidth.Value,
+            (float)targetHeight / _renderHeight.Value);
+        var scaledCaptureWidth = Mathf.Max(1, Mathf.RoundToInt(_renderWidth.Value * resizeScale));
+        var clampedTargetWidth = Mathf.Clamp(targetPixelWidth, 1, scaledCaptureWidth);
+        return Mathf.Clamp((float)clampedTargetWidth / scaledCaptureWidth, 0.001f, 1f);
+    }
+
+    /// <summary>
+    /// 获取主卡框沿图片水平方向投影后的世界宽度。
+    /// </summary>
+    private static bool TryGetProjectedCardFrameWidth(Actor actor, Vector3 imageRight, out float projectedWidth)
+    {
+        projectedWidth = 0f;
+        if (actor == null)
+            return false;
+
+        var frameRenderer = actor.m_cardMesh != null
+            ? actor.m_cardMesh.GetComponent<Renderer>()
+            : actor.GetMeshRenderer(false);
+        if (frameRenderer == null ||
+            !frameRenderer.enabled ||
+            !frameRenderer.gameObject.activeInHierarchy)
+        {
+            return false;
+        }
+
+        var normalizedImageRight = imageRight.sqrMagnitude > 0.001f
+            ? imageRight.normalized
+            : Vector3.right;
+        projectedWidth = GetProjectedHalfExtent(frameRenderer.bounds, normalizedImageRight) * 2f;
+        return projectedWidth > 0.0001f;
+    }
+
+    /// <summary>
+    /// 获取法力水晶沿最终图片水平方向投影后的世界宽度。
+    /// 优先使用 gem_mana 网格，避免法力数字位数和临时光效改变测量结果。
+    /// </summary>
+    private static bool TryGetManaGemBounds(Actor actor, out Bounds manaBounds)
+    {
+        manaBounds = default;
+        if (actor == null)
+            return false;
+
+        var manaRoot = actor.m_manaObject != null
+            ? actor.m_manaObject
+            : actor.GetRootObject() ?? actor.gameObject;
+
+        if (TryFindRendererIgnoreCase(manaRoot, "gem_mana", out var manaGemRenderer) &&
+            manaGemRenderer.enabled &&
+            manaGemRenderer.gameObject.activeInHierarchy)
+        {
+            manaBounds = manaGemRenderer.bounds;
+        }
+        else if (!TryGetActiveRendererBounds(actor.m_manaObject, out manaBounds))
+        {
+            return false;
+        }
+
+        return manaBounds.size.sqrMagnitude > 0.0001f;
+    }
+
+    /// <summary>
+    /// 计算世界轴对齐包围盒在指定方向上的半尺寸。
+    /// </summary>
+    private static float GetProjectedHalfExtent(Bounds bounds, Vector3 direction)
+    {
+        var extents = bounds.extents;
+        return Mathf.Abs(direction.x) * extents.x +
+               Mathf.Abs(direction.y) * extents.y +
+               Mathf.Abs(direction.z) * extents.z;
+    }
+
+    /// <summary>
+    /// 合并指定对象下所有当前可见渲染器的世界包围盒。
+    /// </summary>
+    private static bool TryGetActiveRendererBounds(GameObject targetObject, out Bounds bounds)
+    {
+        bounds = default;
+        if (targetObject == null)
+            return false;
+
+        var hasBounds = false;
+        foreach (var renderer in targetObject.GetComponentsInChildren<Renderer>(true))
+        {
+            if (renderer == null ||
+                !renderer.enabled ||
+                !renderer.gameObject.activeInHierarchy)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        return hasBounds;
     }
 
     /// <summary>
@@ -1948,6 +2377,20 @@ public sealed class Plugin : BaseUnityPlugin
         }
 
         ExportRenderStrategy strategy;
+        if (entityDef.GetCardType() == TAG_CARDTYPE.HERO)
+        {
+            // 所有英雄皮肤统一使用普通手牌英雄框。卡牌定义中的自定义英雄框会生成
+            // 战场钻石外框，因此在加载画像资源后立即卸载自定义框，只保留标准卡面。
+            const TAG_PREMIUM heroPremium = TAG_PREMIUM.NORMAL;
+            strategy = CreateUnifiedCardStrategy(
+                ActorNames.GetHandActor(TAG_CARDTYPE.HERO, heroPremium, entityDef.GetCardId()),
+                ExportRenderStrategyKind.HeroCard,
+                useDualBackgroundAlphaCapture: true,
+                premium: heroPremium,
+                customInitialize: static (actorObject, actor, def) => actor.DestroyCustomFrame());
+            return ApplyAutomaticAlphaCapture(entityDef, strategy);
+        }
+
         if (entityDef.IsHeroSkin())
         {
             strategy = new ExportRenderStrategy(
@@ -2061,15 +2504,19 @@ public sealed class Plugin : BaseUnityPlugin
         ExportRenderStrategyKind kind,
         bool useDualBackgroundAlphaCapture = false,
         Vector3? cameraOffset = null,
-        float orthographicSizeMultiplier = UnifiedCardSlotOrthographicSizeMultiplier)
+        float orthographicSizeMultiplier = UnifiedCardSlotOrthographicSizeMultiplier,
+        TAG_PREMIUM premium = TAG_PREMIUM.NORMAL,
+        Action<GameObject, Actor, EntityDef> customInitialize = null)
     {
         return new ExportRenderStrategy(
             actorPath,
             kind,
+            customInitialize: customInitialize,
             useDualBackgroundAlphaCapture: useDualBackgroundAlphaCapture,
             orthographicSizeMultiplier: orthographicSizeMultiplier,
             distanceMultiplier: UnifiedCardSlotDistanceMultiplier,
-            cameraOffset: cameraOffset ?? Vector3.zero);
+            cameraOffset: cameraOffset ?? Vector3.zero,
+            premium: premium);
     }
 
     /// <summary>
@@ -2095,7 +2542,8 @@ public sealed class Plugin : BaseUnityPlugin
             updateAllComponentsIgnoreSpells: strategy.UpdateAllComponentsIgnoreSpells,
             orthographicSizeMultiplier: EnlargedUnifiedCardOrthographicSizeMultiplier,
             distanceMultiplier: strategy.DistanceMultiplier,
-            cameraOffset: strategy.CameraOffset);
+            cameraOffset: strategy.CameraOffset,
+            premium: strategy.Premium);
     }
 
     private static bool ShouldUseEnlargedUnifiedCardScale(EntityDef entityDef)
@@ -2130,7 +2578,8 @@ public sealed class Plugin : BaseUnityPlugin
             updateAllComponentsIgnoreSpells: strategy.UpdateAllComponentsIgnoreSpells,
             orthographicSizeMultiplier: strategy.OrthographicSizeMultiplier,
             distanceMultiplier: strategy.DistanceMultiplier,
-            cameraOffset: strategy.CameraOffset);
+            cameraOffset: strategy.CameraOffset,
+            premium: strategy.Premium);
     }
 
     /// <summary>
@@ -2138,8 +2587,15 @@ public sealed class Plugin : BaseUnityPlugin
     /// </summary>
     private static bool RequiresAccurateAlphaCapture(EntityDef entityDef)
     {
-        if (entityDef.HasRuneCost || entityDef.HasDeckAction() || entityDef.IsElite())
+        if (entityDef.HasRuneCost ||
+            entityDef.HasDeckAction() ||
+            entityDef.IsElite() ||
+            entityDef.HasTag(GAME_TAG.ZERG) ||
+            entityDef.HasTag(GAME_TAG.TERRAN) ||
+            entityDef.HasTag(GAME_TAG.PROTOSS))
+        {
             return true;
+        }
 
         var classes = new List<TAG_CLASS>();
         entityDef.GetClasses(classes);
@@ -2214,6 +2670,7 @@ internal sealed class FormatModeExportTarget
 internal enum ExportRenderStrategyKind
 {
     Default,
+    HeroCard,
     HeroSkin,
     Pet,
     Location,
@@ -2241,7 +2698,8 @@ internal sealed class ExportRenderStrategy
         bool updateAllComponentsIgnoreSpells = false,
         float orthographicSizeMultiplier = 1.08f,
         float distanceMultiplier = 1f,
-        Vector3? cameraOffset = null)
+        Vector3? cameraOffset = null,
+        TAG_PREMIUM premium = TAG_PREMIUM.NORMAL)
     {
         ActorPath = actorPath;
         Kind = kind;
@@ -2254,6 +2712,7 @@ internal sealed class ExportRenderStrategy
         OrthographicSizeMultiplier = orthographicSizeMultiplier;
         DistanceMultiplier = distanceMultiplier;
         CameraOffset = cameraOffset ?? Vector3.zero;
+        Premium = premium;
     }
 
     public string ActorPath { get; }
@@ -2289,4 +2748,6 @@ internal sealed class ExportRenderStrategy
     public float DistanceMultiplier { get; }
 
     public Vector3 CameraOffset { get; }
+
+    public TAG_PREMIUM Premium { get; }
 }
