@@ -28,14 +28,18 @@ public sealed record AppearanceSettingsResponse(
     string BackgroundImage,
     string BackgroundName,
     bool BackgroundBlur,
-    bool GlassUi);
+    bool GlassUi,
+    int BackgroundBlurRadius,
+    bool LightTransparentUi);
 
 public sealed record AppearanceSettingsSaveRequest(
     string? BackgroundImageDataUrl,
     string? BackgroundName,
     bool BackgroundBlur,
     bool GlassUi,
-    bool ClearBackgroundImage);
+    bool ClearBackgroundImage,
+    int? BackgroundBlurRadius,
+    bool LightTransparentUi);
 
 public sealed record CardDataMapLibraryDto(
     string Key,

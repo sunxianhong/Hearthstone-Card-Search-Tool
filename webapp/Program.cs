@@ -575,7 +575,9 @@ static AppearanceSettingsResponse BuildAppearanceSettingsResponse(
         backgroundImage,
         config.BackgroundName ?? string.Empty,
         config.BackgroundBlur,
-        config.GlassUi);
+        config.GlassUi,
+        config.BackgroundBlurRadius ?? 0,
+        config.LightTransparentUi);
 }
 
 static CardDataMapConfigResponse BuildCardDataMapConfigResponse(CardDataMapOverrideConfig overrides)

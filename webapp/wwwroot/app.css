@@ -116,7 +116,7 @@ body.has-custom-background .page-background::after {
 }
 
 body.has-custom-background.has-background-blur .page-background {
-    filter: blur(18px) saturate(1.08);
+    filter: blur(var(--background-blur-radius)) saturate(1.08);
     transform: scale(1.06);
 }
 
@@ -964,6 +964,26 @@ textarea {
     background: rgba(255, 255, 255, 0.9);
 }
 
+.appearance-blur-control {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.appearance-blur-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.appearance-blur-control input[type="range"] {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--accent-strong);
+    cursor: pointer;
+}
+
 .appearance-setting-meta,
 .appearance-toggle-meta {
     display: flex;
@@ -1206,6 +1226,238 @@ textarea {
     pointer-events: none;
     white-space: nowrap;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+body:not(.has-flat-ui) {
+    --panel: rgba(24, 27, 39, 0.3);
+    --panel-strong: rgba(24, 27, 39, 0.5);
+    --card: rgba(24, 27, 39, 0.3);
+    --ink: #f1eff9;
+    --muted: #bec3d2;
+    --line: rgba(231, 227, 252, 0.2);
+    --accent: #b89bfa;
+    --accent-strong: #8152ca;
+    --accent-soft: rgba(163, 112, 247, 0.18);
+    --shadow: 0 8px 32px rgba(5, 7, 14, 0.2);
+    --shadow-sm: 0 1px 4px rgba(5, 7, 14, 0.2);
+    --shadow-hover: 0 14px 36px rgba(5, 7, 14, 0.28);
+    --filter-bar-surface: rgba(24, 27, 39, 0.78);
+    --filter-control-surface: rgba(34, 38, 52, 0.92);
+    --filter-control-hover: rgba(48, 51, 68, 0.96);
+    --filter-menu-surface: rgba(24, 27, 39, 0.97);
+    --filter-selected-surface: rgba(58, 47, 82, 0.95);
+    background: #151923;
+}
+
+body:not(.has-flat-ui) input[type="checkbox"] {
+    accent-color: var(--accent-strong);
+}
+
+body:not(.has-flat-ui):not(.has-custom-background) .page-background,
+body:not(.has-flat-ui) .appearance-background-preview:not(.has-image) {
+    background:
+        radial-gradient(circle at 82% 4%, rgba(121, 87, 193, 0.3), transparent 34%),
+        radial-gradient(circle at 8% 24%, rgba(57, 105, 155, 0.24), transparent 30%),
+        linear-gradient(180deg, #171b29, #10131d);
+}
+
+body.has-custom-background:not(.has-flat-ui) .page-background::after {
+    background: linear-gradient(180deg, rgba(10, 12, 20, 0.32), rgba(10, 12, 20, 0.52));
+}
+
+body:not(.has-flat-ui) .hero-panel,
+body:not(.has-flat-ui) .control-panel,
+body:not(.has-flat-ui) .card-fallback,
+body:not(.has-flat-ui) .empty-state {
+    background: var(--panel);
+    backdrop-filter: blur(10px);
+}
+
+body:not(.has-flat-ui) .modal-backdrop {
+    background: rgba(5, 7, 14, 0.56);
+    backdrop-filter: none;
+}
+
+body:not(.has-flat-ui) .modal-panel {
+    background: rgba(24, 27, 39, 0.62);
+    backdrop-filter: blur(16px);
+}
+
+body:not(.has-flat-ui) .settings-section,
+body:not(.has-flat-ui) .detail-section,
+body:not(.has-flat-ui) .tag-section,
+body:not(.has-flat-ui) .detail-description {
+    background: rgba(24, 27, 39, 0.22);
+}
+
+body:not(.has-flat-ui) .settings-section-card,
+body:not(.has-flat-ui) .settings-option-item,
+body:not(.has-flat-ui) .appearance-setting-row,
+body:not(.has-flat-ui) .appearance-toggle-card,
+body:not(.has-flat-ui) .settings-placeholder,
+body:not(.has-flat-ui) .tag-line,
+body:not(.has-flat-ui) .tag-line-button {
+    background: rgba(24, 27, 39, 0.4);
+}
+
+body:not(.has-flat-ui) .settings-tab-button,
+body:not(.has-flat-ui) .settings-text-hint,
+body:not(.has-flat-ui) .settings-map-status,
+body:not(.has-flat-ui) .settings-map-textarea,
+body:not(.has-flat-ui) .settings-set-mode-item,
+body:not(.has-flat-ui) .settings-set-mode-toggle,
+body:not(.has-flat-ui) .settings-section-open {
+    background: var(--panel-strong);
+}
+
+body:not(.has-flat-ui) .card-placeholder,
+body:not(.has-flat-ui) .detail-placeholder {
+    background: linear-gradient(135deg, rgba(36, 42, 60, 0.5), rgba(24, 27, 39, 0.35));
+}
+
+body:not(.has-flat-ui) .custom-select-option,
+body:not(.has-flat-ui) .set-picker-option,
+body:not(.has-flat-ui) .detail-description,
+body:not(.has-flat-ui) .tag-line,
+body:not(.has-flat-ui) .tag-line-button {
+    color: var(--ink);
+}
+
+body:not(.has-flat-ui) .related-link-button,
+body:not(.has-flat-ui) .custom-select-option.is-selected,
+body:not(.has-flat-ui) .set-picker-option.is-selected,
+body:not(.has-flat-ui) .set-picker-button.has-selection,
+body:not(.has-flat-ui) .settings-tab-button.is-active,
+body:not(.has-flat-ui) .settings-section-card.is-active,
+body:not(.has-flat-ui) .settings-stat-chip {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+body:not(.has-flat-ui) .settings-map-status.is-success {
+    background: rgba(52, 148, 103, 0.22);
+    color: #a6f2ce;
+}
+
+body:not(.has-flat-ui) .settings-map-status.is-warning {
+    background: rgba(181, 121, 40, 0.22);
+    color: #ffe0a3;
+}
+
+body:not(.has-flat-ui) .custom-select-trigger:hover,
+body:not(.has-flat-ui) .set-picker-button:hover,
+body:not(.has-flat-ui) .custom-select-option:hover,
+body:not(.has-flat-ui) .custom-select-option.is-focused,
+body:not(.has-flat-ui) .set-picker-option:hover,
+body:not(.has-flat-ui) .modal-close,
+body:not(.has-flat-ui) .back-to-top {
+    background: var(--panel-strong);
+}
+
+body.has-light-transparent-ui:not(.has-flat-ui) {
+    --panel: rgba(255, 255, 255, 0.36);
+    --panel-strong: rgba(255, 255, 255, 0.64);
+    --card: rgba(255, 255, 255, 0.36);
+    --ink: #202334;
+    --muted: #596476;
+    --line: rgba(100, 116, 139, 0.28);
+    --accent: #6845ac;
+    --accent-strong: #8053c8;
+    --accent-soft: rgba(128, 83, 200, 0.14);
+    --shadow: 0 8px 32px rgba(31, 41, 55, 0.1);
+    --shadow-sm: 0 1px 4px rgba(31, 41, 55, 0.1);
+    --shadow-hover: 0 14px 36px rgba(31, 41, 55, 0.15);
+    --filter-bar-surface: rgba(255, 255, 255, 0.86);
+    --filter-control-surface: rgba(255, 255, 255, 0.94);
+    --filter-control-hover: rgba(255, 255, 255, 0.98);
+    --filter-menu-surface: rgba(255, 255, 255, 0.98);
+    --filter-selected-surface: rgba(237, 231, 249, 0.96);
+    background: #f7f7fb;
+}
+
+body.has-light-transparent-ui:not(.has-flat-ui):not(.has-custom-background) .page-background,
+body.has-light-transparent-ui:not(.has-flat-ui) .appearance-background-preview:not(.has-image) {
+    background:
+        radial-gradient(circle at 82% 4%, rgba(177, 150, 230, 0.24), transparent 34%),
+        radial-gradient(circle at 8% 24%, rgba(130, 183, 223, 0.2), transparent 30%),
+        linear-gradient(180deg, #fbfbff, #edf0f8);
+}
+
+body.has-custom-background.has-light-transparent-ui:not(.has-flat-ui) .page-background::after {
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.28), rgba(237, 244, 246, 0.44));
+}
+
+body.has-light-transparent-ui:not(.has-flat-ui) .modal-backdrop {
+    background: rgba(15, 23, 42, 0.4);
+}
+
+body.has-light-transparent-ui:not(.has-flat-ui) .modal-panel {
+    background: rgba(255, 255, 255, 0.72);
+}
+
+body.has-light-transparent-ui:not(.has-flat-ui) .settings-section,
+body.has-light-transparent-ui:not(.has-flat-ui) .detail-section,
+body.has-light-transparent-ui:not(.has-flat-ui) .tag-section,
+body.has-light-transparent-ui:not(.has-flat-ui) .detail-description {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+body.has-light-transparent-ui:not(.has-flat-ui) .settings-section-card,
+body.has-light-transparent-ui:not(.has-flat-ui) .settings-option-item,
+body.has-light-transparent-ui:not(.has-flat-ui) .appearance-setting-row,
+body.has-light-transparent-ui:not(.has-flat-ui) .appearance-toggle-card,
+body.has-light-transparent-ui:not(.has-flat-ui) .settings-placeholder,
+body.has-light-transparent-ui:not(.has-flat-ui) .tag-line,
+body.has-light-transparent-ui:not(.has-flat-ui) .tag-line-button {
+    background: rgba(255, 255, 255, 0.48);
+}
+
+body.has-light-transparent-ui:not(.has-flat-ui) .settings-section-card.is-active {
+    background: var(--accent-soft);
+}
+
+body.has-light-transparent-ui:not(.has-flat-ui) .card-placeholder,
+body.has-light-transparent-ui:not(.has-flat-ui) .detail-placeholder {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.68), rgba(237, 240, 248, 0.44));
+}
+
+body.has-light-transparent-ui:not(.has-flat-ui) .settings-map-status.is-success {
+    background: rgba(209, 250, 229, 0.72);
+    color: #047857;
+}
+
+body.has-light-transparent-ui:not(.has-flat-ui) .settings-map-status.is-warning {
+    background: rgba(254, 243, 199, 0.8);
+    color: #92400e;
+}
+
+body:not(.has-flat-ui) .hero-panel,
+body:not(.has-flat-ui) .control-panel {
+    background: var(--filter-bar-surface);
+}
+
+body:not(.has-flat-ui) .custom-select-panel,
+body:not(.has-flat-ui) .set-picker-panel {
+    background: var(--filter-menu-surface);
+    backdrop-filter: blur(16px);
+}
+
+body:not(.has-flat-ui) .control-panel .search-field input,
+body:not(.has-flat-ui) .control-panel .secondary-button,
+body:not(.has-flat-ui) .custom-select-trigger,
+body:not(.has-flat-ui) .set-picker-button {
+    background: var(--filter-control-surface);
+}
+
+body:not(.has-flat-ui) .custom-select-trigger:hover,
+body:not(.has-flat-ui) .set-picker-button:hover {
+    background: var(--filter-control-hover);
+}
+
+body:not(.has-flat-ui) .set-picker-button.has-selection,
+body:not(.has-flat-ui) .set-picker-button.has-selection:hover {
+    border-color: var(--accent);
+    background: var(--filter-selected-surface);
 }
 
 body.has-flat-ui * {

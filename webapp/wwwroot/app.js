@@ -49,8 +49,9 @@ const BACKGROUND_IMAGE_MAX_SIDE = 2400;
 const DEFAULT_APPEARANCE_SETTINGS = {
     backgroundImage: "",
     backgroundName: "",
-    backgroundBlur: false,
+    backgroundBlurRadius: 0,
     glassUi: true,
+    lightTransparentUi: false,
 };
 
 const state = {
@@ -885,8 +886,10 @@ function buildAppearanceSettingsPayload(settings) {
     return {
         backgroundImageDataUrl: normalized.backgroundImageDataUrl || null,
         backgroundName: normalized.backgroundName || null,
-        backgroundBlur: normalized.backgroundBlur,
+        backgroundBlur: normalized.backgroundBlurRadius > 0,
+        backgroundBlurRadius: normalized.backgroundBlurRadius,
         glassUi: normalized.glassUi,
+        lightTransparentUi: normalized.lightTransparentUi,
         clearBackgroundImage: !normalized.backgroundImage && !normalized.backgroundImageDataUrl,
     };
 }
@@ -900,18 +903,23 @@ function normalizeAppearanceSettings(settings) {
         backgroundImage: typeof source.backgroundImage === "string" ? source.backgroundImage : "",
         backgroundImageDataUrl: typeof source.backgroundImageDataUrl === "string" ? source.backgroundImageDataUrl : "",
         backgroundName: typeof source.backgroundName === "string" ? source.backgroundName : "",
-        backgroundBlur: Boolean(source.backgroundBlur),
+        backgroundBlurRadius: Number.isFinite(source.backgroundBlurRadius)
+            ? Math.max(0, Math.min(18, Math.round(source.backgroundBlurRadius)))
+            : (source.backgroundBlur ? 6 : 0),
         glassUi: source.glassUi !== false,
+        lightTransparentUi: Boolean(source.lightTransparentUi),
     };
 }
 
 function applyAppearanceSettings(settings) {
     const normalized = normalizeAppearanceSettings(settings);
     setElementBackgroundImage(elements.pageBackground, normalized.backgroundImage);
+    elements.pageBackground.style.setProperty("--background-blur-radius", `${normalized.backgroundBlurRadius}px`);
 
     document.body.classList.toggle("has-custom-background", Boolean(normalized.backgroundImage));
-    document.body.classList.toggle("has-background-blur", Boolean(normalized.backgroundImage && normalized.backgroundBlur));
+    document.body.classList.toggle("has-background-blur", Boolean(normalized.backgroundImage && normalized.backgroundBlurRadius > 0));
     document.body.classList.toggle("has-flat-ui", !normalized.glassUi);
+    document.body.classList.toggle("has-light-transparent-ui", normalized.glassUi && normalized.lightTransparentUi);
 }
 
 function setElementBackgroundImage(element, image) {
@@ -1206,7 +1214,7 @@ function syncSettingsHeader() {
     } else if (state.activeSettingsView === SETTINGS_VIEW_APPEARANCE) {
         elements.settingsHeaderBadge.textContent = "外观";
         elements.settingsTitle.textContent = "背景与界面效果";
-        elements.settingsDescription.textContent = "自定义页面最底层背景图片，并控制背景高级模糊和整体界面的磨玻璃效果；保存后所有访问这个服务的设备都会看到。";
+        elements.settingsDescription.textContent = "自定义页面最底层背景图片，并选择界面透明主题；保存后所有访问这个服务的设备都会看到。";
         elements.resetFilterConfigButton.textContent = "恢复默认外观";
     } else {
         elements.settingsHeaderBadge.textContent = "设置中心";
@@ -1778,26 +1786,64 @@ function renderAppearanceSettings() {
     elements.appearanceBackgroundPanel.replaceChildren(
         createAppearanceBackgroundPreview(settings),
         createAppearanceBackgroundActionRow(settings),
-        createAppearanceToggleCard(
-            "背景高级模糊",
-            "有自定义背景图片时生效，让底层画面更柔和。",
-            settings.backgroundBlur,
-            (checked) => {
-                settings.backgroundBlur = checked;
-                applyAppearanceSettings(settings);
-                renderAppearanceSettings();
-            }));
+        createAppearanceBlurSlider(settings));
 
     elements.appearanceEffectPanel.replaceChildren(
         createAppearanceToggleCard(
-            "界面磨玻璃效果",
-            "控制顶部栏、筛选区、弹窗等界面面板的半透明模糊。",
+            "界面透明主题",
+            "让背景透过顶部栏、筛选区、弹窗等面板。",
             settings.glassUi,
             (checked) => {
                 settings.glassUi = checked;
                 applyAppearanceSettings(settings);
                 renderAppearanceSettings();
+            }),
+        createAppearanceToggleCard(
+            "浅色透明配色",
+            "开启后使用白色半透明面板；仅在透明主题下生效。",
+            settings.lightTransparentUi,
+            (checked) => {
+                settings.lightTransparentUi = checked;
+                applyAppearanceSettings(settings);
             }));
+}
+
+function createAppearanceBlurSlider(settings) {
+    const row = document.createElement("div");
+    row.className = "appearance-setting-row appearance-blur-control";
+
+    const heading = document.createElement("div");
+    heading.className = "appearance-blur-heading";
+
+    const label = document.createElement("label");
+    label.className = "appearance-setting-title";
+    label.htmlFor = "appearanceBlurRange";
+    label.textContent = "背景高级模糊";
+
+    const value = document.createElement("output");
+    value.htmlFor = "appearanceBlurRange";
+    value.textContent = `${settings.backgroundBlurRadius}px`;
+
+    const slider = document.createElement("input");
+    slider.id = "appearanceBlurRange";
+    slider.type = "range";
+    slider.min = "0";
+    slider.max = "18";
+    slider.step = "1";
+    slider.value = String(settings.backgroundBlurRadius);
+    slider.addEventListener("input", () => {
+        settings.backgroundBlurRadius = Number(slider.value);
+        value.textContent = `${slider.value}px`;
+        applyAppearanceSettings(settings);
+    });
+
+    const detail = document.createElement("div");
+    detail.className = "appearance-setting-detail";
+    detail.textContent = "仅对自定义背景生效，0px 为关闭。";
+
+    heading.append(label, value);
+    row.append(heading, slider, detail);
+    return row;
 }
 
 function createAppearanceBackgroundPreview(settings) {

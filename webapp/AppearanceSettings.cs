@@ -7,7 +7,9 @@ public sealed record AppearanceSettingsConfig(
     string? BackgroundImageFileName,
     string? BackgroundName,
     bool BackgroundBlur,
-    bool GlassUi);
+    bool GlassUi,
+    int? BackgroundBlurRadius = null,
+    bool LightTransparentUi = false);
 
 public sealed class AppearanceSettingsStore
 {
@@ -16,6 +18,8 @@ public sealed class AppearanceSettingsStore
     private const string ImageDirectoryName = "appearance";
     private const string BackgroundImageBaseName = "background";
     private const int MaxBackgroundImageBytes = 8 * 1024 * 1024;
+    private const int MaxBackgroundBlurRadius = 18;
+    private const int LegacyBackgroundBlurRadius = 6;
 
     private static readonly IReadOnlyDictionary<string, string> ImageExtensions =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -135,7 +139,9 @@ public sealed class AppearanceSettingsStore
                 backgroundFileName,
                 backgroundName,
                 request.BackgroundBlur,
-                request.GlassUi));
+                request.GlassUi,
+                request.BackgroundBlurRadius,
+                request.LightTransparentUi));
 
             await SaveCoreAsync(saved, cancellationToken);
             return saved;
@@ -245,8 +251,13 @@ public sealed class AppearanceSettingsStore
     {
         if (current is null)
         {
-            return new AppearanceSettingsConfig(null, null, BackgroundBlur: false, GlassUi: true);
+            return new AppearanceSettingsConfig(null, null, BackgroundBlur: false, GlassUi: true, BackgroundBlurRadius: 0);
         }
+
+        var blurRadius = Math.Clamp(
+            current.BackgroundBlurRadius ?? (current.BackgroundBlur ? LegacyBackgroundBlurRadius : 0),
+            0,
+            MaxBackgroundBlurRadius);
 
         return new AppearanceSettingsConfig(
             string.IsNullOrWhiteSpace(current.BackgroundImageFileName)
@@ -255,8 +266,10 @@ public sealed class AppearanceSettingsStore
             string.IsNullOrWhiteSpace(current.BackgroundName)
                 ? null
                 : current.BackgroundName.Trim(),
-            current.BackgroundBlur,
-            current.GlassUi);
+            blurRadius > 0,
+            current.GlassUi,
+            blurRadius,
+            current.LightTransparentUi);
     }
 
     private static string ResolveConfigDirectory(string? configuredRoot, IWebHostEnvironment environment)
