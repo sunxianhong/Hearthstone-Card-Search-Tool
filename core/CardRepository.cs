@@ -277,6 +277,7 @@ public sealed class CardRepository
             DbfId = card.DbfId,
             Name = card.NameZh,
             Text = card.TextZh,
+            FlavorText = card.TagMap.TryGetValue("FLAVORTEXT", out var flavorText) ? CleanCardText(flavorText) : string.Empty,
             ImagePath = card.ImagePath,
             IsEnchantment = card.IsEnchantment,
             ParentCards = parentCards,

@@ -61,6 +61,12 @@ public sealed class RepositoryTests
     }
 
     [Fact]
+    public void DetailUsesChineseFlavorTextWhenAvailable()
+    {
+        Assert.Equal("炎枪术，冰枪术，酸枪术……招招克敌，枪枪致命。", Repository.Value.GetDetail("AT_001")!.FlavorText);
+    }
+
+    [Fact]
     public void RaceFilterMatchesSecondaryRaceTags()
     {
         var resourceRoot = CreateTemporaryCardDataRoot();

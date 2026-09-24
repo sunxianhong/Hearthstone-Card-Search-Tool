@@ -200,6 +200,7 @@ app.MapGet("/api/cards/{cardId}", (string cardId, RepositoryState state) =>
             detail.DbfId,
             detail.Name,
             detail.Text,
+            detail.FlavorText,
             HasImage(detail.ImagePath),
             BuildImageUrl(detail.CardId, detail.ImagePath),
             detail.IsEnchantment,

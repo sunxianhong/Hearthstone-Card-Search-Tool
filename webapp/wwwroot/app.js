@@ -118,6 +118,7 @@ const elements = {
     copyNameButton: document.getElementById("copyNameButton"),
     copyCardIdButton: document.getElementById("copyCardIdButton"),
     copyDbfIdButton: document.getElementById("copyDbfIdButton"),
+    detailFlavor: document.getElementById("detailFlavor"),
     detailDescription: document.getElementById("detailDescription"),
     detailVisual: document.getElementById("detailVisual"),
     parentSection: document.getElementById("parentSection"),
@@ -2708,6 +2709,7 @@ async function openDetail(cardId) {
     elements.copyNameButton.textContent = "读取中…";
     elements.copyCardIdButton.textContent = cardId;
     elements.copyDbfIdButton.textContent = "-";
+    elements.detailFlavor.classList.add("is-hidden");
     elements.detailDescription.textContent = "请稍候，正在从服务器读取这张卡牌的详细信息。";
     elements.detailVisual.replaceChildren(createPlaceholder("加载中", "正在读取卡牌图片和关联信息。"));
     hideSections();
@@ -2731,6 +2733,8 @@ function renderDetail(detail) {
     elements.copyNameButton.textContent = detail.name;
     elements.copyCardIdButton.textContent = detail.cardId;
     elements.copyDbfIdButton.textContent = String(detail.dbfId);
+    elements.detailFlavor.textContent = detail.flavorText || "";
+    elements.detailFlavor.classList.toggle("is-hidden", !detail.flavorText);
     elements.detailDescription.textContent = detail.text || "（无描述）";
 
     elements.detailVisual.replaceChildren(

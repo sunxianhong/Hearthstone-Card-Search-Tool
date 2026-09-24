@@ -86,6 +86,7 @@ public sealed class CardDetailData
     public required int DbfId { get; init; }
     public required string Name { get; init; }
     public required string Text { get; init; }
+    public required string FlavorText { get; init; }
     public required string? ImagePath { get; init; }
     public required bool IsEnchantment { get; init; }
     public required IReadOnlyList<RelatedCardLink> ParentCards { get; init; }

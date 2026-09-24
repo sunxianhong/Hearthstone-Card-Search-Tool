@@ -86,6 +86,7 @@ public sealed record CardDetailDto(
     int DbfId,
     string Name,
     string Text,
+    string FlavorText,
     bool HasImage,
     string? ImageUrl,
     bool IsEnchantment,

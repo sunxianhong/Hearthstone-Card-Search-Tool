@@ -1070,6 +1070,14 @@ textarea {
     font-weight: 700;
 }
 
+.detail-flavor {
+    margin: 0 0 12px;
+    color: var(--muted);
+    font-style: italic;
+    line-height: 1.7;
+    white-space: pre-line;
+}
+
 .detail-description {
     margin: 0;
     padding: 16px 18px;
