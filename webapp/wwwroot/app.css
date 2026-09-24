@@ -438,6 +438,26 @@ textarea {
     font-weight: 650;
 }
 
+#keywordSelect .custom-select-panel {
+    left: auto;
+    right: 0;
+    display: grid;
+    direction: rtl;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    width: 420px;
+    max-width: min(70vw, 420px);
+    max-height: 420px;
+    padding: 8px;
+}
+
+#keywordSelect .custom-select-option {
+    min-width: 0;
+    direction: ltr;
+    justify-content: center;
+    text-align: center;
+}
+
 .set-picker {
     position: relative;
 }
@@ -1290,6 +1310,14 @@ body.has-flat-ui .tag-line-button {
     }
 
     .set-picker-panel {
+        width: min(92vw, 420px);
+    }
+
+    #keywordSelect .custom-select-panel {
+        left: 0;
+        right: auto;
+        direction: ltr;
+        grid-template-columns: 1fr;
         width: min(92vw, 420px);
     }
 

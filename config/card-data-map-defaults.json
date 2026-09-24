@@ -2,7 +2,7 @@
   "format": "hearthstone-card-search.card-data-map-package",
   "version": 1,
   "kind": "maps",
-  "exportedAt": "2026-09-07T04:28:51.553Z",
+  "exportedAt": "2026-09-24T08:23:30.575Z",
   "maps": {
     "unknownEnumMap": {
       "858": "视为同一卡牌",
@@ -11,7 +11,10 @@
       "4690": "伪装",
       "4761": "巨龙之魂"
     },
-    "tagLabels": {},
+    "tagLabels": {
+      "OLD_GOD": "古神",
+      "ImmuneToSpellpower": "不受法术强度影响"
+    },
     "classMap": {},
     "multiClassMap": {
       "德鲁伊": "34,106,194,130,8194,258,6,18",
@@ -92,7 +95,8 @@
       "TWINSPELL": "双生法术"
     },
     "setMap": {
-      "1988": "逃离紫罗兰监狱"
+      "1988": "逃离紫罗兰监狱",
+      "1994": "黑暗帝国的统治"
     },
     "relatedCardMap": {
       "GDB_728,BT_026,GDB_721,GDB_726,BT_020=>": "BT_025,GDB_137,GDB_138,BT_011,GDB_139,YOP_011,BT_024",
